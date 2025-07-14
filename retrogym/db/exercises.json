@@ -1,0 +1,1930 @@
+[
+  {
+    "name": "Barbell Bench Press",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bench Press",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Bench Press",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Bench Press",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Squat",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Squat",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Squat",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Squat",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Deadlift",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Deadlift",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Trap Bar Deadlift",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Trap Bar"
+    ]
+  },
+  {
+    "name": "Barbell Overhead Press",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Overhead Press",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Overhead Press",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Bent Over Row",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bent Over Row",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Bent Over Row",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Cable Bent Over Row",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Barbell Bicep Curl",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bicep Curl",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Cable Bicep Curl",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Resistance Band Bicep Curl",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Resistance Band"
+    ]
+  },
+  {
+    "name": "Cable Tricep Extension",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Dumbbell Tricep Extension",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Resistance Band Tricep Extension",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Resistance Band"
+    ]
+  },
+  {
+    "name": "Dumbbell Lunge",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Barbell Lunge",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Bodyweight Lunge",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Pull-Up",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Assisted Machine Pull-Up",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Assisted Machine"
+    ]
+  },
+  {
+    "name": "Bodyweight Dip",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Assisted Machine Dip",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Assisted Machine"
+    ]
+  },
+  {
+    "name": "Cable Chest Fly",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Dumbbell Chest Fly",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Chest Fly",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Press",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Cable Lat Pulldown",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Machine Lat Pulldown",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Shoulder Press",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Curl",
+    "muscle_groups": [
+      "Legs"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Extension",
+    "muscle_groups": [
+      "Legs"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Calf Raise",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Dumbbell Calf Raise",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Bodyweight Calf Raise",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Plank",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Russian Twist",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Cable Russian Twist",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Bodyweight Leg Raise",
+    "muscle_groups": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Captain's Chair Leg Raise",
+    "muscle_groups": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "categories": [
+      "Captain's Chair"
+    ]
+  },
+  {
+    "name": "Barbell Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Squat Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Squat Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Squat Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Squat Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Deadlift Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Deadlift Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Trap Bar Deadlift Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Trap Bar"
+    ]
+  },
+  {
+    "name": "Barbell Overhead Press Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Overhead Press Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Overhead Press Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Bent Over Row Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bent Over Row Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Bent Over Row Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Cable Bent Over Row Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Barbell Bicep Curl Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bicep Curl Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Cable Bicep Curl Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Resistance Band Bicep Curl Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Resistance Band"
+    ]
+  },
+  {
+    "name": "Cable Tricep Extension Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Dumbbell Tricep Extension Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Resistance Band Tricep Extension Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Resistance Band"
+    ]
+  },
+  {
+    "name": "Dumbbell Lunge Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Barbell Lunge Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Bodyweight Lunge Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Pull-Up Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Assisted Machine Pull-Up Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Assisted Machine"
+    ]
+  },
+  {
+    "name": "Bodyweight Dip Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Assisted Machine Dip Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Assisted Machine"
+    ]
+  },
+  {
+    "name": "Cable Chest Fly Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Dumbbell Chest Fly Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Chest Fly Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Press Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Cable Lat Pulldown Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Machine Lat Pulldown Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Shoulder Press Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Curl Variation",
+    "muscle_groups": [
+      "Legs"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Extension Variation",
+    "muscle_groups": [
+      "Legs"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Calf Raise Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Dumbbell Calf Raise Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Bodyweight Calf Raise Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Plank Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Russian Twist Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Cable Russian Twist Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Bodyweight Leg Raise Variation",
+    "muscle_groups": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Captain's Chair Leg Raise Variation",
+    "muscle_groups": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "categories": [
+      "Captain's Chair"
+    ]
+  },
+  {
+    "name": "Barbell Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Squat Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Squat Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Squat Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Squat Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Deadlift Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Deadlift Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Trap Bar Deadlift Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Trap Bar"
+    ]
+  },
+  {
+    "name": "Barbell Overhead Press Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Overhead Press Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Overhead Press Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Bent Over Row Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bent Over Row Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Bent Over Row Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Cable Bent Over Row Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Barbell Bicep Curl Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bicep Curl Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Cable Bicep Curl Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Resistance Band Bicep Curl Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Resistance Band"
+    ]
+  },
+  {
+    "name": "Cable Tricep Extension Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Dumbbell Tricep Extension Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Resistance Band Tricep Extension Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Resistance Band"
+    ]
+  },
+  {
+    "name": "Dumbbell Lunge Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Barbell Lunge Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Bodyweight Lunge Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Pull-Up Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Assisted Machine Pull-Up Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Assisted Machine"
+    ]
+  },
+  {
+    "name": "Bodyweight Dip Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Assisted Machine Dip Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Assisted Machine"
+    ]
+  },
+  {
+    "name": "Cable Chest Fly Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Dumbbell Chest Fly Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Chest Fly Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Press Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Cable Lat Pulldown Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Machine Lat Pulldown Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Shoulder Press Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Curl Variation",
+    "muscle_groups": [
+      "Legs"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Extension Variation",
+    "muscle_groups": [
+      "Legs"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Calf Raise Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Dumbbell Calf Raise Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Bodyweight Calf Raise Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Plank Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Russian Twist Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Cable Russian Twist Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Bodyweight Leg Raise Variation",
+    "muscle_groups": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Captain's Chair Leg Raise Variation",
+    "muscle_groups": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "categories": [
+      "Captain's Chair"
+    ]
+  },
+  {
+    "name": "Barbell Bench Press Variation Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bench Press Variation Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Bench Press Variation Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Bench Press Variation Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Squat Variation Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Squat Variation Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Squat Variation Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Squat Variation Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Deadlift Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Deadlift Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Trap Bar Deadlift Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Legs"
+    ],
+    "categories": [
+      "Trap Bar"
+    ]
+  },
+  {
+    "name": "Barbell Overhead Press Variation Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Overhead Press Variation Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Overhead Press Variation Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Barbell Bent Over Row Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bent Over Row Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Bent Over Row Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Cable Bent Over Row Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Barbell Bicep Curl Variation Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bicep Curl Variation Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Cable Bicep Curl Variation Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Resistance Band Bicep Curl Variation Variation",
+    "muscle_groups": [
+      "Biceps"
+    ],
+    "categories": [
+      "Resistance Band"
+    ]
+  },
+  {
+    "name": "Cable Tricep Extension Variation Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Dumbbell Tricep Extension Variation Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Resistance Band Tricep Extension Variation Variation",
+    "muscle_groups": [
+      "Triceps"
+    ],
+    "categories": [
+      "Resistance Band"
+    ]
+  },
+  {
+    "name": "Dumbbell Lunge Variation Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Barbell Lunge Variation Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Bodyweight Lunge Variation Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Pull-Up Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Assisted Machine Pull-Up Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Assisted Machine"
+    ]
+  },
+  {
+    "name": "Bodyweight Dip Variation Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Assisted Machine Dip Variation Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Assisted Machine"
+    ]
+  },
+  {
+    "name": "Cable Chest Fly Variation Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Dumbbell Chest Fly Variation Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Machine Chest Fly Variation Variation",
+    "muscle_groups": [
+      "Chest"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Press Variation Variation",
+    "muscle_groups": [
+      "Legs",
+      "Glutes"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Cable Lat Pulldown Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Machine Lat Pulldown Variation Variation",
+    "muscle_groups": [
+      "Back",
+      "Biceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Shoulder Press Variation Variation",
+    "muscle_groups": [
+      "Shoulders",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Curl Variation Variation",
+    "muscle_groups": [
+      "Legs"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Leg Extension Variation Variation",
+    "muscle_groups": [
+      "Legs"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Machine Calf Raise Variation Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  },
+  {
+    "name": "Dumbbell Calf Raise Variation Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Bodyweight Calf Raise Variation Variation",
+    "muscle_groups": [
+      "Calves"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Plank Variation Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Bodyweight Russian Twist Variation Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Cable Russian Twist Variation Variation",
+    "muscle_groups": [
+      "Core"
+    ],
+    "categories": [
+      "Cable"
+    ]
+  },
+  {
+    "name": "Bodyweight Leg Raise Variation Variation",
+    "muscle_groups": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "categories": [
+      "Bodyweight"
+    ]
+  },
+  {
+    "name": "Captain's Chair Leg Raise Variation Variation",
+    "muscle_groups": [
+      "Core",
+      "Hip Flexors"
+    ],
+    "categories": [
+      "Captain's Chair"
+    ]
+  },
+  {
+    "name": "Barbell Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Barbell"
+    ]
+  },
+  {
+    "name": "Dumbbell Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Dumbbell"
+    ]
+  },
+  {
+    "name": "Smith Machine Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Smith Machine"
+    ]
+  },
+  {
+    "name": "Machine Bench Press Variation",
+    "muscle_groups": [
+      "Chest",
+      "Triceps"
+    ],
+    "categories": [
+      "Machine"
+    ]
+  }
+]

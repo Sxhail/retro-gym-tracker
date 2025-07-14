@@ -1,21 +1,37 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, FlatList } from 'react-native';
 import { useFonts } from 'expo-font';
+import { useWorkout } from '../context/WorkoutContext';
+import { getExercisesByFilter, searchExercisesByName, Exercise } from '../../db/dataAccess';
 import { useRouter } from 'expo-router';
+
+const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Triceps', 'Biceps', 'Glutes', 'Core', 'Calves', 'Forearms', 'Hip Flexors'];
+const CATEGORIES = ['Barbell', 'Dumbbell', 'Machine', 'Cable', 'Bodyweight', 'Smith Machine', 'Trap Bar', 'Resistance Band', "Captain's Chair", 'Assisted Machine'];
 
 export default function NewWorkoutScreen() {
   const [fontsLoaded] = useFonts({
     VT323: require('../../assets/fonts/VT323-Regular.ttf'),
   });
-  const [exercise, setExercise] = useState('');
+  const [search, setSearch] = useState('');
+  const [selectedMuscles, setSelectedMuscles] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [results, setResults] = useState<Exercise[]>([]);
+  const { addExercise, selectedExercises } = useWorkout();
   const router = useRouter();
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  useEffect(() => {
+    if (search.trim()) {
+      searchExercisesByName(search).then(setResults);
+    } else {
+      getExercisesByFilter(selectedMuscles, selectedCategories).then(setResults);
+    }
+  }, [search, selectedMuscles, selectedCategories]);
+
+  if (!fontsLoaded) return null;
 
   return (
     <View style={styles.container}>
+      {/* Header and Back */}
       <View style={styles.header}>
         <View style={styles.statusRow}>
           <View style={styles.statusDot} />
@@ -24,50 +40,93 @@ export default function NewWorkoutScreen() {
         <Text style={styles.protocolText}>RETRO FITNESS PROTOCOL</Text>
         <View style={styles.divider} />
       </View>
-      <View style={styles.cardBox}>
-        <View style={styles.topRow}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backText}>{'← BACK'}</Text>
-          </TouchableOpacity>
-          <Text style={styles.sessionActive}>SESSION ACTIVE</Text>
-        </View>
-        <Text style={styles.workoutTitle}>New Workout</Text>
-        <Text style={styles.workoutDate}>2025.07.14</Text>
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="Exercise name..."
-            placeholderTextColor="#3fa77a"
-            value={exercise}
-            onChangeText={setExercise}
-          />
-          <TouchableOpacity style={styles.addButton}>
-            <Text style={styles.addButtonText}>+</Text>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.endWorkoutButton}>
-          <Text style={styles.endWorkoutText}>END WORKOUT</Text>
+      <View style={styles.topRow}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backText}>{'← BACK'}</Text>
         </TouchableOpacity>
+        <Text style={styles.sessionActive}>SESSION ACTIVE</Text>
       </View>
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>© 2025 GYM.TRACKER.SYS</Text>
-        <Text style={styles.footerText2}>LIFTING.PROTOCOL.ACTIVATED</Text>
-      </View>
+      {/* Search Bar */}
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search exercises..."
+        placeholderTextColor="#3fa77a"
+        value={search}
+        onChangeText={setSearch}
+      />
+      {/* Muscle Group Chips */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+        {MUSCLE_GROUPS.map((mg) => (
+          <TouchableOpacity
+            key={mg}
+            style={[styles.chip, selectedMuscles.includes(mg) && styles.chipSelected]}
+            onPress={() =>
+              setSelectedMuscles((prev) =>
+                prev.includes(mg) ? prev.filter((m) => m !== mg) : [...prev, mg]
+              )
+            }
+          >
+            <Text style={styles.chipText}>{mg}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      {/* Category Chips */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+        {CATEGORIES.map((cat) => (
+          <TouchableOpacity
+            key={cat}
+            style={[styles.chip, selectedCategories.includes(cat) && styles.chipSelected]}
+            onPress={() =>
+              setSelectedCategories((prev) =>
+                prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+              )
+            }
+          >
+            <Text style={styles.chipText}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      {/* Exercise List */}
+      <FlatList
+        data={results}
+        keyExtractor={(item) => item.id.toString()}
+        style={styles.list}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.exerciseCard}
+            onPress={() => addExercise(item)}
+            disabled={selectedExercises.some((e) => e.id === item.id)}
+          >
+            <View>
+              <Text style={styles.exerciseName}>{item.name}</Text>
+              <View style={styles.badgeRow}>
+                {/* Render muscle group badges */}
+                {item.muscle_groups?.map((mg) => (
+                  <Text key={mg} style={styles.badge}>{mg}</Text>
+                ))}
+                {/* Render category badges */}
+                {item.categories?.map((cat) => (
+                  <Text key={cat} style={[styles.badge, styles.badgeCategory]}>{cat}</Text>
+                ))}
+              </View>
+            </View>
+            {selectedExercises.some((e) => e.id === item.id) && (
+              <Text style={styles.selectedMark}>✓</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050d07',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 24,
-  },
+  container: { flex: 1, backgroundColor: '#050d07', padding: 16 },
   header: {
     width: 420,
     marginBottom: 12,
+    alignSelf: 'center',
   },
   statusRow: {
     flexDirection: 'row',
@@ -104,21 +163,12 @@ const styles = StyleSheet.create({
     opacity: 0.2,
     marginVertical: 8,
   },
-  cardBox: {
-    borderColor: '#00ff99',
-    borderWidth: 1,
-    width: 420,
-    padding: 28,
-    marginTop: 8,
-    marginBottom: 24,
-    alignSelf: 'center',
-    backgroundColor: 'transparent',
-  },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 10,
+    marginTop: 2,
   },
   backText: {
     color: '#00ff99',
@@ -132,84 +182,76 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 2,
   },
-  workoutTitle: {
-    color: '#00ff99',
-    fontFamily: 'VT323',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 2,
-    marginTop: 2,
-  },
-  workoutDate: {
-    color: '#00ff99',
-    fontFamily: 'VT323',
-    fontSize: 15,
-    marginBottom: 18,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 22,
-  },
-  input: {
-    flex: 1,
-    borderColor: '#00ff99',
-    borderWidth: 1,
-    fontFamily: 'VT323',
-    color: '#00ff99',
-    fontSize: 18,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: 'transparent',
-    marginRight: 8,
-    letterSpacing: 1.5,
-  },
-  addButton: {
-    width: 54,
-    height: 48,
-    backgroundColor: 'transparent',
-    borderColor: '#00ff99',
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButtonText: {
-    color: '#00ff99',
-    fontFamily: 'VT323',
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginTop: -2,
-  },
-  endWorkoutButton: {
-    backgroundColor: '#2a0d0d',
-    borderColor: '#00ff99',
-    borderWidth: 1,
-    marginTop: 8,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  endWorkoutText: {
-    color: '#00ff99',
+  searchBar: {
     fontFamily: 'VT323',
     fontSize: 20,
-    fontWeight: 'bold',
-    letterSpacing: 2,
+    color: '#00ff99',
+    borderColor: '#00ff99',
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: 'transparent',
   },
-  footer: {
-    alignItems: 'center',
-    marginTop: 24,
+  chipRow: { flexDirection: 'row', marginBottom: 8 },
+  chip: {
+    borderColor: '#00ff99',
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    marginRight: 8,
+    backgroundColor: 'transparent',
   },
-  footerText: {
+  chipSelected: {
+    backgroundColor: '#071d13',
+  },
+  chipText: {
     color: '#00ff99',
     fontFamily: 'VT323',
-    fontSize: 14,
-    marginBottom: 2,
-    letterSpacing: 1.5,
+    fontSize: 16,
   },
-  footerText2: {
+  list: { flex: 1, marginTop: 8 },
+  exerciseCard: {
+    backgroundColor: 'rgba(0,255,153,0.03)',
+    borderColor: '#00ff99',
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  exerciseName: {
+    color: '#00ff99',
+    fontFamily: 'VT323',
+    fontSize: 18,
+    marginBottom: 4,
+    letterSpacing: 2,
+    fontWeight: 'bold',
+    textTransform: 'capitalize',
+  },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 },
+  badge: {
     color: '#00ff99',
     fontFamily: 'VT323',
     fontSize: 13,
-    letterSpacing: 1.5,
+    borderColor: '#00ff99',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginRight: 6,
+    marginBottom: 2,
+  },
+  badgeCategory: {
+    backgroundColor: '#071d13',
+  },
+  selectedMark: {
+    color: '#00ff99',
+    fontFamily: 'VT323',
+    fontSize: 22,
+    fontWeight: 'bold',
   },
 }); 

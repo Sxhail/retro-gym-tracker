@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
+import { useRouter } from 'expo-router';
 
 export default function NewWorkoutScreen() {
   const [fontsLoaded] = useFonts({
     VT323: require('../../assets/fonts/VT323-Regular.ttf'),
   });
   const [exercise, setExercise] = useState('');
+  const router = useRouter();
 
   if (!fontsLoaded) {
     return null;
@@ -24,7 +26,9 @@ export default function NewWorkoutScreen() {
       </View>
       <View style={styles.cardBox}>
         <View style={styles.topRow}>
-          <Text style={styles.backText}>{'← BACK'}</Text>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.backText}>{'← BACK'}</Text>
+          </TouchableOpacity>
           <Text style={styles.sessionActive}>SESSION ACTIVE</Text>
         </View>
         <Text style={styles.workoutTitle}>New Workout</Text>

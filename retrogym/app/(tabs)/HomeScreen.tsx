@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
+import { useRouter } from 'expo-router';
 
 const workouts = [
   { title: 'UPPER WORKOUT', date: '2025.07.11', exercises: 7 },
@@ -14,6 +15,7 @@ export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
     VT323: require('../../assets/fonts/VT323-Regular.ttf'),
   });
+  const router = useRouter();
 
   if (!fontsLoaded) {
     return null;
@@ -36,7 +38,7 @@ export default function HomeScreen() {
           <TouchableOpacity style={styles.buttonLeft}>
             <Text style={styles.buttonText}>↗ PROGRESS</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.buttonRight}>
+          <TouchableOpacity style={styles.buttonRight} onPress={() => router.push('/(tabs)/newworkout')}>
             <Text style={styles.buttonText}>+ NEW WORKOUT</Text>
           </TouchableOpacity>
         </View>

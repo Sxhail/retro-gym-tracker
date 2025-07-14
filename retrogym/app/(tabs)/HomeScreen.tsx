@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useFonts } from 'expo-font';
 
 const workouts = [
   { title: 'UPPER WORKOUT', date: '2025.07.11', exercises: 7 },
@@ -10,6 +11,14 @@ const workouts = [
 ];
 
 export default function HomeScreen() {
+  const [fontsLoaded] = useFonts({
+    VT323: require('../../assets/fonts/VT323-Regular.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -21,7 +30,7 @@ export default function HomeScreen() {
         <View style={styles.divider} />
         <View style={styles.titleRow}>
           <Text style={styles.title}>GYM.TRACKER</Text>
-         <Text style={styles.version}></Text>
+          <Text style={styles.version}></Text>
         </View>
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.buttonLeft}>
@@ -77,15 +86,19 @@ const styles = StyleSheet.create({
   statusText: {
     color: '#00ff99',
     fontSize: 12,
-    fontFamily: 'monospace',
-    letterSpacing: 1.5,
+    fontFamily: 'VT323',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
   },
   protocolText: {
     color: '#00ff99',
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'VT323',
     marginBottom: 8,
-    letterSpacing: 1.5,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
   },
   divider: {
     borderBottomColor: '#00ff99',
@@ -101,16 +114,18 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#00ff99',
-    fontSize: 24,
-    fontFamily: 'monospace',
+    fontSize: 26,
+    fontFamily: 'VT323',
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
   },
   version: {
     color: '#00ff99',
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'VT323',
     opacity: 0.7,
+    letterSpacing: 2,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -141,9 +156,11 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#00ff99',
-    fontFamily: 'monospace',
+    fontFamily: 'VT323',
     fontSize: 16,
-    letterSpacing: 1.5,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
   },
   list: {
     width: '100%',
@@ -162,28 +179,32 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: '#00ff99',
-    fontFamily: 'monospace',
+    fontFamily: 'VT323',
     fontSize: 18,
     marginBottom: 2,
-    letterSpacing: 1.5,
+    letterSpacing: 2,
+    fontWeight: 'bold',
+    textTransform: 'capitalize',
   },
   cardDate: {
     color: '#00ff99',
-    fontFamily: 'monospace',
+    fontFamily: 'VT323',
     fontSize: 13,
     opacity: 0.8,
     marginBottom: 2,
+    letterSpacing: 1.5,
   },
   cardExercises: {
     color: '#00ff99',
-    fontFamily: 'monospace',
+    fontFamily: 'VT323',
     fontSize: 13,
     opacity: 0.8,
+    letterSpacing: 1.5,
   },
   cardArrow: {
     color: '#00ff99',
     fontSize: 28,
-    fontFamily: 'monospace',
+    fontFamily: 'VT323',
     opacity: 0.7,
   },
 }); 

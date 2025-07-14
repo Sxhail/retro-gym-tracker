@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 
 const workouts = [
-  { title: 'Evening Workout', date: '2025.07.11', exercises: 2 },
-  { title: 'Push Day', date: '2025.07.09', exercises: 2 },
-  { title: 'Full Body', date: '2025.07.06', exercises: 2 },
-  { title: 'Strength Day', date: '2025.07.04', exercises: 2 },
-  { title: 'New Workout', date: '2025.07.14', exercises: 0 },
+  { title: 'UPPER WORKOUT', date: '2025.07.11', exercises: 7 },
+  { title: 'LOWER WORKOUT', date: '2025.07.09', exercises: 6 },
+  { title: 'PULL DAY', date: '2025.07.06', exercises: 6 },
+  { title: 'PUSH DAY', date: '2025.07.04', exercises: 7 },
+  { title: 'LEGS DAY', date: '2025.07.14', exercises: 5 },
 ];
 
 export default function HomeScreen() {
@@ -21,7 +21,7 @@ export default function HomeScreen() {
         <View style={styles.divider} />
         <View style={styles.titleRow}>
           <Text style={styles.title}>GYM.TRACKER</Text>
-          <Text style={styles.version}>v2.0.25</Text>
+         <Text style={styles.version}></Text>
         </View>
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.buttonLeft}>

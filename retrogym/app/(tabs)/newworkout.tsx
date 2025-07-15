@@ -11,32 +11,54 @@ const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Triceps', 'Biceps'
 const CATEGORIES = ['Barbell', 'Dumbbell', 'Machine', 'Cable', 'Bodyweight', 'Smith Machine', 'Trap Bar', 'Resistance Band', "Captain's Chair", 'Assisted Machine'];
 const db = (SQLite as any).openDatabase('gym.db');
 
+function ExerciseCard({ exercise, selected, onSelect }: { exercise: Exercise; selected: boolean; onSelect: () => void }) {
+  return (
+    <TouchableOpacity
+      style={[styles.exerciseCard, selected && { opacity: 0.5 }]}
+      onPress={onSelect}
+      disabled={selected}
+    >
+      <View>
+        <Text style={styles.exerciseName}>{exercise.name}</Text>
+        <View style={styles.badgeRow}>
+          {exercise.muscle_groups.map((mg) => (
+            <Text key={mg} style={styles.badge}>{mg}</Text>
+          ))}
+          {exercise.categories.map((cat) => (
+            <Text key={cat} style={[styles.badge, styles.badgeCategory]}>{cat}</Text>
+          ))}
+        </View>
+      </View>
+      {selected && <Text style={styles.selectedMark}>✓</Text>}
+    </TouchableOpacity>
+  );
+}
+
 export default function NewWorkoutScreen() {
   const [fontsLoaded] = useFonts({
     VT323: require('../../assets/fonts/VT323-Regular.ttf'),
   });
-  const [search, setSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscles, setSelectedMuscles] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [results, setResults] = useState<Exercise[]>([]);
+  const [exerciseResults, setExerciseResults] = useState<Exercise[]>([]);
   const { addExercise, removeExercise, selectedExercises } = useWorkout();
   const router = useRouter();
 
   useEffect(() => {
-    if (search.trim()) {
-      searchExercisesByName(search).then(setResults);
+    if (searchQuery.trim()) {
+      searchExercisesByName(searchQuery).then(setExerciseResults);
     } else {
-      getExercisesByFilter(selectedMuscles, selectedCategories).then(setResults);
+      getExercisesByFilter(selectedMuscles, selectedCategories).then(setExerciseResults);
     }
-  }, [search, selectedMuscles, selectedCategories]);
+  }, [searchQuery, selectedMuscles, selectedCategories]);
 
   // Add a new custom exercise to the DB and to the workout
-  const handleAddCustomExercise = () => {
-    const trimmed = search.trim();
+  const handleAddCustomExercise = async () => {
+    const trimmed = searchQuery.trim();
     if (!trimmed) return;
-    // Check if already exists in results or selectedExercises
     if (
-      results.some(e => e.name.toLowerCase() === trimmed.toLowerCase()) ||
+      exerciseResults.some(e => e.name.toLowerCase() === trimmed.toLowerCase()) ||
       selectedExercises.some(e => e.name.toLowerCase() === trimmed.toLowerCase())
     ) {
       Alert.alert('Exercise already exists');
@@ -54,7 +76,7 @@ export default function NewWorkoutScreen() {
             categories: [],
           };
           addExercise(newExercise);
-          setSearch('');
+          setSearchQuery('');
           Alert.alert('Added', `"${trimmed}" added to your workout!`);
         },
         (err: any) => {
@@ -103,13 +125,13 @@ export default function NewWorkoutScreen() {
         style={styles.searchBar}
         placeholder="Search exercises..."
         placeholderTextColor="#3fa77a"
-        value={search}
-        onChangeText={setSearch}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
       />
       {/* Add Custom Exercise Button */}
-      {search.trim() && results.length === 0 && (
+      {searchQuery.trim() && exerciseResults.length === 0 && (
         <TouchableOpacity style={styles.addCustomBtn} onPress={handleAddCustomExercise}>
-          <Text style={styles.addCustomBtnText}>+ Add "{search.trim()}" as a new exercise</Text>
+          <Text style={styles.addCustomBtnText}>+ Add "{searchQuery.trim()}" as a new exercise</Text>
         </TouchableOpacity>
       )}
       {/* Muscle Group Chips */}
@@ -146,33 +168,16 @@ export default function NewWorkoutScreen() {
       </ScrollView>
       {/* Exercise List */}
       <FlatList
-        data={results}
+        data={exerciseResults}
         keyExtractor={(item) => item.id.toString()}
         style={styles.list}
         contentContainerStyle={{ paddingBottom: 32 }}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.exerciseCard}
-            onPress={() => addExercise(item)}
-            disabled={selectedExercises.some((e) => e.id === item.id)}
-          >
-            <View>
-              <Text style={styles.exerciseName}>{item.name}</Text>
-              <View style={styles.badgeRow}>
-                {/* Render muscle group badges */}
-                {item.muscle_groups?.map((mg) => (
-                  <Text key={mg} style={styles.badge}>{mg}</Text>
-                ))}
-                {/* Render category badges */}
-                {item.categories?.map((cat) => (
-                  <Text key={cat} style={[styles.badge, styles.badgeCategory]}>{cat}</Text>
-                ))}
-              </View>
-            </View>
-            {selectedExercises.some((e) => e.id === item.id) && (
-              <Text style={styles.selectedMark}>✓</Text>
-            )}
-          </TouchableOpacity>
+          <ExerciseCard
+            exercise={item}
+            selected={selectedExercises.some((e) => e.id === item.id)}
+            onSelect={() => addExercise(item)}
+          />
         )}
       />
     </View>

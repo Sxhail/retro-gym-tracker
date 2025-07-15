@@ -1,9 +1,6 @@
-import * as SQLite from 'expo-sqlite';
 import type { ExerciseJson } from './initDb';
+import { getDb } from './initDb';
 
-const db = (SQLite as any).openDatabase('gym.db');
-
-// --- TypeScript interfaces ---
 export interface Exercise {
   id: number;
   name: string;
@@ -26,89 +23,104 @@ export interface WorkoutSet {
   // Add more fields as needed
 }
 
-// --- Data-access utilities ---
-
 // Get exercises filtered by muscle group and/or category
-export function getExercisesByFilter(
+export async function getExercisesByFilter(
   muscleGroups: string[] = [],
   categories: string[] = [],
 ): Promise<Exercise[]> {
-  return new Promise((resolve, reject) => {
-    let sql = `SELECT e.id, e.name
-      FROM exercises e`;
-    const joins: string[] = [];
-    const wheres: string[] = [];
-    const params: any[] = [];
+  const db = await getDb();
+  // @ts-ignore: transaction is available on the db instance
+  const dbWithTx = db as any;
+  let sql = `SELECT e.id, e.name FROM exercises e`;
+  const joins: string[] = [];
+  const wheres: string[] = [];
+  const params: any[] = [];
 
-    if (muscleGroups.length > 0) {
-      joins.push('JOIN exercise_muscle em ON e.id = em.exercise_id');
-      joins.push('JOIN muscle_groups mg ON em.muscle_group_id = mg.id');
-      wheres.push(`mg.name IN (${muscleGroups.map(() => '?').join(',')})`);
-      params.push(...muscleGroups);
-    }
-    if (categories.length > 0) {
-      joins.push('JOIN exercise_category ec ON e.id = ec.exercise_id');
-      joins.push('JOIN categories c ON ec.category_id = c.id');
-      wheres.push(`c.name IN (${categories.map(() => '?').join(',')})`);
-      params.push(...categories);
-    }
-    if (joins.length > 0) sql += ' ' + joins.join(' ');
-    if (wheres.length > 0) sql += ' WHERE ' + wheres.join(' AND ');
-    sql += ' GROUP BY e.id, e.name';
+  if (muscleGroups.length > 0) {
+    joins.push('JOIN exercise_muscle em ON e.id = em.exercise_id');
+    joins.push('JOIN muscle_groups mg ON em.muscle_group_id = mg.id');
+    wheres.push(`mg.name IN (${muscleGroups.map(() => '?').join(',')})`);
+    params.push(...muscleGroups);
+  }
+  if (categories.length > 0) {
+    joins.push('JOIN exercise_category ec ON e.id = ec.exercise_id');
+    joins.push('JOIN categories c ON ec.category_id = c.id');
+    wheres.push(`c.name IN (${categories.map(() => '?').join(',')})`);
+    params.push(...categories);
+  }
+  if (joins.length > 0) sql += ' ' + joins.join(' ');
+  if (wheres.length > 0) sql += ' WHERE ' + wheres.join(' AND ');
+  sql += ' GROUP BY e.id, e.name';
 
-    db.transaction((tx: any) => {
-      tx.executeSql(
-        sql,
-        params,
-        (_: any, { rows }: any) => {
-          const exercises: Exercise[] = [];
-          for (let i = 0; i < rows.length; i++) {
-            exercises.push({ id: rows.item(i).id, name: rows.item(i).name, muscle_groups: [], categories: [] });
+  return new Promise<Exercise[]>((resolve, reject) => {
+    dbWithTx.transaction(
+      (tx: any) => {
+        tx.executeSql(
+          sql,
+          params,
+          (_tx: any, result: any) => {
+            const exercises: Exercise[] = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              exercises.push({ id: result.rows.item(i).id, name: result.rows.item(i).name, muscle_groups: [], categories: [] });
+            }
+            resolve(exercises);
+          },
+          (_tx: any, err: any) => {
+            console.error('getExercisesByFilter error:', err);
+            reject(err);
+            return true;
           }
-          resolve(exercises);
-        },
-        (err: any) => {
-          console.error('getExercisesByFilter error:', err);
-          reject(err);
-          return true;
-        }
-      );
-    });
+        );
+      },
+      (err: any) => {
+        console.error('getExercisesByFilter transaction error:', err);
+        reject(err);
+      }
+    );
   });
 }
 
 // Search exercises by name (case-insensitive, partial match)
-export function searchExercisesByName(query: string): Promise<Exercise[]> {
-  return new Promise((resolve, reject) => {
-    db.transaction((tx: any) => {
-      tx.executeSql(
-        `SELECT id, name FROM exercises WHERE name LIKE ? COLLATE NOCASE`,
-        [`%${query}%`],
-        (_: any, { rows }: any) => {
-          const exercises: Exercise[] = [];
-          for (let i = 0; i < rows.length; i++) {
-            exercises.push({ id: rows.item(i).id, name: rows.item(i).name, muscle_groups: [], categories: [] });
+export async function searchExercisesByName(query: string): Promise<Exercise[]> {
+  const db = await getDb();
+  // @ts-ignore: transaction is available on the db instance
+  const dbWithTx = db as any;
+  return new Promise<Exercise[]>((resolve, reject) => {
+    dbWithTx.transaction(
+      (tx: any) => {
+        tx.executeSql(
+          `SELECT id, name FROM exercises WHERE name LIKE ? COLLATE NOCASE`,
+          [`%${query}%`],
+          (_tx: any, result: any) => {
+            const exercises: Exercise[] = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              exercises.push({ id: result.rows.item(i).id, name: result.rows.item(i).name, muscle_groups: [], categories: [] });
+            }
+            resolve(exercises);
+          },
+          (_tx: any, err: any) => {
+            console.error('searchExercisesByName error:', err);
+            reject(err);
+            return true;
           }
-          resolve(exercises);
-        },
-        (err: any) => {
-          console.error('searchExercisesByName error:', err);
-          reject(err);
-          return true;
-        }
-      );
-    });
+        );
+      },
+      (err: any) => {
+        console.error('searchExercisesByName transaction error:', err);
+        reject(err);
+      }
+    );
   });
 }
 
 // (Stub) Get sets for a workout session
-export function getSetsForSession(sessionId: number): Promise<WorkoutSet[]> {
+export async function getSetsForSession(sessionId: number): Promise<WorkoutSet[]> {
   // Implement when workout/session tables are defined
-  return Promise.resolve([]);
+  return [];
 }
 
 // (Stub) Get all workout sessions
-export function getWorkoutSessions(): Promise<WorkoutSession[]> {
+export async function getWorkoutSessions(): Promise<WorkoutSession[]> {
   // Implement when workout/session tables are defined
-  return Promise.resolve([]);
+  return [];
 } 

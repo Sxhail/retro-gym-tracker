@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, FlatList, Alert } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useWorkout } from '../context/WorkoutContext';
 import { getExercisesByFilter, searchExercisesByName, Exercise } from '../../db/dataAccess';
 import { useRouter } from 'expo-router';
+import * as SQLite from 'expo-sqlite';
+console.log('SQLite is', SQLite);
 
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Triceps', 'Biceps', 'Glutes', 'Core', 'Calves', 'Forearms', 'Hip Flexors'];
 const CATEGORIES = ['Barbell', 'Dumbbell', 'Machine', 'Cable', 'Bodyweight', 'Smith Machine', 'Trap Bar', 'Resistance Band', "Captain's Chair", 'Assisted Machine'];
+const db = (SQLite as any).openDatabase('gym.db');
 
 export default function NewWorkoutScreen() {
   const [fontsLoaded] = useFonts({
@@ -16,7 +19,7 @@ export default function NewWorkoutScreen() {
   const [selectedMuscles, setSelectedMuscles] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [results, setResults] = useState<Exercise[]>([]);
-  const { addExercise, selectedExercises } = useWorkout();
+  const { addExercise, removeExercise, selectedExercises } = useWorkout();
   const router = useRouter();
 
   useEffect(() => {
@@ -26,6 +29,41 @@ export default function NewWorkoutScreen() {
       getExercisesByFilter(selectedMuscles, selectedCategories).then(setResults);
     }
   }, [search, selectedMuscles, selectedCategories]);
+
+  // Add a new custom exercise to the DB and to the workout
+  const handleAddCustomExercise = () => {
+    const trimmed = search.trim();
+    if (!trimmed) return;
+    // Check if already exists in results or selectedExercises
+    if (
+      results.some(e => e.name.toLowerCase() === trimmed.toLowerCase()) ||
+      selectedExercises.some(e => e.name.toLowerCase() === trimmed.toLowerCase())
+    ) {
+      Alert.alert('Exercise already exists');
+      return;
+    }
+    db.transaction((tx: any) => {
+      tx.executeSql(
+        'INSERT INTO exercises (name) VALUES (?)',
+        [trimmed],
+        (_: any, result: any) => {
+          const newExercise: Exercise = {
+            id: result.insertId,
+            name: trimmed,
+            muscle_groups: [],
+            categories: [],
+          };
+          addExercise(newExercise);
+          setSearch('');
+          Alert.alert('Added', `"${trimmed}" added to your workout!`);
+        },
+        (err: any) => {
+          Alert.alert('Error', 'Could not add exercise.');
+          return true;
+        }
+      );
+    });
+  };
 
   if (!fontsLoaded) return null;
 
@@ -46,6 +84,20 @@ export default function NewWorkoutScreen() {
         </TouchableOpacity>
         <Text style={styles.sessionActive}>SESSION ACTIVE</Text>
       </View>
+      {/* Selected Exercises */}
+      {selectedExercises.length > 0 && (
+        <View style={styles.selectedList}>
+          <Text style={styles.selectedTitle}>Current Workout:</Text>
+          {selectedExercises.map((ex) => (
+            <View key={ex.id} style={styles.selectedExerciseRow}>
+              <Text style={styles.selectedExerciseName}>{ex.name}</Text>
+              <TouchableOpacity onPress={() => removeExercise(ex.id)}>
+                <Text style={styles.removeBtn}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      )}
       {/* Search Bar */}
       <TextInput
         style={styles.searchBar}
@@ -54,6 +106,12 @@ export default function NewWorkoutScreen() {
         value={search}
         onChangeText={setSearch}
       />
+      {/* Add Custom Exercise Button */}
+      {search.trim() && results.length === 0 && (
+        <TouchableOpacity style={styles.addCustomBtn} onPress={handleAddCustomExercise}>
+          <Text style={styles.addCustomBtnText}>+ Add "{search.trim()}" as a new exercise</Text>
+        </TouchableOpacity>
+      )}
       {/* Muscle Group Chips */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
         {MUSCLE_GROUPS.map((mg) => (
@@ -182,6 +240,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 2,
   },
+  selectedList: {
+    marginBottom: 10,
+    backgroundColor: 'rgba(0,255,153,0.03)',
+    borderColor: '#00ff99',
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 10,
+  },
+  selectedTitle: {
+    color: '#00ff99',
+    fontFamily: 'VT323',
+    fontSize: 16,
+    marginBottom: 4,
+    fontWeight: 'bold',
+  },
+  selectedExerciseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  selectedExerciseName: {
+    color: '#00ff99',
+    fontFamily: 'VT323',
+    fontSize: 16,
+  },
+  removeBtn: {
+    color: '#ff4d4d',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
   searchBar: {
     fontFamily: 'VT323',
     fontSize: 20,
@@ -192,6 +282,21 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
     backgroundColor: 'transparent',
+  },
+  addCustomBtn: {
+    backgroundColor: '#071d13',
+    borderColor: '#00ff99',
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  addCustomBtnText: {
+    color: '#00ff99',
+    fontFamily: 'VT323',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   chipRow: { flexDirection: 'row', marginBottom: 8 },
   chip: {

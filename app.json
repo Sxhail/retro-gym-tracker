@@ -9,8 +9,7 @@
     "name": "gymtracker",
     "slug": "gymtracker",
     "assetBundlePatterns": [
-      "assets/*",
-      "db/app.db"
+      "assets/*"
     ]
   }
 }

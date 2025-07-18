@@ -2,9 +2,15 @@
   "expo": {
     "scheme": "acme",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-sqlite",
+      "expo-asset"
     ],
     "name": "gymtracker",
-    "slug": "gymtracker"
+    "slug": "gymtracker",
+    "assetBundlePatterns": [
+      "assets/*",
+      "db/app.db"
+    ]
   }
 }

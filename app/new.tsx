@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
-import { getAllExercises, searchExercisesByName, Exercise } from '../services/db';
+import { db } from '../db/client';
+import * as schema from '../db/schema';
+
+export type Exercise = typeof schema.exercises.$inferSelect;
 
 export default function NewWorkoutScreen() {
   const [exercise, setExercise] = useState('');
@@ -19,8 +22,8 @@ export default function NewWorkoutScreen() {
     let isActive = true;
     setPickerLoading(true);
     const fetch = search.trim()
-      ? searchExercisesByName(search.trim())
-      : getAllExercises();
+      ? db.select().from(schema.exercises).then(results => results.filter(ex => ex.name.toLowerCase().includes(search.trim().toLowerCase())))
+      : db.select().from(schema.exercises);
     fetch
       .then((results) => {
         if (isActive) setPickerExercises(results);
@@ -138,11 +141,17 @@ export default function NewWorkoutScreen() {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           {/* Only show input and END WORKOUT button when no exercises */}
           <View style={{ width: '100%', maxWidth: 400, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, padding: 24, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, marginBottom: 18, letterSpacing: 1.5 }}>New Workout</Text>
+            <TextInput
+              style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, marginBottom: 18, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}
+              value={workoutName}
+              onChangeText={setWorkoutName}
+              placeholder="Enter workout name..."
+              placeholderTextColor={theme.colors.neon}
+            />
             <View style={{ flexDirection: 'row', width: '100%', marginBottom: 18 }}>
               <TextInput
                 style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
-                placeholder="Exercise name..."
+                placeholder="ADD EXERCISE"
                 placeholderTextColor={theme.colors.neon}
                 value={search}
                 onChangeText={setSearch}
@@ -152,7 +161,7 @@ export default function NewWorkoutScreen() {
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 28, fontWeight: 'bold', marginTop: -2 }}>+</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={{ width: '100%', backgroundColor: '#330000', borderRadius: 4, paddingVertical: 18, alignItems: 'center', borderWidth: 2, borderColor: theme.colors.neon, marginBottom: 0 }}>
+            <TouchableOpacity style={{ width: '100%', backgroundColor: '#CC0000', borderRadius: 4, paddingVertical: 18, alignItems: 'center', borderWidth: 2, borderColor: theme.colors.neon, marginBottom: 0 }}>
               <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>END WORKOUT</Text>
             </TouchableOpacity>
           </View>
@@ -197,7 +206,7 @@ export default function NewWorkoutScreen() {
           <View style={{ flexDirection: 'row', width: '100%', marginBottom: 12 }}>
             <TextInput
               style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
-              placeholder="Exercise name..."
+              placeholder="ADD EXERCISE"
               placeholderTextColor={theme.colors.neon}
               value={search}
               onChangeText={setSearch}
@@ -207,7 +216,7 @@ export default function NewWorkoutScreen() {
               <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 28, fontWeight: 'bold', marginTop: -2 }}>+</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={{ width: '100%', backgroundColor: '#330000', borderRadius: 4, paddingVertical: 18, alignItems: 'center', borderWidth: 2, borderColor: theme.colors.neon, marginBottom: 0 }}>
+          <TouchableOpacity style={{ width: '100%', backgroundColor: '#CC0000', borderRadius: 4, paddingVertical: 18, alignItems: 'center', borderWidth: 2, borderColor: theme.colors.neon, marginBottom: 0 }}>
             <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>END WORKOUT</Text>
           </TouchableOpacity>
         </>

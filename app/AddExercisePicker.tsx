@@ -3,7 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput,
 import theme from '../styles/theme';
 import FilterChips from '../components/FilterChips';
 import ExerciseCard from '../components/ExerciseCard';
-import { getAllExercises, filterExercises, searchExercisesByName, insertCustomExercise, Exercise } from '../services/db';
+import { db } from '../db/client';
+import * as schema from '../db/schema';
+
+export type Exercise = typeof schema.exercises.$inferSelect;
 
 interface AddExercisePickerProps {
   onClose: () => void;
@@ -23,11 +26,11 @@ const AddExercisePicker: React.FC<AddExercisePickerProps> = ({ onClose, onAddExe
   // Load all exercises and extract unique categories/muscle groups
   useEffect(() => {
     setLoading(true);
-    getAllExercises().then((all) => {
+    db.select().from(schema.exercises).then((all) => {
       setExercises(all);
       // Extract unique muscle groups and categories
-      const allMuscles = Array.from(new Set(all.flatMap(ex => ex.muscle_group.split(',').map(s => s.trim())))).filter(Boolean);
-      const allCats = Array.from(new Set(all.flatMap(ex => ex.category.split(',').map(s => s.trim())))).filter(Boolean);
+      const allMuscles = Array.from(new Set(all.flatMap(ex => (ex.muscle_group || '').split(',').map(s => s.trim())))).filter(Boolean) as string[];
+      const allCats = Array.from(new Set(all.flatMap(ex => (ex.category || '').split(',').map(s => s.trim())))).filter(Boolean) as string[];
       setMuscleGroups(['Any', ...allMuscles]);
       setCategories(['Any', ...allCats]);
       setLoading(false);
@@ -37,20 +40,20 @@ const AddExercisePicker: React.FC<AddExercisePickerProps> = ({ onClose, onAddExe
   // Filter/search logic
   useEffect(() => {
     setLoading(true);
-    let fetch;
+    let fetch: Promise<Exercise[]>;
     if (search.trim()) {
-      fetch = searchExercisesByName(search.trim());
+      fetch = db.select().from(schema.exercises).then(results => results.filter(ex => ex.name.toLowerCase().includes(search.trim().toLowerCase())));
     } else {
-      fetch = getAllExercises();
+      fetch = db.select().from(schema.exercises);
     }
     fetch.then((results) => {
       // Further filter by muscle group/category if needed
       let filtered = results;
       if (selectedMuscle !== 'Any') {
-        filtered = filtered.filter(ex => ex.muscle_group.split(',').map(s => s.trim()).includes(selectedMuscle));
+        filtered = filtered.filter(ex => (ex.muscle_group || '').split(',').map(s => s.trim()).includes(selectedMuscle));
       }
       if (selectedCategory !== 'Any') {
-        filtered = filtered.filter(ex => ex.category.split(',').map(s => s.trim()).includes(selectedCategory));
+        filtered = filtered.filter(ex => (ex.category || '').split(',').map(s => s.trim()).includes(selectedCategory));
       }
       setExercises(filtered);
       setShowAddCustom(search.trim() && filtered.length === 0);
@@ -73,7 +76,13 @@ const AddExercisePicker: React.FC<AddExercisePickerProps> = ({ onClose, onAddExe
     const category = selectedCategory !== 'Any' ? selectedCategory : prompt('Category for new exercise?') || '';
     const muscle_group = selectedMuscle !== 'Any' ? selectedMuscle : prompt('Muscle group for new exercise?') || '';
     setLoading(true);
-    await insertCustomExercise(search.trim(), category, muscle_group);
+    await db.insert(schema.exercises).values({
+      name: search.trim(),
+      category,
+      muscle_group,
+      is_custom: 1,
+      created_at: new Date().toISOString(),
+    });
     setSearch(''); // Reset search to reload all
     setLoading(false);
   };

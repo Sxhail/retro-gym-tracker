@@ -32,7 +32,7 @@ export default function HomeScreen() {
       {/* Navigation Buttons */}
       <View style={styles.buttonRow}>
         <TouchableOpacity style={[styles.button, styles.buttonLeft]} onPress={() => router.push('/progress')}>
-          <Text style={styles.buttonText}>PROGRESS</Text>
+          <Text style={styles.buttonText}>→ PROGRESS</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.button, styles.buttonRight]} onPress={() => router.push('/new')}>
           <Text style={styles.buttonText}>+ NEW WORKOUT</Text>

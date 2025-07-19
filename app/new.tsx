@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, PanResponder, Animated } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, PanResponder, Animated, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 import { db } from '../db/client';
@@ -31,89 +31,151 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
   // Only allow marking as complete if both KG and REPS are positive numbers
   const canComplete = !!set.weight && !!set.reps && Number(set.weight) > 0 && Number(set.reps) > 0;
 
+  // Rest timer state (per set)
+  const [restTime, setRestTime] = useState(set.rest ?? 120);
+  const [restActive, setRestActive] = useState(false);
+  const restInterval = useRef<any>(null);
+
+  // Update rest duration handler
+  const handleRestChange = (delta: number) => {
+    let newRest = Math.max(15, Math.min(Number(set.rest ?? 120) + delta, 600));
+    handleSetFieldChange(exerciseId, setIdx, 'rest', String(newRest));
+    // If timer is running, reset timer to new value
+    if (restActive) {
+      setRestTime(newRest);
+    }
+  };
+
+  // Start/stop rest timer when set is marked/unmarked as complete
+  useEffect(() => {
+    if (set.completed && canComplete) {
+      setRestActive(true);
+      setRestTime(Number(set.rest ?? 120));
+      if (restInterval.current) clearInterval(restInterval.current);
+      restInterval.current = setInterval(() => {
+        setRestTime((prev) => {
+          if (prev > 0) return prev - 1;
+          clearInterval(restInterval.current);
+          return 0;
+        });
+      }, 1000);
+    } else {
+      setRestActive(false);
+      setRestTime(Number(set.rest ?? 120));
+      if (restInterval.current) clearInterval(restInterval.current);
+    }
+    return () => {
+      if (restInterval.current) clearInterval(restInterval.current);
+    };
+  }, [set.completed, canComplete, set.restActive, set.rest]);
+
+  // Format rest timer mm:ss
+  function formatRestTimer(seconds: number) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
   return (
-    <Animated.View
-      style={{
-        transform: [{ translateX: pan }],
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-        padding: 6,
-        borderWidth: 1,
-        borderColor: theme.colors.neon,
-        borderRadius: 6,
-        backgroundColor: 'rgba(0,255,0,0.05)',
-      }}
-      {...panResponder.panHandlers}
-    >
-      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, marginRight: 8, minWidth: 48 }}>SET {setIdx + 1}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-        {/* KG label and input */}
-        <View style={{ alignItems: 'center', marginRight: 6 }}>
-          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>KG</Text>
-          <TextInput
-            style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, width: 48, padding: 2, backgroundColor: 'transparent', textAlign: 'center' }}
-            value={set.weight?.toString() || ''}
-            onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'weight', v)}
-            placeholder="0"
-            placeholderTextColor={theme.colors.neon}
-            keyboardType="numeric"
-          />
-        </View>
-        {/* REPS label and input */}
-        <View style={{ alignItems: 'center', marginRight: 6 }}>
-          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>REPS</Text>
-          <TextInput
-            style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, width: 48, padding: 2, backgroundColor: 'transparent', textAlign: 'center' }}
-            value={set.reps?.toString() || ''}
-            onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'reps', v)}
-            placeholder="0"
-            placeholderTextColor={theme.colors.neon}
-            keyboardType="numeric"
-          />
-        </View>
-        {/* NOTES label and input */}
-        <View style={{ justifyContent: 'center', alignItems: 'center', marginRight: 6, flex: 1 }}>
-          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>NOTES</Text>
-          <TextInput
-            style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, padding: 2, backgroundColor: 'transparent', textAlign: 'left', width: '100%' }}
-            value={set.notes || ''}
-            onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'notes', v)}
-            placeholder="-"
-            placeholderTextColor={theme.colors.neon}
-            multiline={false}
-            maxLength={40}
-          />
-        </View>
-      </View>
-      {/* Done toggle */}
-      <TouchableOpacity
-        onPress={() => canComplete && handleToggleSetComplete(exerciseId, setIdx)}
-        style={{ marginLeft: 'auto' }}
-        disabled={!canComplete}
+    <>
+      <Animated.View
+        style={{
+          transform: [{ translateX: pan }],
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginBottom: 10,
+          padding: 6,
+          borderWidth: 1,
+          borderColor: theme.colors.neon,
+          borderRadius: 6,
+          backgroundColor: 'rgba(0,255,0,0.05)',
+        }}
+        {...panResponder.panHandlers}
       >
-        <Text style={{
-          color: canComplete
-            ? (set.completed ? theme.colors.success : theme.colors.neon)
-            : '#444',
-          fontFamily: theme.fonts.mono,
-          fontSize: 24,
-          fontWeight: 'bold',
-          borderWidth: set.completed && canComplete ? 2 : 1,
-          borderColor: canComplete
-            ? (set.completed ? theme.colors.success : theme.colors.neon)
-            : '#444',
-          borderRadius: 16,
-          paddingHorizontal: 8,
-          paddingVertical: 2,
-          backgroundColor: set.completed && canComplete ? 'rgba(0,255,0,0.15)' : 'transparent',
-          overflow: 'hidden',
-          textAlign: 'center',
-          minWidth: 32,
-          opacity: canComplete ? 1 : 0.4,
-        }}>{set.completed ? '✓' : '○'}</Text>
-      </TouchableOpacity>
-    </Animated.View>
+        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, marginRight: 8, minWidth: 48 }}>SET {setIdx + 1}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          {/* KG label and input */}
+          <View style={{ alignItems: 'center', marginRight: 6 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>KG</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, width: 48, padding: 2, backgroundColor: 'transparent', textAlign: 'center' }}
+              value={set.weight?.toString() || ''}
+              onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'weight', v)}
+              placeholder=""
+              placeholderTextColor={theme.colors.neon}
+              keyboardType="numeric"
+            />
+          </View>
+          {/* REPS label and input */}
+          <View style={{ alignItems: 'center', marginRight: 6 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>REPS</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, width: 48, padding: 2, backgroundColor: 'transparent', textAlign: 'center' }}
+              value={set.reps?.toString() || ''}
+              onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'reps', v)}
+              placeholder=""
+              placeholderTextColor={theme.colors.neon}
+              keyboardType="numeric"
+            />
+          </View>
+          {/* NOTES label and input */}
+          <View style={{ justifyContent: 'center', alignItems: 'center', marginRight: 6, flex: 1 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>NOTES</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, padding: 2, backgroundColor: 'transparent', textAlign: 'left', width: '100%' }}
+              value={set.notes || ''}
+              onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'notes', v)}
+              placeholder="-"
+              placeholderTextColor={theme.colors.neon}
+              multiline={false}
+              maxLength={40}
+            />
+          </View>
+        </View>
+        {/* Done toggle */}
+        <TouchableOpacity
+          onPress={() => canComplete && handleToggleSetComplete(exerciseId, setIdx)}
+          style={{ marginLeft: 'auto' }}
+          disabled={!canComplete}
+        >
+          <Text style={{
+            color: canComplete
+              ? (set.completed ? theme.colors.success : theme.colors.neon)
+              : '#444',
+            fontFamily: theme.fonts.mono,
+            fontSize: 24,
+            fontWeight: 'bold',
+            borderWidth: set.completed && canComplete ? 2 : 1,
+            borderColor: canComplete
+              ? (set.completed ? theme.colors.success : theme.colors.neon)
+              : '#444',
+            borderRadius: 16,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            backgroundColor: set.completed && canComplete ? 'rgba(0,255,0,0.15)' : 'transparent',
+            overflow: 'hidden',
+            textAlign: 'center',
+            minWidth: 32,
+            opacity: canComplete ? 1 : 0.4,
+          }}>{set.completed ? '✓' : '○'}</Text>
+        </TouchableOpacity>
+      </Animated.View>
+      {/* Rest timer below set row */}
+      {restActive && restTime > 0 && (
+        <View style={{ alignItems: 'center', marginBottom: 8, flexDirection: 'row', justifyContent: 'center' }}>
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2, marginRight: 12 }}>
+            REST: {formatRestTimer(restTime)}
+          </Text>
+          <TouchableOpacity onPress={() => handleRestChange(-15)} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 8, marginRight: 4 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 18 }}>-</Text>
+          </TouchableOpacity>
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, marginHorizontal: 2 }}>{Math.max(15, set.rest ?? 120)}s</Text>
+          <TouchableOpacity onPress={() => handleRestChange(15)} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 8, marginLeft: 4 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 18 }}>+</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </>
   );
 }
 
@@ -194,7 +256,10 @@ export default function NewWorkoutScreen() {
     setPickerLoading(true);
     try {
       if (!sessionExercises.some(e => e.id === ex.id)) {
-        setSessionExercises([...sessionExercises, { ...ex, sets: [] }]);
+        setSessionExercises([
+          ...sessionExercises,
+          { ...ex, sets: [{ reps: '', weight: '', completed: false, rest: 120 }] }
+        ]);
       }
       setModalVisible(false);
     } catch (err) {
@@ -221,7 +286,7 @@ export default function NewWorkoutScreen() {
     setSessionExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
         const lastRest = ex.sets && ex.sets.length > 0 ? ex.sets[ex.sets.length - 1].rest ?? 120 : 120;
-        const newSet = { reps: 0, weight: 0, completed: false, rest: lastRest };
+        const newSet = { reps: '', weight: '', completed: false, rest: lastRest };
         return { ...ex, sets: ex.sets ? [...ex.sets, newSet] : [newSet] };
       }
       return ex;
@@ -404,12 +469,16 @@ export default function NewWorkoutScreen() {
         </View>
       ) : (
         <>
+          {/* Show workout name above exercises */}
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, marginBottom: 18, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}>
+            {workoutName}
+          </Text>
           <ScrollView style={{ flex: 1, marginBottom: 12 }}>
             {sessionExercises.map((ex, idx) => (
               <View key={ex.id} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, marginBottom: 18, padding: 12, backgroundColor: 'transparent' }}>
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 18, textTransform: 'uppercase', marginBottom: 8 }}>{ex.name.toUpperCase()}</Text>
                 {/* Sets List */}
-                {(ex.sets && ex.sets.length > 0 ? ex.sets : [{ reps: 0, weight: 0, rest: 120 }]).map((set: any, setIdx: number) => (
+                {(ex.sets || []).map((set: any, setIdx: number) => (
                   <SetRow
                     key={setIdx}
                     set={set}
@@ -427,22 +496,26 @@ export default function NewWorkoutScreen() {
               </View>
             ))}
           </ScrollView>
-          <View style={{ flexDirection: 'row', width: '100%', marginBottom: 12 }}>
-            <TextInput
-              style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
-              placeholder="ADD EXERCISE"
-              placeholderTextColor={theme.colors.neon}
-              value={search}
-              onChangeText={setSearch}
-              onFocus={() => setModalVisible(true)}
-            />
-            <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }} onPress={() => setModalVisible(true)}>
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 28, fontWeight: 'bold', marginTop: -2 }}>+</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity style={{ width: '100%', backgroundColor: '#CC0000', borderRadius: 4, paddingVertical: 18, alignItems: 'center', borderWidth: 2, borderColor: theme.colors.neon, marginBottom: 0 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>END WORKOUT</Text>
-          </TouchableOpacity>
+          <SafeAreaView style={{ width: '100%', paddingHorizontal: 0, paddingBottom: 8, backgroundColor: 'transparent' }}>
+            <View style={{ width: '100%', paddingHorizontal: 0, marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 16, paddingHorizontal: 8 }}>
+                <TextInput
+                  style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, paddingVertical: 12, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
+                  placeholder="ADD EXERCISE"
+                  placeholderTextColor={theme.colors.neon}
+                  value={search}
+                  onChangeText={setSearch}
+                  onFocus={() => setModalVisible(true)}
+                />
+                <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }} onPress={() => setModalVisible(true)}>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 32, fontWeight: 'bold', marginTop: -2 }}>+</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity style={{ width: '100%', backgroundColor: '#CC0000', borderRadius: 4, paddingVertical: 20, alignItems: 'center', borderWidth: 2, borderColor: theme.colors.neon, marginBottom: 0, marginTop: 0 }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 22, fontWeight: 'bold', letterSpacing: 1.2 }}>END WORKOUT</Text>
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
         </>
       )}
       {/* Exercise Picker Modal */}
@@ -570,69 +643,77 @@ export default function NewWorkoutScreen() {
             </View>
           ) : (
             <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
-              {pickerExercises.map((ex) => (
-                <TouchableOpacity 
-                  key={ex.id} 
-                  style={{ 
-                    borderWidth: 1, 
-                    borderColor: theme.colors.neon, 
-                    borderRadius: 8, 
-                    marginBottom: 12, 
-                    padding: 16, 
-                    backgroundColor: 'transparent',
-                    flexDirection: 'row',
-                    alignItems: 'center'
-                  }} 
-                  onPress={() => handleAddExerciseFromPicker(ex)}
-                >
-                  {/* Exercise Icon */}
-                  <View style={{ 
-                    width: 40, 
-                    height: 40, 
-                    borderRadius: 20, 
-                    backgroundColor: theme.colors.neon, 
-                    justifyContent: 'center', 
-                    alignItems: 'center',
-                    marginRight: 12
-                  }}>
-                    <Text style={{ color: 'black', fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold' }}>
-                      {ex.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
+              {pickerExercises.map((ex) => {
+                const alreadyAdded = sessionExercises.some(e => e.id === ex.id);
+                return (
+                  <TouchableOpacity 
+                    key={ex.id} 
+                    style={{ 
+                      borderWidth: 1, 
+                      borderColor: theme.colors.neon, 
+                      borderRadius: 8, 
+                      marginBottom: 12, 
+                      padding: 16, 
+                      backgroundColor: 'transparent',
+                      flexDirection: 'row',
+                      alignItems: 'center'
+                    }} 
+                    onPress={() => !alreadyAdded && handleAddExerciseFromPicker(ex)}
+                    disabled={alreadyAdded}
+                  >
+                    {/* Exercise Icon */}
+                    <View style={{ 
+                      width: 40, 
+                      height: 40, 
+                      borderRadius: 20, 
+                      backgroundColor: theme.colors.neon, 
+                      justifyContent: 'center', 
+                      alignItems: 'center',
+                      marginRight: 12
+                    }}>
+                      <Text style={{ color: 'black', fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold' }}>
+                        {ex.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
 
-                  {/* Exercise Details */}
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>
-                      {ex.name}
-                    </Text>
-                    <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
-                      {ex.muscle_group} • {ex.category}
-                    </Text>
-                                         <View style={{ flexDirection: 'row' }}>
-                       <View style={{ 
-                         backgroundColor: '#FFD700', 
-                         borderRadius: 8, 
-                         paddingHorizontal: 6, 
-                         paddingVertical: 2 
-                       }}>
-                         <Text style={{ color: 'black', fontFamily: theme.fonts.mono, fontSize: 10, fontWeight: 'bold' }}>
-                           INTERMEDIATE
-                         </Text>
-                       </View>
-                     </View>
-                  </View>
+                    {/* Exercise Details */}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>
+                        {ex.name}
+                      </Text>
+                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
+                        {ex.muscle_group} • {ex.category}
+                      </Text>
+                      <View style={{ flexDirection: 'row' }}>
+                        <View style={{ 
+                          backgroundColor: '#FFD700', 
+                          borderRadius: 8, 
+                          paddingHorizontal: 6, 
+                          paddingVertical: 2 
+                        }}>
+                          <Text style={{ color: 'black', fontFamily: theme.fonts.mono, fontSize: 10, fontWeight: 'bold' }}>
+                            INTERMEDIATE
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
 
-                  {/* Action Icons */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <TouchableOpacity style={{ marginRight: 12 }}>
-                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16 }}>☆</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleAddExerciseFromPicker(ex)}>
-                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold' }}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                    {/* Action Icons */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <TouchableOpacity style={{ marginRight: 12 }} disabled>
+                        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16 }}>☆</Text>
+                      </TouchableOpacity>
+                      {alreadyAdded ? (
+                        <Text style={{ color: theme.colors.success, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold' }}>✔</Text>
+                      ) : (
+                        <TouchableOpacity onPress={() => handleAddExerciseFromPicker(ex)}>
+                          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold' }}>+</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
               {pickerExercises.length === 0 && (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 }}>
                   <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, textAlign: 'center' }}>

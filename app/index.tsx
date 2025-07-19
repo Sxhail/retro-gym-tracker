@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from
 import { useRouter } from 'expo-router';
 
 const workouts = [
-  { title: 'Evening Workout', date: '2025.07.11', exercises: 2 },
-  { title: 'Push Day', date: '2025.07.09', exercises: 2 },
-  { title: 'Full Body', date: '2025.07.06', exercises: 2 },
-  { title: 'Strength Day', date: '2025.07.04', exercises: 2 },
+  { title: 'UPPER', date: '2025.07.11', exercises: 2 },
+  { title: 'LOWER', date: '2025.07.10', exercises: 2 },
+  { title: 'PUSH DAY', date: '2025.07.09', exercises: 2 },
+  { title: 'PULL DAY', date: '2025.07.08', exercises: 2 },
+  { title: 'LEGS DAY', date: '2025.07.07', exercises: 2 },
 ];
 
 const GREEN = '#00FF00';
@@ -27,7 +28,6 @@ export default function HomeScreen() {
       {/* App Title Row */}
       <View style={styles.headerRow}>
         <Text style={styles.title}>GYM.TRACKER</Text>
-        <Text style={styles.version}>v2.0.25</Text>
       </View>
       {/* Navigation Buttons */}
       <View style={styles.buttonRow}>

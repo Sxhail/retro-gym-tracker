@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, PanResponder, Animated, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, PanResponder, Animated, SafeAreaView, Alert } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import theme from '../styles/theme';
 import { db } from '../db/client';
 import * as schema from '../db/schema';
+import { useWorkoutSession } from '../context/WorkoutSessionContext';
+import { loadTemplateIntoSession } from '../services/workoutTemplates';
 
 export type Exercise = typeof schema.exercises.$inferSelect;
 
@@ -124,11 +126,16 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
             <TextInput
               style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, padding: 2, backgroundColor: 'transparent', textAlign: 'left', width: '100%' }}
               value={set.notes || ''}
-              onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'notes', v)}
+              onChangeText={v => {
+                // Limit notes to 200 characters
+                if (v.length <= 200) {
+                  handleSetFieldChange(exerciseId, setIdx, 'notes', v);
+                }
+              }}
               placeholder="-"
               placeholderTextColor={theme.colors.neon}
               multiline={false}
-              maxLength={40}
+              maxLength={200}
             />
           </View>
         </View>
@@ -183,18 +190,34 @@ export default function NewWorkoutScreen() {
   const [exercise, setExercise] = useState('');
   const [search, setSearch] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [sessionExercises, setSessionExercises] = useState<any[]>([]);
-  const [workoutName, setWorkoutName] = useState('New Workout');
   const [pickerExercises, setPickerExercises] = useState<Exercise[]>([]);
   const [pickerLoading, setPickerLoading] = useState(false);
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('All');
   const [selectedEquipment, setSelectedEquipment] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('A-Z');
   const router = useRouter();
-  const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
+  const { templateId } = useLocalSearchParams<{ templateId?: string }>();
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<any>(null);
   const [workoutDate, setWorkoutDate] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [templateLoading, setTemplateLoading] = useState(false);
+
+
+
+  // Use workout session context
+  const {
+    currentExercises: sessionExercises,
+    setCurrentExercises,
+    workoutName,
+    setWorkoutName,
+    sessionStartTime,
+    isWorkoutActive,
+    startWorkout,
+    endWorkout,
+    saveWorkout,
+    resetSession
+  } = useWorkoutSession();
 
   // Load exercises for modal (search-aware with filters)
   useEffect(() => {
@@ -256,12 +279,16 @@ export default function NewWorkoutScreen() {
     setPickerLoading(true);
     try {
       if (!sessionExercises.some(e => e.id === ex.id)) {
-        setSessionExercises([
+        setCurrentExercises([
           ...sessionExercises,
-          { ...ex, sets: [{ reps: '', weight: '', completed: false, rest: 120 }] }
+          { ...ex, sets: [{ reps: '', weight: '', completed: false, restDuration: 120 }] }
         ]);
       }
       setModalVisible(false);
+      // Start workout timer when first exercise is added
+      if (!isWorkoutActive) {
+        startWorkout();
+      }
     } catch (err) {
       console.error('Error adding exercise:', err);
     } finally {
@@ -271,7 +298,7 @@ export default function NewWorkoutScreen() {
 
   // Remove exercise from session
   const handleRemoveExercise = (exerciseId: number) => {
-    setSessionExercises(sessionExercises.filter((ex) => ex.id !== exerciseId));
+    setCurrentExercises(sessionExercises.filter((ex) => ex.id !== exerciseId));
   };
 
   // Add helper to format seconds as mm:ss
@@ -283,10 +310,10 @@ export default function NewWorkoutScreen() {
 
   // Add set to an exercise
   const handleAddSet = (exerciseId: number) => {
-    setSessionExercises(sessionExercises.map((ex) => {
+    setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
-        const lastRest = ex.sets && ex.sets.length > 0 ? ex.sets[ex.sets.length - 1].rest ?? 120 : 120;
-        const newSet = { reps: '', weight: '', completed: false, rest: lastRest };
+        const lastRest = ex.sets && ex.sets.length > 0 ? ex.sets[ex.sets.length - 1].restDuration ?? 120 : 120;
+        const newSet = { reps: '', weight: '', completed: false, restDuration: lastRest };
         return { ...ex, sets: ex.sets ? [...ex.sets, newSet] : [newSet] };
       }
       return ex;
@@ -295,7 +322,7 @@ export default function NewWorkoutScreen() {
 
   // Toggle set completion
   const handleToggleSetComplete = (exerciseId: number, setIdx: number) => {
-    setSessionExercises(sessionExercises.map((ex) => {
+    setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
         const updatedSets = (ex.sets || []).map((set: any, idx: number) =>
           idx === setIdx ? { ...set, completed: !set.completed } : set
@@ -308,7 +335,7 @@ export default function NewWorkoutScreen() {
 
   // Update handleSetFieldChange to support 'notes' field
   const handleSetFieldChange = (exerciseId: number, setIdx: number, field: 'weight' | 'reps' | 'notes', value: string) => {
-    setSessionExercises(sessionExercises.map((ex) => {
+    setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
         const updatedSets = (ex.sets || []).map((set: any, idx: number) =>
           idx === setIdx ? { ...set, [field]: field === 'notes' ? value : value.replace(/[^0-9]/g, '') } : set
@@ -321,10 +348,10 @@ export default function NewWorkoutScreen() {
 
   // Add handler to update rest
   const handleSetRestChange = (exerciseId: number, setIdx: number, delta: number) => {
-    setSessionExercises(sessionExercises.map((ex) => {
+    setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
         const updatedSets = (ex.sets || []).map((set: any, idx: number) =>
-          idx === setIdx ? { ...set, rest: Math.max(0, (set.rest ?? 120) + delta) } : set
+          idx === setIdx ? { ...set, restDuration: Math.max(0, (set.restDuration ?? 120) + delta) } : set
         );
         return { ...ex, sets: updatedSets };
       }
@@ -334,7 +361,7 @@ export default function NewWorkoutScreen() {
 
   // Add handler to remove a set from an exercise
   const handleRemoveSet = (exerciseId: number, setIdx: number) => {
-    setSessionExercises(sessionExercises.map((ex) => {
+    setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
         const updatedSets = (ex.sets || []).filter((_, idx) => idx !== setIdx);
         return { ...ex, sets: updatedSets };
@@ -345,34 +372,35 @@ export default function NewWorkoutScreen() {
 
   // Start timer and set date when first exercise is added
   useEffect(() => {
-    if (sessionExercises.length > 0 && !workoutStartTime) {
-      setWorkoutStartTime(Date.now());
+    if (sessionExercises.length > 0 && !isWorkoutActive) {
+      startWorkout();
       setElapsed(0);
       // Set the workout date to today
       const now = new Date();
       const formatted = `${now.getFullYear()}.${(now.getMonth()+1).toString().padStart(2, '0')}.${now.getDate().toString().padStart(2, '0')}`;
       setWorkoutDate(formatted);
+
     }
     // Reset timer and date if all exercises are removed
-    if (sessionExercises.length === 0 && workoutStartTime) {
-      setWorkoutStartTime(null);
+    if (sessionExercises.length === 0 && isWorkoutActive) {
+      endWorkout();
       setElapsed(0);
       setWorkoutDate("");
       if (timerRef.current) clearInterval(timerRef.current);
     }
-  }, [sessionExercises.length]);
+  }, [sessionExercises.length, isWorkoutActive]);
 
   // Timer interval
   useEffect(() => {
-    if (workoutStartTime) {
+    if (sessionStartTime) {
       timerRef.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - workoutStartTime) / 1000));
+        setElapsed(Math.floor((Date.now() - sessionStartTime.getTime()) / 1000));
       }, 1000);
       return () => {
         if (timerRef.current) clearInterval(timerRef.current);
       };
     }
-  }, [workoutStartTime]);
+  }, [sessionStartTime]);
 
   // Format timer mm:ss
   function formatElapsed(seconds: number) {
@@ -387,6 +415,168 @@ export default function NewWorkoutScreen() {
       setPickerLoading(false);
     }
   }, [modalVisible]);
+
+
+
+  // Load template if templateId is provided
+  useEffect(() => {
+    if (templateId) {
+      loadTemplate();
+    }
+  }, [templateId]);
+
+  // Load template into session
+  const loadTemplate = async () => {
+    if (!templateId) return;
+    
+    try {
+      setTemplateLoading(true);
+      const templateData = await loadTemplateIntoSession(parseInt(templateId));
+      
+      // Convert template data to session format
+      const templateExercises = templateData.exercises.map(exercise => ({
+        id: exercise.id,
+        name: exercise.name,
+        category: exercise.category,
+        muscle_group: exercise.muscle_group,
+        distance: exercise.distance,
+        sets: exercise.sets.map(set => ({
+          weight: Number(set.weight) || 0,
+          reps: Number(set.reps) || 0,
+          rest: Number(set.rest) || 120,
+          notes: set.notes || '',
+          completed: false,
+        }))
+      }));
+
+      // Set exercises in session
+      setCurrentExercises(templateExercises);
+      
+      Alert.alert('Template Loaded', 'Workout template has been loaded successfully!');
+    } catch (error) {
+      console.error('Error loading template:', error);
+      Alert.alert('Error', 'Failed to load template. Please try again.');
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
+
+  // Handle cancel workout
+  const handleCancelWorkout = () => {
+    Alert.alert(
+      'Cancel Workout',
+      'Are you sure you want to cancel this workout? All progress will be lost.',
+      [
+        {
+          text: 'Keep Working Out',
+          style: 'cancel'
+        },
+        {
+          text: 'Cancel Workout',
+          style: 'destructive',
+          onPress: () => {
+            resetSession();
+            router.push('/');
+          }
+        }
+      ]
+    );
+  };
+
+  // Handle finish workout
+  const handleFinishWorkout = async () => {
+    // Validate workout name
+    if (!workoutName || workoutName.trim().length === 0) {
+      Alert.alert('Invalid Workout Name', 'Please enter a workout name before finishing.');
+      return;
+    }
+
+    if (workoutName.length > 100) {
+      Alert.alert('Workout Name Too Long', 'Workout name must be 100 characters or less.');
+      return;
+    }
+
+    // Validate exercises
+    if (sessionExercises.length === 0) {
+      Alert.alert('No Exercises', 'Cannot finish workout with no exercises.');
+      return;
+    }
+
+    // Validate that all exercises have at least one set
+    const exercisesWithoutSets = sessionExercises.filter(exercise => 
+      !exercise.sets || exercise.sets.length === 0
+    );
+
+    if (exercisesWithoutSets.length > 0) {
+      Alert.alert(
+        'Incomplete Exercises', 
+        'All exercises must have at least one set. Please add sets to all exercises.'
+      );
+      return;
+    }
+
+    // Validate sets have valid data
+    const invalidSets = sessionExercises.flatMap(exercise => 
+      exercise.sets.filter(set => {
+        const weight = Number(set.weight);
+        const reps = Number(set.reps);
+        return isNaN(weight) || weight < 0 || isNaN(reps) || reps <= 0;
+      })
+    );
+
+    if (invalidSets.length > 0) {
+      Alert.alert(
+        'Invalid Set Data', 
+        'All sets must have valid weight (≥ 0) and reps (> 0) values.'
+      );
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      endWorkout(); // End the workout session
+      const workoutId = await saveWorkout(); // Save to database
+      
+      if (workoutId) {
+        Alert.alert(
+          'Workout Saved!', 
+          `Workout "${workoutName.trim()}" has been saved successfully.`,
+          [
+            {
+              text: 'View History',
+              onPress: () => router.push('/history')
+            },
+            {
+              text: 'New Workout',
+              onPress: () => {
+                resetSession();
+                router.push('/new');
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Handle specific error cases
+      if (errorMessage.includes('Workout name cannot be empty')) {
+        Alert.alert('Invalid Workout Name', 'Please enter a workout name.');
+      } else if (errorMessage.includes('too long')) {
+        Alert.alert('Input Too Long', 'Please shorten your workout name or notes.');
+      } else if (errorMessage.includes('negative') || errorMessage.includes('greater than 0')) {
+        Alert.alert('Invalid Values', 'Please check your weight and reps values.');
+      } else if (errorMessage.includes('Database is busy')) {
+        Alert.alert('Database Busy', 'Please try again in a moment.');
+      } else if (errorMessage.includes('Database schema is missing')) {
+        Alert.alert('Database Error', 'Please restart the app and try again.');
+      } else {
+        Alert.alert('Save Failed', `Failed to save workout: ${errorMessage}`);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 0, paddingTop: 0 }}>
@@ -416,7 +606,7 @@ export default function NewWorkoutScreen() {
             <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14 }}>{workoutDate}</Text>
           )}
         </View>
-        {workoutStartTime && (
+        {sessionStartTime && (
           <Text 
             style={{ 
               color: theme.colors.neon, 
@@ -442,13 +632,26 @@ export default function NewWorkoutScreen() {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -120 }}>
           {/* Only show input and END WORKOUT button when no exercises */}
           <View style={{ width: '100%', maxWidth: 400, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, padding: 24, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
-            <TextInput
-              style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, marginBottom: 18, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}
-              value={workoutName}
-              onChangeText={setWorkoutName}
-              placeholder="ENTER WORKOUT"
-              placeholderTextColor={theme.colors.neon}
-            />
+            <View style={{ alignItems: 'center', marginBottom: 18 }}>
+              <TextInput
+                style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}
+                value={workoutName}
+                onChangeText={(text) => {
+                  // Limit workout name to 100 characters
+                  if (text.length <= 100) {
+                    setWorkoutName(text);
+                  }
+                }}
+                placeholder="ENTER WORKOUT"
+                placeholderTextColor={theme.colors.neon}
+                maxLength={100}
+              />
+              {['MORNING WORKOUT', 'AFTERNOON WORKOUT', 'NIGHT WORKOUT', 'LATE NIGHT WORKOUT'].includes(workoutName) && (
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginTop: 4, opacity: 0.7 }}>
+                  TIME-BASED NAME
+                </Text>
+              )}
+            </View>
             <View style={{ flexDirection: 'row', width: '100%', marginBottom: 18 }}>
               <TextInput
                 style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
@@ -462,17 +665,58 @@ export default function NewWorkoutScreen() {
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 28, fontWeight: 'bold', marginTop: -2 }}>+</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={{ width: '100%', backgroundColor: '#CC0000', borderRadius: 4, paddingVertical: 18, alignItems: 'center', borderWidth: 2, borderColor: theme.colors.neon, marginBottom: 0 }}>
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>END WORKOUT</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
+              <TouchableOpacity 
+                style={{ 
+                  flex: 1,
+                  backgroundColor: '#333', 
+                  borderRadius: 4, 
+                  paddingVertical: 18, 
+                  alignItems: 'center', 
+                  borderWidth: 2, 
+                  borderColor: theme.colors.neon, 
+                  marginBottom: 0 
+                }}
+                onPress={handleCancelWorkout}
+              >
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                  CANCEL
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={{ 
+                  flex: 1,
+                  backgroundColor: isSaving ? '#666' : '#CC0000', 
+                  borderRadius: 4, 
+                  paddingVertical: 18, 
+                  alignItems: 'center', 
+                  borderWidth: 2, 
+                  borderColor: theme.colors.neon, 
+                  marginBottom: 0 
+                }}
+                onPress={handleFinishWorkout}
+                disabled={isSaving}
+              >
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                  {isSaving ? 'SAVING...' : 'FINISH'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       ) : (
         <>
           {/* Show workout name above exercises */}
-          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, marginBottom: 18, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}>
-            {workoutName}
-          </Text>
+          <View style={{ alignItems: 'center', marginBottom: 18 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}>
+              {workoutName}
+            </Text>
+            {['MORNING WORKOUT', 'AFTERNOON WORKOUT', 'NIGHT WORKOUT', 'LATE NIGHT WORKOUT'].includes(workoutName) && (
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginTop: 4, opacity: 0.7 }}>
+                TIME-BASED NAME
+              </Text>
+            )}
+          </View>
           <ScrollView style={{ flex: 1, marginBottom: 12 }}>
             {sessionExercises.map((ex, idx) => (
               <View key={ex.id} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, marginBottom: 18, padding: 12, backgroundColor: 'transparent' }}>
@@ -511,9 +755,45 @@ export default function NewWorkoutScreen() {
                   <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 32, fontWeight: 'bold', marginTop: -2 }}>+</Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={{ width: '100%', backgroundColor: '#CC0000', borderRadius: 4, paddingVertical: 20, alignItems: 'center', borderWidth: 2, borderColor: theme.colors.neon, marginBottom: 0, marginTop: 0 }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 22, fontWeight: 'bold', letterSpacing: 1.2 }}>END WORKOUT</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
+                <TouchableOpacity 
+                  style={{ 
+                    flex: 1,
+                    backgroundColor: '#333', 
+                    borderRadius: 4, 
+                    paddingVertical: 20, 
+                    alignItems: 'center', 
+                    borderWidth: 2, 
+                    borderColor: theme.colors.neon, 
+                    marginBottom: 0, 
+                    marginTop: 0 
+                  }}
+                  onPress={handleCancelWorkout}
+                >
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                    CANCEL
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={{ 
+                    flex: 1,
+                    backgroundColor: isSaving ? '#666' : '#CC0000', 
+                    borderRadius: 4, 
+                    paddingVertical: 20, 
+                    alignItems: 'center', 
+                    borderWidth: 2, 
+                    borderColor: theme.colors.neon, 
+                    marginBottom: 0, 
+                    marginTop: 0 
+                  }}
+                  onPress={handleFinishWorkout}
+                  disabled={isSaving}
+                >
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                    {isSaving ? 'SAVING...' : 'FINISH'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </SafeAreaView>
         </>

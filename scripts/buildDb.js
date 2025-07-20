@@ -60,6 +60,43 @@ db.serialize(() => {
     FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE
   )`);
 
+  // Create workout_templates table
+  db.run(`CREATE TABLE IF NOT EXISTS workout_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    category TEXT,
+    difficulty TEXT,
+    estimated_duration INTEGER,
+    is_favorite INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Create template_exercises table
+  db.run(`CREATE TABLE IF NOT EXISTS template_exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_id INTEGER NOT NULL,
+    exercise_id INTEGER NOT NULL,
+    exercise_order INTEGER NOT NULL,
+    distance REAL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (template_id) REFERENCES workout_templates(id) ON DELETE CASCADE,
+    FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+  )`);
+
+  // Create template_sets table
+  db.run(`CREATE TABLE IF NOT EXISTS template_sets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_exercise_id INTEGER NOT NULL,
+    set_index INTEGER NOT NULL,
+    target_weight REAL,
+    target_reps INTEGER NOT NULL,
+    target_rest INTEGER NOT NULL,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (template_exercise_id) REFERENCES template_exercises(id) ON DELETE CASCADE
+  )`);
+
   // Prepare insert statement
   const stmt = db.prepare(
     'INSERT INTO exercises (name, category, muscle_group, is_custom) VALUES (?, ?, ?, 0)'
@@ -75,7 +112,7 @@ db.serialize(() => {
   stmt.finalize();
 
   console.log(`Inserted ${exercises.length} exercises into app.db`);
-  console.log('Created tables: exercises, workouts, workout_exercises, sets');
+  console.log('Created tables: exercises, workouts, workout_exercises, sets, workout_templates, template_exercises, template_sets');
 });
 
 db.close(); 

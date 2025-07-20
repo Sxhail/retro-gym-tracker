@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
+import theme from '../styles/theme';
 
 const workouts = [
   { title: 'UPPER', date: '2025.07.11', exercises: 2 },
@@ -10,49 +11,109 @@ const workouts = [
   { title: 'LEGS DAY', date: '2025.07.07', exercises: 2 },
 ];
 
-const GREEN = '#00FF00';
-const LIGHT_GREEN = '#39FF14';
-const FONT = 'monospace';
 const { width } = Dimensions.get('window');
-const CARD_MARGIN = 18;
+const CARD_MARGIN = theme.spacing.lg;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [titleOpacity] = useState(new Animated.Value(0));
+  const [titleScale] = useState(new Animated.Value(0.8));
+
+  // Loading animation for title
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(titleOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(titleScale, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return (
     <View style={styles.root}>
       {/* Header Section */}
-      <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-      <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-      <View style={styles.divider} />
-      {/* App Title Row */}
-      <View style={styles.headerRow}>
+      <View style={styles.header}>
+        <Text style={styles.status}>■ SYSTEM ONLINE</Text>
+        <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
+        <View style={styles.divider} />
+      </View>
+
+      {/* App Title with Animation */}
+      <Animated.View style={[styles.titleContainer, { opacity: titleOpacity, transform: [{ scale: titleScale }] }]}>
         <Text style={styles.title}>GYM.TRACKER</Text>
+      </Animated.View>
+
+      {/* Navigation Grid */}
+      <View style={styles.navigationGrid}>
+        <View style={styles.gridRow}>
+          <TouchableOpacity 
+            style={styles.navCard} 
+            activeOpacity={0.7}
+            onPress={() => router.push('/progress')}
+          >
+            <Text style={styles.navIcon}>→</Text>
+            <Text style={styles.navText}>PROGRESS</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.navCard} 
+            activeOpacity={0.7}
+            onPress={() => router.push('/history')}
+          >
+            <Text style={styles.navIcon}>📊</Text>
+            <Text style={styles.navText}>HISTORY</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.gridRow}>
+          <TouchableOpacity 
+            style={styles.navCard} 
+            activeOpacity={0.7}
+            onPress={() => router.push('/templates')}
+          >
+            <Text style={styles.navIcon}>📋</Text>
+            <Text style={styles.navText}>TEMPLATES</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.navCard, styles.newWorkoutCard]} 
+            activeOpacity={0.7}
+            onPress={() => router.push('/new')}
+          >
+            <Text style={styles.navIcon}>+</Text>
+            <Text style={styles.navText}>NEW WORKOUT</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      {/* Navigation Buttons */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={[styles.button, styles.buttonLeft]} onPress={() => router.push('/progress')}>
-          <Text style={styles.buttonText}>→ PROGRESS</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.buttonRight]} onPress={() => router.push('/new')}>
-          <Text style={styles.buttonText}>+ NEW WORKOUT</Text>
-        </TouchableOpacity>
-      </View>
+
       {/* Workout List */}
-      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 12 }} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.list} 
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      >
         {workouts.map((w, i) => (
-          <TouchableOpacity key={i} style={styles.workoutCard} activeOpacity={0.8}>
-            <View>
+          <TouchableOpacity 
+            key={i} 
+            style={styles.workoutCard} 
+            activeOpacity={0.8} 
+            onPress={() => router.push('/history')}
+          >
+            <View style={styles.workoutInfo}>
               <Text style={styles.workoutTitle}>{w.title}</Text>
               <Text style={styles.workoutDate}>{w.date}</Text>
-              <Text style={styles.workoutExercises}>{w.exercises} exercises</Text>
+              <Text style={styles.workoutExercises}>{w.exercises} EXERCISES</Text>
             </View>
-            <Text style={styles.arrow}>{'>'}</Text>
+            <Text style={styles.arrow}>→</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-      {/* Footer (empty) */}
-      <View style={styles.footer}></View>
     </View>
   );
 }
@@ -60,136 +121,124 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: theme.colors.background,
     padding: 0,
-    justifyContent: 'flex-start',
+  },
+  header: {
+    paddingTop: theme.spacing.xl,
+    paddingHorizontal: CARD_MARGIN,
   },
   status: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 13,
-    marginTop: 18,
-    marginLeft: CARD_MARGIN,
-    marginBottom: 0,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.mono,
+    fontSize: 14,
+    marginBottom: theme.spacing.xs,
     letterSpacing: 1,
   },
   protocol: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 13,
-    marginLeft: CARD_MARGIN,
-    marginBottom: 8,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.mono,
+    fontSize: 14,
+    marginBottom: theme.spacing.md,
     letterSpacing: 1,
   },
   divider: {
     borderBottomWidth: 1,
-    borderBottomColor: GREEN,
-    marginHorizontal: CARD_MARGIN,
-    marginBottom: 18,
+    borderBottomColor: theme.colors.neon,
+    marginBottom: theme.spacing.xl,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  titleContainer: {
     alignItems: 'center',
-    marginTop: 18,
-    marginBottom: 8,
-    marginHorizontal: CARD_MARGIN,
+    marginBottom: theme.spacing.xxl,
   },
   title: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.mono,
     fontWeight: 'bold',
-    fontSize: 28,
-    letterSpacing: 2,
+    fontSize: 36,
+    letterSpacing: 3,
   },
-  version: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 14,
-    opacity: 0.8,
+  navigationGrid: {
+    paddingHorizontal: CARD_MARGIN,
+    marginBottom: theme.spacing.xl,
   },
-  buttonRow: {
+  gridRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-    marginTop: 8,
-    marginHorizontal: CARD_MARGIN,
+    marginBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
   },
-  button: {
+  navCard: {
     flex: 1,
-    flexDirection: 'row',
+    backgroundColor: theme.colors.neon,
+    borderRadius: theme.borderRadius,
+    padding: theme.spacing.md,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: GREEN,
-    borderRadius: 2,
-    paddingVertical: 16,
     justifyContent: 'center',
-    backgroundColor: LIGHT_GREEN,
-    marginHorizontal: 0,
+    minHeight: 60,
+    ...theme.shadows.button,
   },
-  buttonLeft: {
-    marginRight: 10,
+  newWorkoutCard: {
+    flex: 1, // Equal size for all buttons
   },
-  buttonRight: {
-    marginLeft: 10,
+  navIcon: {
+    color: theme.colors.background,
+    fontFamily: theme.fonts.mono,
+    fontSize: 18,
+    marginBottom: theme.spacing.xs,
   },
-  buttonText: {
-    color: 'black',
-    fontFamily: FONT,
-    fontSize: 15,
+  navText: {
+    color: theme.colors.background,
+    fontFamily: theme.fonts.mono,
+    fontSize: 12,
     fontWeight: 'bold',
-    letterSpacing: 1.2,
+    letterSpacing: 0.5,
     textAlign: 'center',
-    flex: 1,
   },
   list: {
-    marginTop: 0,
-    marginHorizontal: CARD_MARGIN,
+    flex: 1,
+    paddingHorizontal: CARD_MARGIN,
+  },
+  listContent: {
+    paddingBottom: theme.spacing.xl,
   },
   workoutCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: GREEN,
-    borderRadius: 2,
-    padding: 18,
-    marginTop: 0,
-    marginBottom: 18,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
     backgroundColor: 'transparent',
-    width: '100%',
+    ...theme.shadows.card,
+  },
+  workoutInfo: {
+    flex: 1,
   },
   workoutTitle: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.mono,
     fontWeight: 'bold',
-    fontSize: 20,
-    marginBottom: 2,
-    letterSpacing: 1.2,
+    fontSize: 18,
+    marginBottom: theme.spacing.xs,
+    letterSpacing: 1,
   },
   workoutDate: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 15,
-    marginBottom: 2,
-    opacity: 0.85,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.mono,
+    fontSize: 14,
+    marginBottom: theme.spacing.xs,
   },
   workoutExercises: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 15,
-    opacity: 0.85,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.mono,
+    fontSize: 14,
   },
   arrow: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 28,
-    alignSelf: 'center',
-    marginLeft: 12,
-  },
-  footer: {
-    alignItems: 'center',
-    marginBottom: 12,
-    marginTop: 0,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.mono,
+    fontSize: 24,
+    marginLeft: theme.spacing.md,
   },
 }); 

@@ -120,11 +120,13 @@ export default function WorkoutDetailScreen() {
   if (loading) {
     return (
       <View style={styles.root}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>WORKOUT DETAIL</Text>
+        <View style={{ marginTop: 12, marginLeft: 8, marginBottom: 0, alignItems: 'flex-start' }}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={styles.backButton}>← BACK</Text>
           </TouchableOpacity>
+        </View>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>WORKOUT DETAIL</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={GREEN} />
@@ -137,11 +139,13 @@ export default function WorkoutDetailScreen() {
   if (error || !workout) {
     return (
       <View style={styles.root}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>WORKOUT DETAIL</Text>
+        <View style={{ marginTop: 12, marginLeft: 8, marginBottom: 0, alignItems: 'flex-start' }}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={styles.backButton}>← BACK</Text>
           </TouchableOpacity>
+        </View>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>WORKOUT DETAIL</Text>
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>ERROR: {error || 'Workout not found'}</Text>
@@ -176,14 +180,16 @@ export default function WorkoutDetailScreen() {
 
   return (
     <View style={styles.root}>
+      <View style={{ marginTop: 12, marginLeft: 8, marginBottom: 0, alignItems: 'flex-start' }}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backButton}>← BACK</Text>
+        </TouchableOpacity>
+      </View>
       {/* Header Section */}
       
       {/* Header Row */}
       <View style={styles.headerRow}>
         <Text style={styles.title}>WORKOUT DETAIL</Text>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>← BACK</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Workout Header */}
@@ -296,15 +302,6 @@ export default function WorkoutDetailScreen() {
       <SafeAreaView style={styles.actionContainer}>
         <View style={styles.actionButtons}>
           <TouchableOpacity 
-            style={[styles.actionButton, styles.shareButton]} 
-            onPress={() => {
-              // Share functionality placeholder
-              Alert.alert('Share', 'Share functionality coming soon!');
-            }}
-          >
-            <Text style={styles.shareButtonText}>📤 SHARE WORKOUT</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
             style={[styles.actionButton, styles.deleteButton]} 
             onPress={handleDeleteWorkout}
             disabled={deleting}
@@ -358,21 +355,21 @@ const styles = StyleSheet.create({
     marginHorizontal: CARD_MARGIN,
   },
   title: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.display,
     fontWeight: 'bold',
     fontSize: 28,
     letterSpacing: 2,
   },
   backButton: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: GREEN,
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
+    fontSize: 12,
+    borderWidth: 0,
+    borderColor: 'transparent',
+    borderRadius: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
     backgroundColor: 'transparent',
   },
   workoutHeader: {
@@ -381,7 +378,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   workoutName: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: 24,
@@ -389,14 +386,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   workoutDate: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 16,
     opacity: 0.8,
     marginBottom: 4,
   },
   workoutDuration: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 14,
     opacity: 0.8,
@@ -405,7 +402,7 @@ const styles = StyleSheet.create({
     marginHorizontal: CARD_MARGIN,
     marginBottom: 18,
     borderWidth: 1,
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
     borderRadius: 8,
     padding: 16,
     backgroundColor: 'rgba(0,255,0,0.05)',
@@ -417,8 +414,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   performanceTitle: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -433,7 +430,7 @@ const styles = StyleSheet.create({
   },
   completionText: {
     color: 'black',
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -447,28 +444,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   performanceLabel: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 10,
     opacity: 0.7,
     marginBottom: 2,
     textAlign: 'center',
   },
   performanceValue: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 16,
     fontWeight: 'bold',
   },
   notesSummary: {
     borderTopWidth: 1,
-    borderTopColor: GREEN,
+    borderTopColor: theme.colors.neon,
     paddingTop: 8,
     alignItems: 'center',
   },
   notesSummaryText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 12,
     opacity: 0.8,
   },
@@ -483,14 +480,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statNumber: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   statLabel: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 10,
     opacity: 0.8,
@@ -502,7 +499,7 @@ const styles = StyleSheet.create({
   },
   exerciseCard: {
     borderWidth: 1,
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
     borderRadius: 8,
     padding: 16,
     marginBottom: 18,
@@ -515,16 +512,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   exerciseName: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: 18,
     letterSpacing: 1,
     flex: 1,
   },
   exerciseDistance: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     opacity: 0.8,
   },
@@ -533,7 +530,7 @@ const styles = StyleSheet.create({
   },
   setRow: {
     borderWidth: 1,
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
     borderRadius: 6,
     padding: 12,
     backgroundColor: 'rgba(0,255,0,0.05)',
@@ -545,14 +542,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   setNumber: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 14,
     fontWeight: 'bold',
   },
   completedBadge: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 10,
     fontWeight: 'bold',
     backgroundColor: 'rgba(0,255,0,0.2)',
@@ -570,33 +567,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   setDetailLabel: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 10,
     opacity: 0.7,
     marginBottom: 2,
   },
   setDetailValue: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 14,
     fontWeight: 'bold',
   },
   notesContainer: {
     borderTopWidth: 1,
-    borderTopColor: GREEN,
+    borderTopColor: theme.colors.neon,
     paddingTop: 8,
   },
   notesLabel: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 10,
     opacity: 0.7,
     marginBottom: 2,
   },
   notesText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 12,
     fontStyle: 'italic',
   },
@@ -615,22 +612,22 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     backgroundColor: '#0066CC',
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
   },
   shareButtonText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
   deleteButton: {
     backgroundColor: '#CC0000',
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
   },
   deleteButtonText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,

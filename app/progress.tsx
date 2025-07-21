@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   analysis: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   title: {

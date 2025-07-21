@@ -114,6 +114,12 @@ export default function HistoryListScreen() {
 
   return (
     <View style={styles.root}>
+      {/* Back Button at Top */}
+      <View style={{ marginTop: 12, marginLeft: 8, marginBottom: 0, alignItems: 'flex-start' }}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={[styles.backButton, { color: theme.colors.neon, fontSize: 12, paddingVertical: 2, paddingHorizontal: 6 }]}>← BACK</Text>
+        </TouchableOpacity>
+      </View>
       {/* Header Section */}
       
       {/* App Title Row */}
@@ -139,13 +145,13 @@ export default function HistoryListScreen() {
         </View>
       </View>
 
-      {/* Search Bar */}
+      {/* Search Bar - left aligned below title */}
       {showSearch && (
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, { alignSelf: 'flex-start', marginLeft: CARD_MARGIN, marginRight: CARD_MARGIN, width: '90%' }]}> 
           <TextInput
             style={styles.searchInput}
             placeholder="SEARCH WORKOUTS..."
-            placeholderTextColor={GREEN}
+            placeholderTextColor={theme.colors.neon}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus={true}
@@ -219,7 +225,6 @@ export default function HistoryListScreen() {
         {workouts.length === 0 && !loading && !error ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>NO WORKOUTS YET</Text>
-            <Text style={styles.emptyText}>Complete your first workout to see it here.</Text>
             <TouchableOpacity 
               style={styles.newWorkoutButton} 
               onPress={() => router.push('/new')}
@@ -265,8 +270,6 @@ export default function HistoryListScreen() {
                   <Text style={styles.detailValue}>{workout.totalSets}</Text>
                 </View>
               </View>
-              
-              <Text style={styles.arrow}>{'>'}</Text>
             </TouchableOpacity>
           ))
         )}
@@ -334,7 +337,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.display,
     fontWeight: 'bold',
     fontSize: 28,
@@ -427,14 +430,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statNumber: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   statLabel: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 10,
     opacity: 0.8,
@@ -460,7 +463,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   workoutTitle: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: 20,
@@ -468,7 +471,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   workoutDate: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 14,
     opacity: 0.8,
@@ -482,20 +485,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailLabel: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 10,
     opacity: 0.7,
-    marginBottom: 2,
+    textAlign: 'center',
   },
   detailValue: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 16,
     fontWeight: 'bold',
   },
   arrow: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 24,
     position: 'absolute',
@@ -556,7 +559,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyTitle: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontSize: 24,
     fontWeight: 'bold',
@@ -570,18 +573,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   newWorkoutButton: {
-    borderWidth: 2,
-    borderColor: GREEN,
-    borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    backgroundColor: LIGHT_GREEN,
+    backgroundColor: theme.colors.neon,
+    borderRadius: 12,
+    paddingVertical: theme.spacing.lg,
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+    width: '100%',
   },
   newWorkoutButtonText: {
-    color: 'black',
+    color: theme.colors.background,
     fontFamily: theme.fonts.heading,
-    fontSize: 16,
     fontWeight: 'bold',
+    fontSize: 18,
     letterSpacing: 1,
   },
   endContainer: {

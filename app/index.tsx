@@ -12,12 +12,11 @@ const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (
       <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('history')}>
         <Text style={[styles.navTabLabel, activeTab === 'history' && styles.navTabLabelActive]}>History</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('start')}>
-        <Text style={[styles.navTabIcon, activeTab === 'start' && styles.navTabIconActive]}>+</Text>
-        <Text style={[styles.navTabLabel, activeTab === 'start' && styles.navTabLabelActive]}>Start Workout</Text>
-      </TouchableOpacity>
       <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('exercises')}>
         <Text style={[styles.navTabLabel, activeTab === 'exercises' && styles.navTabLabelActive]}>Exercises</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
+        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>PROGRESS</Text>
       </TouchableOpacity>
     </View>
   </SafeAreaView>
@@ -64,18 +63,14 @@ export default function HomeScreen() {
       {/* Start an Empty Workout Button */}
       <View style={styles.section}>
         <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-          <Text style={styles.startButtonText}>
-            <Text style={{ fontSize: 32, lineHeight: 32 }}>+</Text> NEW WORKOUT
-          </Text>
+          <Text style={styles.startButtonText}>+ NEW WORKOUT</Text>
         </TouchableOpacity>
       </View>
 
       {/* + TEMPLATES Button Only */}
       <View style={[styles.section, { alignItems: 'center' }]}> {/* Center the button */}
         <TouchableOpacity style={[styles.addTemplateButton, { alignItems: 'center', justifyContent: 'center', minWidth: 180 }]} onPress={() => router.push('/templates')}>
-          <Text style={styles.addTemplateButtonText}>
-            <Text style={{ fontSize: 32, lineHeight: 32 }}>+</Text> TEMPLATES
-          </Text>
+          <Text style={[styles.addTemplateButtonText, { textAlign: 'center', width: '100%' }]}>+ TEMPLATES</Text>
         </TouchableOpacity>
       </View>
 
@@ -87,8 +82,8 @@ export default function HomeScreen() {
         onTabPress={(tab) => {
           setActiveTab(tab);
           if (tab === 'history') router.push('/history');
-          if (tab === 'start') router.push('/new');
-          if (tab === 'exercises') router.push('/progress');
+          if (tab === 'exercises') router.push('/exercises');
+          if (tab === 'progress') router.push('/progress');
         }}
       />
     </SafeAreaView>
@@ -122,7 +117,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginHorizontal: theme.spacing.xl,
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
   },
   sectionTitle: {
     color: '#fff',
@@ -143,6 +138,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.lg,
     alignItems: 'center',
     marginBottom: theme.spacing.md,
+    width: '100%',
   },
   startButtonText: {
     color: theme.colors.background,
@@ -160,14 +156,14 @@ const styles = StyleSheet.create({
   addTemplateButton: {
     borderWidth: 1,
     borderColor: theme.colors.neon,
-    borderRadius: 8,
-    paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.lg,
+    borderRadius: 12, // match startButton
+    paddingVertical: theme.spacing.lg, // match startButton
+    paddingHorizontal: 0, // match startButton (no extra horizontal padding)
     backgroundColor: 'black',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 260,
     marginBottom: theme.spacing.md,
+    width: '100%',
   },
   addTemplateButtonText: {
     color: theme.colors.neon,
@@ -264,6 +260,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 10,
+    marginHorizontal: 4,
+    paddingVertical: 8,
+    // Add a subtle border and background for clickable look
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,0,0.15)',
+    backgroundColor: 'rgba(0,255,0,0.04)',
+    shadowColor: '#00FF00',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   navTabIcon: {
     color: theme.colors.textSecondary,
@@ -280,9 +288,14 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
     fontSize: 12,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
   navTabLabelActive: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.body,
+    backgroundColor: 'rgba(0,255,0,0.10)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
 }); 

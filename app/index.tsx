@@ -1,38 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
-import { getTemplates, getTemplateDetail, type WorkoutTemplate } from '../services/workoutTemplates';
-
-const TEMPLATES_PREVIEW_LIMIT = 2;
-
-const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (tab: string) => void }) => (
-  <SafeAreaView style={styles.bottomNavContainer}>
-    <View style={styles.bottomNav}>
-      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('history')}>
-        <Text style={[styles.navTabLabel, activeTab === 'history' && styles.navTabLabelActive]}>History</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('exercises')}>
-        <Text style={[styles.navTabLabel, activeTab === 'exercises' && styles.navTabLabelActive]}>Exercises</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
-        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>PROGRESS</Text>
-      </TouchableOpacity>
-    </View>
-  </SafeAreaView>
-);
+import { db } from '../db/client';
+import * as schema from '../db/schema';
+import { sql } from 'drizzle-orm';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('start');
-  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
-  const [loadingTemplates, setLoadingTemplates] = useState(true);
+  const [templates, setTemplates] = useState([]);
 
   useEffect(() => {
-    getTemplates().then((data) => {
-      setTemplates(data);
-      setLoadingTemplates(false);
-    });
+    async function fetchTemplates() {
+      // Fetch templates and their exercise counts
+      const templates = await db.select().from(schema.workout_templates).orderBy(schema.workout_templates.created_at);
+      const templatesWithCounts = await Promise.all(
+        templates.map(async (tpl) => {
+          const count = await db
+            .select({ count: schema.template_exercises.id })
+            .from(schema.template_exercises)
+            .where(sql`template_id = ${tpl.id}`);
+          return { ...tpl, exerciseCount: count[0]?.count || 0 };
+        })
+      );
+      setTemplates(templatesWithCounts.reverse()); // newest first
+    }
+    fetchTemplates();
   }, []);
 
   // Template preview: just show template name for now
@@ -69,12 +63,39 @@ export default function HomeScreen() {
 
       {/* + TEMPLATES Button Only */}
       <View style={[styles.section, { alignItems: 'center' }]}> {/* Center the button */}
-        <TouchableOpacity style={[styles.addTemplateButton, { alignItems: 'center', justifyContent: 'center', minWidth: 180 }]} onPress={() => router.push('/templates')}>
-          <Text style={[styles.addTemplateButtonText, { textAlign: 'center', width: '100%' }]}>+ TEMPLATES</Text>
+        <TouchableOpacity style={styles.addTemplateButton} onPress={() => router.push('/templates')}>
+          <Text style={styles.addTemplateButtonText}>+ TEMPLATES</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Templates Section */}
+      {/* Templates Preview List */}
+      {templates.length > 0 && (
+        <View style={{ width: '100%', marginBottom: 16 }}>
+          {templates.map((tpl) => (
+            <TouchableOpacity
+              key={tpl.id}
+              style={{
+                borderWidth: 1,
+                borderColor: theme.colors.neon,
+                borderRadius: 8,
+                padding: 16,
+                marginHorizontal: 16,
+                marginBottom: 16,
+                backgroundColor: 'transparent',
+              }}
+              onPress={() => router.push(`/templates/${tpl.id}`)}
+              activeOpacity={0.8}
+            >
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 18, marginBottom: 2 }}>
+                {tpl.name}
+              </Text>
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 13, opacity: 0.8 }}>
+                {tpl.exerciseCount} exercises
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Bottom Navigation */}
       <BottomNav
@@ -89,6 +110,22 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (tab: string) => void }) => (
+  <SafeAreaView style={styles.bottomNavContainer}>
+    <View style={styles.bottomNav}>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('history')}>
+        <Text style={[styles.navTabLabel, activeTab === 'history' && styles.navTabLabelActive]}>History</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('exercises')}>
+        <Text style={[styles.navTabLabel, activeTab === 'exercises' && styles.navTabLabelActive]}>Exercises</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
+        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>PROGRESS</Text>
+      </TouchableOpacity>
+    </View>
+  </SafeAreaView>
+);
 
 const styles = StyleSheet.create({
   root: {

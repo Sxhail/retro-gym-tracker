@@ -123,7 +123,7 @@ export default function TemplatesScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       {/* Header Section */}
       
       {/* Header Row */}
@@ -250,21 +250,29 @@ export default function TemplatesScreen() {
         )}
       </ScrollView>
 
-      {/* Action Buttons */}
-      <SafeAreaView style={styles.actionContainer}>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.createButton]} 
-            onPress={() => {
-              // Navigate to template creation
-              Alert.alert('Create Template', 'Template creation coming soon!');
-            }}
-          >
-            <Text style={styles.createButtonText}>📝 CREATE TEMPLATE</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </View>
+      {/* + CREATE TEMPLATE Button at bottom */}
+      <View style={{ marginTop: 24, marginBottom: 24, alignItems: 'center' }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: theme.colors.neon,
+            borderRadius: 12,
+            paddingVertical: theme.spacing.lg,
+            alignItems: 'center',
+            width: '90%',
+          }}
+          onPress={() => router.push('/templates/create')}
+        >
+          <Text style={{
+            color: theme.colors.background,
+            fontFamily: theme.fonts.heading,
+            fontWeight: 'bold',
+            fontSize: 18,
+            letterSpacing: 1,
+            textAlign: 'center',
+          }}>+ CREATE TEMPLATE</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 

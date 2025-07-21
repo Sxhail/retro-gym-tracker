@@ -22,9 +22,6 @@ export default function ProgressAnalysis() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.statusBar}>■ SYSTEM ONLINE</Text>
-      <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-      <View style={styles.divider} />
       <View style={styles.headerRow}>
         <Text style={styles.back} onPress={() => router.back()}>{'← BACK'}</Text>
         <Text style={styles.analysis}>PROGRESS.ANALYSIS</Text>
@@ -49,13 +46,13 @@ const styles = StyleSheet.create({
   },
   statusBar: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: 12,
     marginBottom: 2,
   },
   protocol: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: 12,
     marginBottom: 8,
   },
@@ -72,13 +69,28 @@ const styles = StyleSheet.create({
   },
   back: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
   },
   analysis: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.heading,
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  title: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.display,
+    fontWeight: 'bold',
+    fontSize: 22,
+    marginBottom: 2,
+    letterSpacing: 1.5,
+  },
+  subtitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    marginBottom: 18,
+    opacity: 0.85,
   },
 }); 

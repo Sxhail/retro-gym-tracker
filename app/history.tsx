@@ -101,9 +101,6 @@ export default function HistoryListScreen() {
   if (loading && workouts.length === 0) {
     return (
       <View style={styles.root}>
-        <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-        <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-        <View style={styles.divider} />
         <View style={styles.headerRow}>
           <Text style={styles.title}>WORKOUT HISTORY</Text>
         </View>
@@ -118,9 +115,6 @@ export default function HistoryListScreen() {
   return (
     <View style={styles.root}>
       {/* Header Section */}
-      <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-      <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-      <View style={styles.divider} />
       
       {/* App Title Row */}
       <View style={styles.headerRow}>
@@ -306,7 +300,7 @@ const styles = StyleSheet.create({
   },
   status: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 13,
     marginTop: 18,
     marginLeft: CARD_MARGIN,
@@ -315,7 +309,7 @@ const styles = StyleSheet.create({
   },
   protocol: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 13,
     marginLeft: CARD_MARGIN,
     marginBottom: 8,
@@ -341,7 +335,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.display,
     fontWeight: 'bold',
     fontSize: 28,
     letterSpacing: 2,
@@ -357,7 +351,7 @@ const styles = StyleSheet.create({
   },
   workoutCountText: {
     color: 'black',
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -376,12 +370,12 @@ const styles = StyleSheet.create({
   },
   searchButtonText: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
   },
   backButton: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     borderWidth: 1,
     borderColor: GREEN,
@@ -404,7 +398,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     paddingVertical: 8,
   },
@@ -418,7 +412,7 @@ const styles = StyleSheet.create({
   },
   clearSearchText: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -434,14 +428,14 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   statLabel: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 10,
     opacity: 0.8,
     textAlign: 'center',
@@ -467,7 +461,7 @@ const styles = StyleSheet.create({
   },
   workoutTitle: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: 20,
     letterSpacing: 1.2,
@@ -475,7 +469,7 @@ const styles = StyleSheet.create({
   },
   workoutDate: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     opacity: 0.8,
   },
@@ -489,20 +483,20 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 10,
     opacity: 0.7,
     marginBottom: 2,
   },
   detailValue: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
     fontWeight: 'bold',
   },
   arrow: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 24,
     position: 'absolute',
     right: 18,
@@ -516,11 +510,10 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
   loadingText: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 16,
-    marginTop: 16,
-    letterSpacing: 1,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    marginTop: 8,
   },
   loadingMoreContainer: {
     flexDirection: 'row',
@@ -530,7 +523,7 @@ const styles = StyleSheet.create({
   },
   loadingMoreText: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     marginLeft: 12,
   },
@@ -540,7 +533,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#FF4444',
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 16,
@@ -554,7 +547,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: '#FF4444',
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -564,19 +557,17 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 12,
     letterSpacing: 1,
   },
   emptyText: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 24,
-    opacity: 0.8,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    marginTop: 8,
   },
   newWorkoutButton: {
     borderWidth: 2,
@@ -588,7 +579,7 @@ const styles = StyleSheet.create({
   },
   newWorkoutButtonText: {
     color: 'black',
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -599,7 +590,7 @@ const styles = StyleSheet.create({
   },
   endText: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     opacity: 0.6,
     letterSpacing: 1,

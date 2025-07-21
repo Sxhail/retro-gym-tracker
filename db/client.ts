@@ -9,7 +9,7 @@ export const expoDb = openDatabaseSync('app.db', {
 });
 
 // Create Drizzle database instance with schema
-export const db = drizzle(expoDb, { schema });
+export const db = drizzle(expoDb, { schema }); 
 
 /**
  * Initialize database tables and ensure they exist

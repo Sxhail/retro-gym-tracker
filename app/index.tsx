@@ -1,120 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
+import { getTemplates, getTemplateDetail, type WorkoutTemplate } from '../services/workoutTemplates';
 
-const workouts = [
-  { title: 'UPPER', date: '2025.07.11', exercises: 2 },
-  { title: 'LOWER', date: '2025.07.10', exercises: 2 },
-  { title: 'PUSH DAY', date: '2025.07.09', exercises: 2 },
-  { title: 'PULL DAY', date: '2025.07.08', exercises: 2 },
-  { title: 'LEGS DAY', date: '2025.07.07', exercises: 2 },
-];
+const TEMPLATES_PREVIEW_LIMIT = 2;
 
-const { width } = Dimensions.get('window');
-const CARD_MARGIN = theme.spacing.lg;
-const CARD_WIDTH = width - CARD_MARGIN * 2;
+const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (tab: string) => void }) => (
+  <SafeAreaView style={styles.bottomNavContainer}>
+    <View style={styles.bottomNav}>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('history')}>
+        <Text style={[styles.navTabLabel, activeTab === 'history' && styles.navTabLabelActive]}>History</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('start')}>
+        <Text style={[styles.navTabIcon, activeTab === 'start' && styles.navTabIconActive]}>+</Text>
+        <Text style={[styles.navTabLabel, activeTab === 'start' && styles.navTabLabelActive]}>Start Workout</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('exercises')}>
+        <Text style={[styles.navTabLabel, activeTab === 'exercises' && styles.navTabLabelActive]}>Exercises</Text>
+      </TouchableOpacity>
+    </View>
+  </SafeAreaView>
+);
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [titleOpacity] = useState(new Animated.Value(0));
-  const [titleScale] = useState(new Animated.Value(0.8));
+  const [activeTab, setActiveTab] = useState('start');
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
 
-  // Loading animation for title
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(titleOpacity, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(titleScale, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    getTemplates().then((data) => {
+      setTemplates(data);
+      setLoadingTemplates(false);
+    });
   }, []);
 
+  // Template preview: just show template name for now
+  const renderTemplatePreview = (template: WorkoutTemplate) => {
+    return template.name;
+  };
+
   return (
-    <View style={styles.root}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-        <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-        <View style={styles.divider} />
+    <SafeAreaView style={styles.root}>
+      {/* SYSTEM ONLINE and protocol banner at very top */}
+      <View style={{ width: '100%', alignItems: 'flex-start', marginTop: theme.spacing.xs, marginBottom: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4, marginLeft: 16, marginTop: 4 }}>
+          <View style={{ width: 12, height: 12, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 8 }} />
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, letterSpacing: 1 }}>
+            SYSTEM ONLINE
+          </Text>
+        </View>
+        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 13, marginBottom: 2, letterSpacing: 1, marginLeft: 16 }}>
+          RETRO FITNESS PROTOCOL
+        </Text>
+        <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
       </View>
-
-      {/* App Title with Animation */}
-      <Animated.View style={[styles.titleContainer, { opacity: titleOpacity, transform: [{ scale: titleScale }] }]}>
+      {/* Header */}
+      <View style={styles.headerSection}>
         <Text style={styles.title}>GYM.TRACKER</Text>
-      </Animated.View>
-
-      {/* Navigation Grid */}
-      <View style={styles.navigationGrid}>
-        <View style={styles.gridRow}>
-          <TouchableOpacity 
-            style={styles.navCard} 
-            activeOpacity={0.7}
-            onPress={() => router.push('/progress')}
-          >
-            <Text style={styles.navIcon}>→</Text>
-            <Text style={styles.navText}>PROGRESS</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.navCard} 
-            activeOpacity={0.7}
-            onPress={() => router.push('/history')}
-          >
-            <Text style={styles.navIcon}>📊</Text>
-            <Text style={styles.navText}>HISTORY</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.gridRow}>
-          <TouchableOpacity 
-            style={styles.navCard} 
-            activeOpacity={0.7}
-            onPress={() => router.push('/templates')}
-          >
-            <Text style={styles.navIcon}>📋</Text>
-            <Text style={styles.navText}>TEMPLATES</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.navCard, styles.newWorkoutCard]} 
-            activeOpacity={0.7}
-            onPress={() => router.push('/new')}
-          >
-            <Text style={styles.navIcon}>+</Text>
-            <Text style={styles.navText}>NEW WORKOUT</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* Workout List */}
-      <ScrollView 
-        style={styles.list} 
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {workouts.map((w, i) => (
-          <TouchableOpacity 
-            key={i} 
-            style={styles.workoutCard} 
-            activeOpacity={0.8} 
-            onPress={() => router.push('/history')}
-          >
-            <View style={styles.workoutInfo}>
-              <Text style={styles.workoutTitle}>{w.title}</Text>
-              <Text style={styles.workoutDate}>{w.date}</Text>
-              <Text style={styles.workoutExercises}>{w.exercises} EXERCISES</Text>
-            </View>
-            <Text style={styles.arrow}>→</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
+      {/* Start an Empty Workout Button */}
+      <View style={styles.section}>
+        <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
+          <Text style={styles.startButtonText}>
+            <Text style={{ fontSize: 32, lineHeight: 32 }}>+</Text> NEW WORKOUT
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* + TEMPLATES Button Only */}
+      <View style={[styles.section, { alignItems: 'center' }]}> {/* Center the button */}
+        <TouchableOpacity style={[styles.addTemplateButton, { alignItems: 'center', justifyContent: 'center', minWidth: 180 }]} onPress={() => router.push('/templates')}>
+          <Text style={styles.addTemplateButtonText}>
+            <Text style={{ fontSize: 32, lineHeight: 32 }}>+</Text> TEMPLATES
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Templates Section */}
+
+      {/* Bottom Navigation */}
+      <BottomNav
+        activeTab={activeTab}
+        onTabPress={(tab) => {
+          setActiveTab(tab);
+          if (tab === 'history') router.push('/history');
+          if (tab === 'start') router.push('/new');
+          if (tab === 'exercises') router.push('/progress');
+        }}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -124,121 +101,188 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     padding: 0,
   },
-  header: {
-    paddingTop: theme.spacing.xl,
-    paddingHorizontal: CARD_MARGIN,
-  },
-  status: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
-    fontSize: 14,
-    marginBottom: theme.spacing.xs,
-    letterSpacing: 1,
-  },
-  protocol: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
-    fontSize: 14,
-    marginBottom: theme.spacing.md,
-    letterSpacing: 1,
-  },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.neon,
-    marginBottom: theme.spacing.xl,
-  },
-  titleContainer: {
+  headerSection: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.md,
   },
   title: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.display,
     fontWeight: 'bold',
-    fontSize: 36,
-    letterSpacing: 3,
+    fontSize: 28,
+    letterSpacing: 2,
   },
-  navigationGrid: {
-    paddingHorizontal: CARD_MARGIN,
-    marginBottom: theme.spacing.xl,
+  subtitle: {
+    color: theme.colors.neonDim,
+    fontFamily: theme.fonts.body,
+    fontSize: 13,
+    marginTop: 2,
+    marginBottom: 0,
   },
-  gridRow: {
-    flexDirection: 'row',
+  section: {
+    marginHorizontal: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontFamily: theme.fonts.heading,
+    fontWeight: 'bold',
+    fontSize: 22,
+    marginBottom: 2,
+  },
+  sectionSub: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
     marginBottom: theme.spacing.sm,
-    gap: theme.spacing.sm,
   },
-  navCard: {
-    flex: 1,
+  startButton: {
     backgroundColor: theme.colors.neon,
-    borderRadius: theme.borderRadius,
-    padding: theme.spacing.md,
+    borderRadius: 12,
+    paddingVertical: theme.spacing.lg,
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 60,
-    ...theme.shadows.button,
-  },
-  newWorkoutCard: {
-    flex: 1, // Equal size for all buttons
-  },
-  navIcon: {
-    color: theme.colors.background,
-    fontFamily: theme.fonts.mono,
-    fontSize: 18,
-    marginBottom: theme.spacing.xs,
-  },
-  navText: {
-    color: theme.colors.background,
-    fontFamily: theme.fonts.mono,
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-    textAlign: 'center',
-  },
-  list: {
-    flex: 1,
-    paddingHorizontal: CARD_MARGIN,
-  },
-  listContent: {
-    paddingBottom: theme.spacing.xl,
-  },
-  workoutCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius,
-    padding: theme.spacing.lg,
     marginBottom: theme.spacing.md,
-    backgroundColor: 'transparent',
-    ...theme.shadows.card,
   },
-  workoutInfo: {
-    flex: 1,
-  },
-  workoutTitle: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+  startButtonText: {
+    color: theme.colors.background,
+    fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: 18,
-    marginBottom: theme.spacing.xs,
     letterSpacing: 1,
   },
-  workoutDate: {
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.mono,
-    fontSize: 14,
-    marginBottom: theme.spacing.xs,
+  templatesHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
   },
-  workoutExercises: {
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.mono,
-    fontSize: 14,
+  addTemplateButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 8,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
+    backgroundColor: 'black',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 260,
+    marginBottom: theme.spacing.md,
   },
-  arrow: {
+  addTemplateButtonText: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
-    fontSize: 24,
-    marginLeft: theme.spacing.md,
+    fontFamily: theme.fonts.heading,
+    fontWeight: 'bold',
+    fontSize: 18,
+    letterSpacing: 1,
+    textAlign: 'center',
+    width: '100%',
+  },
+  templatesScroll: {
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  templateCard: {
+    backgroundColor: 'transparent',
+    borderColor: theme.colors.neonDim,
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: theme.spacing.md,
+    marginRight: theme.spacing.md,
+    minWidth: 160,
+    maxWidth: 200,
+  },
+  templateCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  templateCardTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
+    fontWeight: 'bold',
+    fontSize: 16,
+    flex: 1,
+  },
+  menuButton: {
+    marginLeft: 8,
+    padding: 2,
+  },
+  menuButtonText: {
+    color: theme.colors.neon,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  templateCardPreview: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  loadingText: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    marginTop: 8,
+  },
+  emptyText: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    marginTop: 8,
+  },
+  bottomNavContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 100,
+    // For iOS shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    // For Android elevation
+    elevation: 16,
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.neonDim,
+    paddingVertical: 8,
+    paddingBottom: 8,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    marginHorizontal: 0,
+  },
+  navTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navTabIcon: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.code,
+    fontSize: 22,
+    marginBottom: 2,
+  },
+  navTabIconActive: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+  },
+  navTabLabel: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  navTabLabelActive: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
   },
 }); 

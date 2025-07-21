@@ -94,13 +94,13 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
         }}
         {...panResponder.panHandlers}
       >
-        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, marginRight: 8, minWidth: 48 }}>SET {setIdx + 1}</Text>
+        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, marginRight: 8, minWidth: 48 }}>SET {setIdx + 1}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           {/* KG label and input */}
           <View style={{ alignItems: 'center', marginRight: 6 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>KG</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 10, marginBottom: 2 }}>KG</Text>
             <TextInput
-              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, width: 48, padding: 2, backgroundColor: 'transparent', textAlign: 'center' }}
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, width: 48, padding: 2, backgroundColor: 'transparent', textAlign: 'center' }}
               value={set.weight?.toString() || ''}
               onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'weight', v)}
               placeholder=""
@@ -110,9 +110,9 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
           </View>
           {/* REPS label and input */}
           <View style={{ alignItems: 'center', marginRight: 6 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>REPS</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 10, marginBottom: 2 }}>REPS</Text>
             <TextInput
-              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, width: 48, padding: 2, backgroundColor: 'transparent', textAlign: 'center' }}
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, width: 48, padding: 2, backgroundColor: 'transparent', textAlign: 'center' }}
               value={set.reps?.toString() || ''}
               onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'reps', v)}
               placeholder=""
@@ -122,9 +122,9 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
           </View>
           {/* NOTES label and input */}
           <View style={{ justifyContent: 'center', alignItems: 'center', marginRight: 6, flex: 1 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginBottom: 2 }}>NOTES</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 10, marginBottom: 2 }}>NOTES</Text>
             <TextInput
-              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, padding: 2, backgroundColor: 'transparent', textAlign: 'left', width: '100%' }}
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, padding: 2, backgroundColor: 'transparent', textAlign: 'left', width: '100%' }}
               value={set.notes || ''}
               onChangeText={v => {
                 // Limit notes to 200 characters
@@ -149,7 +149,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
             color: canComplete
               ? (set.completed ? theme.colors.success : theme.colors.neon)
               : '#444',
-            fontFamily: theme.fonts.mono,
+            fontFamily: theme.fonts.code,
             fontSize: 24,
             fontWeight: 'bold',
             borderWidth: set.completed && canComplete ? 2 : 1,
@@ -170,15 +170,15 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       {/* Rest timer below set row */}
       {restActive && restTime > 0 && (
         <View style={{ alignItems: 'center', marginBottom: 8, flexDirection: 'row', justifyContent: 'center' }}>
-          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2, marginRight: 12 }}>
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2, marginRight: 12 }}>
             REST: {formatRestTimer(restTime)}
           </Text>
           <TouchableOpacity onPress={() => handleRestChange(-15)} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 8, marginRight: 4 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 18 }}>-</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18 }}>-</Text>
           </TouchableOpacity>
-          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, marginHorizontal: 2 }}>{Math.max(15, set.rest ?? 120)}s</Text>
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, marginHorizontal: 2 }}>{Math.max(15, set.rest ?? 120)}s</Text>
           <TouchableOpacity onPress={() => handleRestChange(15)} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 8, marginLeft: 4 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 18 }}>+</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18 }}>+</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -581,16 +581,13 @@ export default function NewWorkoutScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 0, paddingTop: 0 }}>
       {/* Top status and protocol */}
-      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, marginTop: 24, marginLeft: 16, marginBottom: 0 }}>■ SYSTEM ONLINE</Text>
-      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, marginLeft: 16, marginBottom: 8 }}>RETRO FITNESS PROTOCOL</Text>
-      <View style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.neon, marginHorizontal: 0, marginBottom: 8 }} />
       {/* Header row: BACK (top left), DATE (below), TIMER (right) */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 16, marginBottom: 8, marginTop: 0 }}>
         <View style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
           <Text 
             style={{ 
               color: theme.colors.neon, 
-              fontFamily: theme.fonts.mono, 
+              fontFamily: theme.fonts.code, 
               fontSize: 14, 
               marginBottom: 2, 
               borderWidth: 1, 
@@ -603,14 +600,14 @@ export default function NewWorkoutScreen() {
             }} 
             onPress={() => router.back()}>{'← BACK'}</Text>
           {workoutDate && (
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14 }}>{workoutDate}</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14 }}>{workoutDate}</Text>
           )}
         </View>
         {sessionStartTime && (
           <Text 
             style={{ 
               color: theme.colors.neon, 
-              fontFamily: theme.fonts.mono, 
+              fontFamily: theme.fonts.code, 
               fontSize: 18, 
               fontWeight: 'bold', 
               letterSpacing: 2, 
@@ -634,7 +631,7 @@ export default function NewWorkoutScreen() {
           <View style={{ width: '100%', maxWidth: 400, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, padding: 24, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' }}>
             <View style={{ alignItems: 'center', marginBottom: 18 }}>
               <TextInput
-                style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}
+                style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontWeight: 'bold', fontSize: 22, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}
                 value={workoutName}
                 onChangeText={(text) => {
                   // Limit workout name to 100 characters
@@ -647,14 +644,12 @@ export default function NewWorkoutScreen() {
                 maxLength={100}
               />
               {['MORNING WORKOUT', 'AFTERNOON WORKOUT', 'NIGHT WORKOUT', 'LATE NIGHT WORKOUT'].includes(workoutName) && (
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginTop: 4, opacity: 0.7 }}>
-                  TIME-BASED NAME
-                </Text>
+                null
               )}
             </View>
             <View style={{ flexDirection: 'row', width: '100%', marginBottom: 18 }}>
               <TextInput
-                style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
+                style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
                 placeholder="ADD EXERCISE"
                 placeholderTextColor={theme.colors.neon}
                 value={search}
@@ -662,7 +657,7 @@ export default function NewWorkoutScreen() {
                 onFocus={() => setModalVisible(true)}
               />
               <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }} onPress={() => setModalVisible(true)}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 28, fontWeight: 'bold', marginTop: -2 }}>+</Text>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 28, fontWeight: 'bold', marginTop: -2 }}>+</Text>
               </TouchableOpacity>
             </View>
             <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
@@ -679,7 +674,7 @@ export default function NewWorkoutScreen() {
                 }}
                 onPress={handleCancelWorkout}
               >
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2 }}>
                   CANCEL
                 </Text>
               </TouchableOpacity>
@@ -697,10 +692,10 @@ export default function NewWorkoutScreen() {
                 onPress={handleFinishWorkout}
                 disabled={isSaving}
               >
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2 }}>
                   {isSaving ? 'SAVING...' : 'FINISH'}
                 </Text>
-              </TouchableOpacity>
+            </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -708,19 +703,17 @@ export default function NewWorkoutScreen() {
         <>
           {/* Show workout name above exercises */}
           <View style={{ alignItems: 'center', marginBottom: 18 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 22, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontWeight: 'bold', fontSize: 22, letterSpacing: 1.5, textAlign: 'center', backgroundColor: 'transparent', borderWidth: 0 }}>
               {workoutName}
             </Text>
             {['MORNING WORKOUT', 'AFTERNOON WORKOUT', 'NIGHT WORKOUT', 'LATE NIGHT WORKOUT'].includes(workoutName) && (
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginTop: 4, opacity: 0.7 }}>
-                TIME-BASED NAME
-              </Text>
+              null
             )}
           </View>
           <ScrollView style={{ flex: 1, marginBottom: 12 }}>
             {sessionExercises.map((ex, idx) => (
               <View key={ex.id} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, marginBottom: 18, padding: 12, backgroundColor: 'transparent' }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontWeight: 'bold', fontSize: 18, textTransform: 'uppercase', marginBottom: 8 }}>{ex.name.toUpperCase()}</Text>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontWeight: 'bold', fontSize: 18, textTransform: 'uppercase', marginBottom: 8 }}>{ex.name.toUpperCase()}</Text>
                 {/* Sets List */}
                 {(ex.sets || []).map((set: any, setIdx: number) => (
                   <SetRow
@@ -735,7 +728,7 @@ export default function NewWorkoutScreen() {
                   />
                 ))}
                 <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingVertical: 10, alignItems: 'center', marginTop: 4, backgroundColor: 'transparent' }} onPress={() => handleAddSet(ex.id)}>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>ADD SET</Text>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>ADD SET</Text>
                 </TouchableOpacity>
               </View>
             ))}
@@ -743,18 +736,18 @@ export default function NewWorkoutScreen() {
           <SafeAreaView style={{ width: '100%', paddingHorizontal: 0, paddingBottom: 8, backgroundColor: 'transparent' }}>
             <View style={{ width: '100%', paddingHorizontal: 0, marginTop: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 16, paddingHorizontal: 8 }}>
-                <TextInput
-                  style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, paddingVertical: 12, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
+            <TextInput
+                  style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 12, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
                   placeholder="ADD EXERCISE"
-                  placeholderTextColor={theme.colors.neon}
-                  value={search}
-                  onChangeText={setSearch}
-                  onFocus={() => setModalVisible(true)}
-                />
+              placeholderTextColor={theme.colors.neon}
+              value={search}
+              onChangeText={setSearch}
+              onFocus={() => setModalVisible(true)}
+            />
                 <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }} onPress={() => setModalVisible(true)}>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 32, fontWeight: 'bold', marginTop: -2 }}>+</Text>
-                </TouchableOpacity>
-              </View>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 32, fontWeight: 'bold', marginTop: -2 }}>+</Text>
+            </TouchableOpacity>
+          </View>
               <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
                 <TouchableOpacity 
                   style={{ 
@@ -770,7 +763,7 @@ export default function NewWorkoutScreen() {
                   }}
                   onPress={handleCancelWorkout}
                 >
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
                     CANCEL
                   </Text>
                 </TouchableOpacity>
@@ -789,10 +782,10 @@ export default function NewWorkoutScreen() {
                   onPress={handleFinishWorkout}
                   disabled={isSaving}
                 >
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
                     {isSaving ? 'SAVING...' : 'FINISH'}
                   </Text>
-                </TouchableOpacity>
+          </TouchableOpacity>
               </View>
             </View>
           </SafeAreaView>
@@ -809,24 +802,24 @@ export default function NewWorkoutScreen() {
           {/* Header */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.neon }}>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 24 }}>←</Text>
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 24 }}>←</Text>
             </TouchableOpacity>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold' }}>EXERCISES</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>EXERCISES</Text>
             <TouchableOpacity>
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20 }}>⋮</Text>
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20 }}>⋮</Text>
             </TouchableOpacity>
           </View>
 
           {/* Search Bar */}
           <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, backgroundColor: 'transparent', paddingHorizontal: 12 }}>
-              <TextInput
-                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, paddingVertical: 12 }}
+          <TextInput
+                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 12 }}
                 placeholder="SEARCH"
                 placeholderTextColor={theme.colors.neon}
-                value={search}
-                onChangeText={setSearch}
-              />
+            value={search}
+            onChangeText={setSearch}
+          />
             </View>
           </View>
 
@@ -834,18 +827,18 @@ export default function NewWorkoutScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12 }}>FILTER</Text>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>FILTER</Text>
               </TouchableOpacity>
               <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12 }}>{sortBy}</Text>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>{sortBy}</Text>
               </TouchableOpacity>
             </View>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12 }}>{pickerExercises.length} found</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>{pickerExercises.length} found</Text>
           </View>
 
           {/* Muscle Groups Filter */}
           <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>MUSCLE GROUPS</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>MUSCLE GROUPS</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row' }}>
                 {['All', 'Chest', 'Arms', 'Legs', 'Back', 'Core', 'Shoulders'].map((group) => (
@@ -864,7 +857,7 @@ export default function NewWorkoutScreen() {
                   >
                     <Text style={{ 
                       color: selectedMuscleGroup === group ? 'black' : theme.colors.neon, 
-                      fontFamily: theme.fonts.mono, 
+                      fontFamily: theme.fonts.code, 
                       fontSize: 12 
                     }}>{group}</Text>
                   </TouchableOpacity>
@@ -875,7 +868,7 @@ export default function NewWorkoutScreen() {
 
           {/* Equipment Filter */}
           <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>CATEGORY</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>CATEGORY</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row' }}>
                 {['All', 'Bodyweight', 'Dumbbell', 'Barbell', 'Machine', 'Cable'].map((equipment) => (
@@ -894,7 +887,7 @@ export default function NewWorkoutScreen() {
                   >
                     <Text style={{ 
                       color: selectedEquipment === equipment ? 'black' : theme.colors.neon, 
-                      fontFamily: theme.fonts.mono, 
+                      fontFamily: theme.fonts.code, 
                       fontSize: 12 
                     }}>{equipment}</Text>
                   </TouchableOpacity>
@@ -912,7 +905,7 @@ export default function NewWorkoutScreen() {
                 setSelectedEquipment('All');
               }}
             >
-              <Text style={{ color: '#FF0000', fontFamily: theme.fonts.mono, fontSize: 12 }}>CLEAR ALL FILTERS</Text>
+              <Text style={{ color: '#FF0000', fontFamily: theme.fonts.code, fontSize: 12 }}>CLEAR ALL FILTERS</Text>
             </TouchableOpacity>
           )}
 
@@ -951,17 +944,17 @@ export default function NewWorkoutScreen() {
                       alignItems: 'center',
                       marginRight: 12
                     }}>
-                      <Text style={{ color: 'black', fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold' }}>
+                      <Text style={{ color: 'black', fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold' }}>
                         {ex.name.charAt(0).toUpperCase()}
                       </Text>
                     </View>
 
                     {/* Exercise Details */}
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>
+                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>
                         {ex.name}
                       </Text>
-                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
+                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
                         {ex.muscle_group} • {ex.category}
                       </Text>
                       <View style={{ flexDirection: 'row' }}>
@@ -971,7 +964,7 @@ export default function NewWorkoutScreen() {
                           paddingHorizontal: 6, 
                           paddingVertical: 2 
                         }}>
-                          <Text style={{ color: 'black', fontFamily: theme.fonts.mono, fontSize: 10, fontWeight: 'bold' }}>
+                          <Text style={{ color: 'black', fontFamily: theme.fonts.code, fontSize: 10, fontWeight: 'bold' }}>
                             INTERMEDIATE
                           </Text>
                         </View>
@@ -981,25 +974,25 @@ export default function NewWorkoutScreen() {
                     {/* Action Icons */}
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <TouchableOpacity style={{ marginRight: 12 }} disabled>
-                        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16 }}>☆</Text>
+                        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16 }}>☆</Text>
                       </TouchableOpacity>
                       {alreadyAdded ? (
-                        <Text style={{ color: theme.colors.success, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold' }}>✔</Text>
+                        <Text style={{ color: theme.colors.success, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>✔</Text>
                       ) : (
                         <TouchableOpacity onPress={() => handleAddExerciseFromPicker(ex)}>
-                          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 20, fontWeight: 'bold' }}>+</Text>
+                          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>+</Text>
                         </TouchableOpacity>
                       )}
                     </View>
-                  </TouchableOpacity>
+                </TouchableOpacity>
                 );
               })}
               {pickerExercises.length === 0 && (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 }}>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 16, textAlign: 'center' }}>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, textAlign: 'center' }}>
                     No exercises found.
                   </Text>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 12, textAlign: 'center', marginTop: 8, opacity: 0.7 }}>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, textAlign: 'center', marginTop: 8, opacity: 0.7 }}>
                     Try a different keyword or filter.
                   </Text>
                 </View>
@@ -1021,14 +1014,14 @@ const styles = StyleSheet.create({
   },
   statusBar: {
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: theme.fonts.caption.fontSize,
     marginBottom: theme.spacing.xs / 2,
     lineHeight: theme.fonts.caption.lineHeight,
   },
   protocol: {
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: theme.fonts.caption.fontSize,
     marginBottom: theme.spacing.sm,
     lineHeight: theme.fonts.caption.lineHeight,
@@ -1046,20 +1039,20 @@ const styles = StyleSheet.create({
   },
   back: {
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: theme.fonts.body.fontSize,
     lineHeight: theme.fonts.body.lineHeight,
   },
   session: {
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.heading,
     fontSize: theme.fonts.body.fontSize,
     fontWeight: 'bold',
     lineHeight: theme.fonts.body.lineHeight,
   },
   title: {
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: theme.fonts.h2.fontSize,
     marginBottom: theme.spacing.xs,
@@ -1068,7 +1061,7 @@ const styles = StyleSheet.create({
   },
   date: {
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: theme.fonts.body.fontSize,
     marginBottom: theme.spacing.xl,
     opacity: 0.85,
@@ -1085,13 +1078,13 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius,
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
-    fontSize: theme.fonts.body.fontSize,
+    fontFamily: theme.fonts.body,
+    fontSize: theme.fonts.bodyText.fontSize,
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
     marginRight: theme.spacing.sm,
     backgroundColor: theme.colors.backgroundOverlay,
-    lineHeight: theme.fonts.body.lineHeight,
+    lineHeight: theme.fonts.bodyText.lineHeight,
   },
   addBtn: {
     borderWidth: theme.borderWidth,
@@ -1103,7 +1096,7 @@ const styles = StyleSheet.create({
   },
   addIcon: {
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.heading,
     fontSize: theme.fonts.h3.fontSize,
     fontWeight: 'bold',
   },
@@ -1116,7 +1109,7 @@ const styles = StyleSheet.create({
   },
   endBtnText: {
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.heading,
     fontSize: theme.fonts.h3.fontSize,
     fontWeight: 'bold',
     letterSpacing: 1.2,
@@ -1131,7 +1124,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   bigBtnText: {
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.display,
     fontSize: theme.fonts.h2.fontSize,
     fontWeight: 'bold',
     letterSpacing: 1.2,

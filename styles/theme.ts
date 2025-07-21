@@ -1,13 +1,13 @@
 const colors = {
-  // Greens - Updated palette for better contrast
-  neon: '#00FF41', // Bright green (main accent)
-  neonBright: '#00FF41', // Bright green for highlights/active
-  neonDim: '#00CC33', // Darker green for secondary/disabled
-  neonDark: '#008800', // For muted/secondary text
-  neonHover: '#00FF55', // Hover state
-  neonFocus: '#00FFAA', // Focus state
-  neonDisabled: '#005500', // Disabled state
-  success: '#00FF88', // Success/confirmation
+  // Greens - Darker, Spotify-inspired
+  neon: '#16913A', // Main accent (darker than Spotify)
+  neonBright: '#1DB954', // Spotify green for highlights/active
+  neonDim: '#11782E', // Even darker green for secondary/disabled
+  neonDark: '#0D5C22', // For muted/secondary text
+  neonHover: '#1ED760', // Hover state (Spotify hover)
+  neonFocus: '#21E065', // Focus state
+  neonDisabled: '#0A3C16', // Disabled state
+  success: '#21E065', // Success/confirmation
   error: '#FF0033', // Error
 
   // Backgrounds
@@ -17,14 +17,14 @@ const colors = {
   backgroundHover: 'rgba(0,32,0,0.98)', // Card/button hover
 
   // Borders & outlines
-  border: '#00CC33', // Default border (darker green)
-  borderFocus: '#00FF41', // Focused border (bright green)
+  border: '#11782E', // Default border (darker green)
+  borderFocus: '#16913A', // Focused border (main accent)
   borderError: '#FF0033', // Error border
 
   // Text
-  text: '#00FF41', // Default text (bright green)
-  textSecondary: '#00CC33', // Secondary text (darker green)
-  textDisabled: '#005500', // Disabled text
+  text: '#16913A', // Default text (main accent)
+  textSecondary: '#11782E', // Secondary text (darker green)
+  textDisabled: '#0A3C16', // Disabled text
   textError: '#FF0033', // Error text
 
   // Misc
@@ -33,11 +33,16 @@ const colors = {
 
 const fonts = {
   mono: 'JetBrains Mono, monospace', // Modern monospace font
+  // Retro/Cyberpunk font families (Google Fonts loaded in _layout.tsx)
+  heading: 'Orbitron_700Bold', // For headers/titles
+  body: 'ShareTechMono_400Regular', // For main body text, forms, workout data
+  code: 'VT323_400Regular', // For terminal/badge/timer text
+  display: 'PressStart2P_400Regular', // For large display/branding
   // Typography scale
   h1: { fontSize: 32, fontWeight: 'bold', lineHeight: 40 }, // Main page title
   h2: { fontSize: 24, fontWeight: 'bold', lineHeight: 32 }, // Section title
   h3: { fontSize: 20, fontWeight: 'bold', lineHeight: 28 }, // Card/row title
-  body: { fontSize: 16, fontWeight: 'normal', lineHeight: 24 }, // Main body text
+  bodyText: { fontSize: 16, fontWeight: 'normal', lineHeight: 24 }, // Main body text
   caption: { fontSize: 14, fontWeight: 'normal', lineHeight: 20 }, // Small/secondary text
 };
 

@@ -117,9 +117,6 @@ export default function TemplateDetailScreen() {
   if (loading) {
     return (
       <View style={styles.root}>
-        <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-        <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-        <View style={styles.divider} />
         <View style={styles.headerRow}>
           <Text style={styles.title}>TEMPLATE DETAIL</Text>
           <TouchableOpacity onPress={() => router.back()}>
@@ -137,9 +134,6 @@ export default function TemplateDetailScreen() {
   if (error || !template) {
     return (
       <View style={styles.root}>
-        <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-        <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-        <View style={styles.divider} />
         <View style={styles.headerRow}>
           <Text style={styles.title}>TEMPLATE DETAIL</Text>
           <TouchableOpacity onPress={() => router.back()}>
@@ -164,9 +158,6 @@ export default function TemplateDetailScreen() {
   return (
     <View style={styles.root}>
       {/* Header Section */}
-      <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-      <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-      <View style={styles.divider} />
       
       {/* Header Row */}
       <View style={styles.headerRow}>
@@ -306,7 +297,7 @@ const styles = StyleSheet.create({
   },
   status: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 12,
     marginTop: 40,
     marginLeft: 18,
@@ -315,7 +306,7 @@ const styles = StyleSheet.create({
   },
   protocol: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 10,
     marginLeft: 18,
     marginBottom: 12,
@@ -337,14 +328,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.display,
     fontSize: 24,
     fontWeight: 'bold',
     letterSpacing: 2,
   },
   backButton: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -361,7 +352,7 @@ const styles = StyleSheet.create({
   },
   templateName: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -378,7 +369,7 @@ const styles = StyleSheet.create({
   },
   templateDescription: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 12,
     opacity: 0.8,
     lineHeight: 16,
@@ -395,14 +386,14 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   statLabel: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 8,
     opacity: 0.6,
     textAlign: 'center',
@@ -414,14 +405,14 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 8,
     opacity: 0.6,
     marginBottom: 2,
   },
   metaValue: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -532,7 +523,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     marginTop: 16,
     letterSpacing: 1,
@@ -545,7 +536,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#FF4444',
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 16,

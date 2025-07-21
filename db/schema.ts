@@ -123,7 +123,7 @@ export const templateSetsRelations = relations(template_sets, ({ one }) => ({
 }));
 
 // TypeScript types
-export type Exercise = typeof exercises.$inferSelect;
+export type Exercise = typeof exercises.$inferSelect; 
 export type Workout = typeof workouts.$inferSelect;
 export type WorkoutExercise = typeof workout_exercises.$inferSelect;
 export type Set = typeof sets.$inferSelect;

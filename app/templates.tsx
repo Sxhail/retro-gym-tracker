@@ -108,9 +108,6 @@ export default function TemplatesScreen() {
   if (loading && !refreshing) {
     return (
       <View style={styles.root}>
-        <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-        <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-        <View style={styles.divider} />
         <View style={styles.headerRow}>
           <Text style={styles.title}>WORKOUT TEMPLATES</Text>
           <TouchableOpacity onPress={() => router.back()}>
@@ -128,9 +125,6 @@ export default function TemplatesScreen() {
   return (
     <View style={styles.root}>
       {/* Header Section */}
-      <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-      <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-      <View style={styles.divider} />
       
       {/* Header Row */}
       <View style={styles.headerRow}>
@@ -283,7 +277,7 @@ const styles = StyleSheet.create({
   },
   status: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 12,
     marginTop: 40,
     marginLeft: 18,
@@ -292,7 +286,7 @@ const styles = StyleSheet.create({
   },
   protocol: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 10,
     marginLeft: 18,
     marginBottom: 12,
@@ -314,14 +308,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.display,
     fontSize: 24,
     fontWeight: 'bold',
     letterSpacing: 2,
   },
   backButton: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -389,7 +383,7 @@ const styles = StyleSheet.create({
   },
   templateName: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -397,7 +391,7 @@ const styles = StyleSheet.create({
   },
   favoriteBadge: {
     color: LIGHT_GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 20,
   },
   templateDescription: {
@@ -451,8 +445,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     marginTop: 16,
     letterSpacing: 1,
@@ -492,7 +486,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',

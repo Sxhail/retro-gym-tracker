@@ -120,9 +120,6 @@ export default function WorkoutDetailScreen() {
   if (loading) {
     return (
       <View style={styles.root}>
-        <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-        <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-        <View style={styles.divider} />
         <View style={styles.headerRow}>
           <Text style={styles.title}>WORKOUT DETAIL</Text>
           <TouchableOpacity onPress={() => router.back()}>
@@ -140,9 +137,6 @@ export default function WorkoutDetailScreen() {
   if (error || !workout) {
     return (
       <View style={styles.root}>
-        <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-        <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-        <View style={styles.divider} />
         <View style={styles.headerRow}>
           <Text style={styles.title}>WORKOUT DETAIL</Text>
           <TouchableOpacity onPress={() => router.back()}>
@@ -183,9 +177,6 @@ export default function WorkoutDetailScreen() {
   return (
     <View style={styles.root}>
       {/* Header Section */}
-      <Text style={styles.status}>■ SYSTEM ONLINE</Text>
-      <Text style={styles.protocol}>RETRO FITNESS PROTOCOL</Text>
-      <View style={styles.divider} />
       
       {/* Header Row */}
       <View style={styles.headerRow}>
@@ -337,7 +328,7 @@ const styles = StyleSheet.create({
   },
   status: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 13,
     marginTop: 18,
     marginLeft: CARD_MARGIN,
@@ -346,7 +337,7 @@ const styles = StyleSheet.create({
   },
   protocol: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 13,
     marginLeft: CARD_MARGIN,
     marginBottom: 8,
@@ -368,7 +359,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.display,
     fontWeight: 'bold',
     fontSize: 28,
     letterSpacing: 2,
@@ -391,7 +382,7 @@ const styles = StyleSheet.create({
   },
   workoutName: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: 24,
     letterSpacing: 1.5,
@@ -399,14 +390,14 @@ const styles = StyleSheet.create({
   },
   workoutDate: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
     opacity: 0.8,
     marginBottom: 4,
   },
   workoutDuration: {
     color: GREEN,
-    fontFamily: FONT,
+    fontFamily: theme.fonts.code,
     fontSize: 14,
     opacity: 0.8,
   },
@@ -493,15 +484,15 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     color: GREEN,
-    fontFamily: FONT,
-    fontSize: 16,
+    fontFamily: theme.fonts.code,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   statLabel: {
     color: GREEN,
-    fontFamily: FONT,
-    fontSize: 9,
+    fontFamily: theme.fonts.body,
+    fontSize: 10,
     opacity: 0.8,
     textAlign: 'center',
   },
@@ -651,11 +642,10 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
   loadingText: {
-    color: GREEN,
-    fontFamily: FONT,
-    fontSize: 16,
-    marginTop: 16,
-    letterSpacing: 1,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    marginTop: 8,
   },
   errorContainer: {
     flex: 1,

@@ -957,6 +957,7 @@ export default function NewWorkoutScreen() {
                       <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
                         {ex.muscle_group} • {ex.category}
                       </Text>
+<<<<<<< HEAD
                       <View style={{ flexDirection: 'row' }}>
                         <View style={{ 
                           backgroundColor: '#FFD700', 
@@ -969,6 +970,8 @@ export default function NewWorkoutScreen() {
                           </Text>
                         </View>
                       </View>
+=======
+>>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
                     </View>
 
                     {/* Action Icons */}

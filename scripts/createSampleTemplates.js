@@ -10,7 +10,10 @@ const sampleTemplates = [
     name: 'Push Day',
     description: 'Classic push workout focusing on chest, shoulders, and triceps',
     category: 'strength',
+<<<<<<< HEAD
     difficulty: 'intermediate',
+=======
+>>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
     estimated_duration: 60,
     exercises: [
       {
@@ -56,7 +59,10 @@ const sampleTemplates = [
     name: 'Pull Day',
     description: 'Back and biceps focused workout',
     category: 'strength',
+<<<<<<< HEAD
     difficulty: 'intermediate',
+=======
+>>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
     estimated_duration: 55,
     exercises: [
       {
@@ -101,7 +107,10 @@ const sampleTemplates = [
     name: 'Leg Day',
     description: 'Comprehensive lower body workout',
     category: 'strength',
+<<<<<<< HEAD
     difficulty: 'advanced',
+=======
+>>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
     estimated_duration: 70,
     exercises: [
       {
@@ -147,7 +156,10 @@ const sampleTemplates = [
     name: 'Cardio HIIT',
     description: 'High-intensity interval training for cardiovascular fitness',
     category: 'cardio',
+<<<<<<< HEAD
     difficulty: 'beginner',
+=======
+>>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
     estimated_duration: 30,
     exercises: [
       {
@@ -176,7 +188,10 @@ const sampleTemplates = [
     name: 'Full Body',
     description: 'Complete full body workout for overall strength',
     category: 'strength',
+<<<<<<< HEAD
     difficulty: 'beginner',
+=======
+>>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
     estimated_duration: 45,
     exercises: [
       {
@@ -209,6 +224,16 @@ const sampleTemplates = [
   }
 ];
 
+<<<<<<< HEAD
+=======
+// Remove or replace all occurrences of difficulty: 'intermediate'
+sampleTemplates.forEach(template => {
+  if (template.difficulty === 'intermediate') {
+    template.difficulty = 'beginner'; // or remove the property if you prefer
+  }
+});
+
+>>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(async () => {

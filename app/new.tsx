@@ -202,8 +202,22 @@ export default function NewWorkoutScreen() {
   const [workoutDate, setWorkoutDate] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [templateLoading, setTemplateLoading] = useState(false);
+  // Add state for pause
+  const [isPaused, setIsPaused] = useState(false);
 
+  // Add state for custom exercise modal
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [newMuscleGroups, setNewMuscleGroups] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [adding, setAdding] = useState(false);
 
+  const MUSCLE_GROUP_OPTIONS = [
+    'Chest', 'Back', 'Legs', 'Glutes', 'Shoulders', 'Triceps', 'Biceps', 'Core', 'Arms'
+  ];
+  const CATEGORY_OPTIONS = [
+    'Barbell', 'Dumbbell', 'Machine', 'Smith Machine', 'Bodyweight', 'Cable', 'Trap Bar', 'Kettlebell', 'Band', 'Other'
+  ];
 
   // Use workout session context
   const {
@@ -390,17 +404,15 @@ export default function NewWorkoutScreen() {
     }
   }, [sessionExercises.length, isWorkoutActive]);
 
-  // Timer interval
+  // In the timer effect, ensure timer only runs when not paused
   useEffect(() => {
-    if (sessionStartTime) {
-      timerRef.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - sessionStartTime.getTime()) / 1000));
-      }, 1000);
-      return () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
+    if (!sessionStartTime || isPaused) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
     }
-  }, [sessionStartTime]);
+    timerRef.current = setInterval(() => setElapsed((prev) => prev + 1), 1000);
+    return () => clearInterval(timerRef.current);
+  }, [sessionStartTime, isPaused]);
 
   // Format timer mm:ss
   function formatElapsed(seconds: number) {
@@ -582,48 +594,50 @@ export default function NewWorkoutScreen() {
     <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 0, paddingTop: 0 }}>
       {/* Top status and protocol */}
       {/* Header row: BACK (top left), DATE (below), TIMER (right) */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 16, marginBottom: 8, marginTop: 0 }}>
-        <View style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-          <Text 
-            style={{ 
-              color: theme.colors.neon, 
-              fontFamily: theme.fonts.code, 
-              fontSize: 14, 
-              marginBottom: 2, 
-              borderWidth: 1, 
-              borderColor: theme.colors.neon, 
-              borderRadius: 6, 
-              paddingVertical: 4, 
-              paddingHorizontal: 12, 
-              overflow: 'hidden',
-              backgroundColor: 'transparent',
-            }} 
-            onPress={() => router.back()}>{'← BACK'}</Text>
-          {workoutDate && (
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14 }}>{workoutDate}</Text>
+      {sessionExercises.length > 0 && (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 16, marginBottom: 8, marginTop: 40 }}>
+          <View style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+            <Text 
+              style={{ 
+                color: theme.colors.neon, 
+                fontFamily: theme.fonts.code, 
+                fontSize: 14, 
+                marginBottom: 2, 
+                borderWidth: 1, 
+                borderColor: theme.colors.neon, 
+                borderRadius: 6, 
+                paddingVertical: 4, 
+                paddingHorizontal: 12, 
+                overflow: 'hidden',
+                backgroundColor: 'transparent',
+              }} 
+              onPress={() => router.back()}>{'← BACK'}</Text>
+            {workoutDate && (
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14 }}>{workoutDate}</Text>
+            )}
+          </View>
+          {sessionStartTime && (
+            <Text 
+              style={{ 
+                color: isPaused ? '#FFA500' : theme.colors.neon, // orange if paused
+                fontFamily: theme.fonts.code, 
+                fontSize: 18, 
+                fontWeight: 'bold', 
+                letterSpacing: 2, 
+                borderWidth: 1, 
+                borderColor: isPaused ? '#FFA500' : theme.colors.neon, 
+                borderRadius: 6, 
+                paddingVertical: 4, 
+                paddingHorizontal: 16, 
+                overflow: 'hidden',
+                backgroundColor: 'transparent',
+              }}
+            >
+              {isPaused ? 'TIMER PAUSED' : 'TIMER'}: {formatElapsed(elapsed)}
+            </Text>
           )}
         </View>
-        {sessionStartTime && (
-          <Text 
-            style={{ 
-              color: theme.colors.neon, 
-              fontFamily: theme.fonts.code, 
-              fontSize: 18, 
-              fontWeight: 'bold', 
-              letterSpacing: 2, 
-              borderWidth: 1, 
-              borderColor: theme.colors.neon, 
-              borderRadius: 6, 
-              paddingVertical: 4, 
-              paddingHorizontal: 16, 
-              overflow: 'hidden',
-              backgroundColor: 'transparent',
-            }}
-          >
-            TIMER: {formatElapsed(elapsed)}
-          </Text>
-        )}
-      </View>
+      )}
       {/* Main content (workout box, input, END WORKOUT) */}
       {sessionExercises.length === 0 ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -120 }}>
@@ -678,24 +692,6 @@ export default function NewWorkoutScreen() {
                   CANCEL
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={{ 
-                  flex: 1,
-                  backgroundColor: isSaving ? '#666' : '#CC0000', 
-                  borderRadius: 4, 
-                  paddingVertical: 18, 
-                  alignItems: 'center', 
-                  borderWidth: 2, 
-                  borderColor: theme.colors.neon, 
-                  marginBottom: 0 
-                }}
-                onPress={handleFinishWorkout}
-                disabled={isSaving}
-              >
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2 }}>
-                  {isSaving ? 'SAVING...' : 'FINISH'}
-                </Text>
-            </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -752,7 +748,7 @@ export default function NewWorkoutScreen() {
                 <TouchableOpacity 
                   style={{ 
                     flex: 1,
-                    backgroundColor: '#333', 
+                    backgroundColor: isPaused ? '#666' : '#333', 
                     borderRadius: 4, 
                     paddingVertical: 20, 
                     alignItems: 'center', 
@@ -761,10 +757,10 @@ export default function NewWorkoutScreen() {
                     marginBottom: 0, 
                     marginTop: 0 
                   }}
-                  onPress={handleCancelWorkout}
+                  onPress={() => setIsPaused((prev) => !prev)}
                 >
                   <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
-                    CANCEL
+                    {isPaused ? 'UNPAUSE' : 'PAUSE'}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -957,21 +953,6 @@ export default function NewWorkoutScreen() {
                       <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
                         {ex.muscle_group} • {ex.category}
                       </Text>
-<<<<<<< HEAD
-                      <View style={{ flexDirection: 'row' }}>
-                        <View style={{ 
-                          backgroundColor: '#FFD700', 
-                          borderRadius: 8, 
-                          paddingHorizontal: 6, 
-                          paddingVertical: 2 
-                        }}>
-                          <Text style={{ color: 'black', fontFamily: theme.fonts.code, fontSize: 10, fontWeight: 'bold' }}>
-                            INTERMEDIATE
-                          </Text>
-                        </View>
-                      </View>
-=======
->>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
                     </View>
 
                     {/* Action Icons */}
@@ -995,13 +976,115 @@ export default function NewWorkoutScreen() {
                   <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, textAlign: 'center' }}>
                     No exercises found.
                   </Text>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, textAlign: 'center', marginTop: 8, opacity: 0.7 }}>
-                    Try a different keyword or filter.
-                  </Text>
+                  <TouchableOpacity
+                    style={{ marginTop: 16, backgroundColor: theme.colors.neon, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24 }}
+                    onPress={() => {
+                      setNewExerciseName(search);
+                      setShowAddModal(true);
+                    }}
+                  >
+                    <Text style={{ color: theme.colors.background, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 16 }}>+ Add "{search.trim()}" as new exercise</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </ScrollView>
           )}
+        </View>
+      </Modal>
+      {/* Add Exercise Modal */}
+      <Modal visible={showAddModal} animationType="slide" transparent={true} onRequestClose={() => setShowAddModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: theme.colors.background, borderRadius: 16, padding: 24, width: '90%', maxWidth: 400 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 20, marginBottom: 16, textAlign: 'center' }}>Add New Exercise</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: 'transparent', marginBottom: 16 }}
+              placeholder="Exercise Name"
+              placeholderTextColor={theme.colors.neon}
+              value={newExerciseName}
+              onChangeText={setNewExerciseName}
+            />
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14, marginBottom: 8 }}>Muscle Groups</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+              {MUSCLE_GROUP_OPTIONS.map((group) => (
+                <TouchableOpacity
+                  key={group}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme.colors.neon,
+                    borderRadius: 16,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    backgroundColor: newMuscleGroups.includes(group) ? theme.colors.neon : 'transparent',
+                  }}
+                  onPress={() => {
+                    setNewMuscleGroups((prev) => prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]);
+                  }}
+                >
+                  <Text style={{ color: newMuscleGroups.includes(group) ? 'black' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 13 }}>{group}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14, marginBottom: 8 }}>Category</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+              {CATEGORY_OPTIONS.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme.colors.neon,
+                    borderRadius: 16,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    backgroundColor: newCategory === cat ? theme.colors.neon : 'transparent',
+                  }}
+                  onPress={() => setNewCategory(cat)}
+                >
+                  <Text style={{ color: newCategory === cat ? 'black' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 13 }}>{cat}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+              <TouchableOpacity onPress={() => setShowAddModal(false)} style={{ paddingVertical: 10, paddingHorizontal: 18 }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16 }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ backgroundColor: theme.colors.neon, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 18 }}
+                disabled={adding || !newExerciseName.trim() || newMuscleGroups.length === 0 || !newCategory}
+                onPress={async () => {
+                  setAdding(true);
+                  try {
+                    await db.insert(schema.exercises).values({
+                      name: newExerciseName.trim(),
+                      muscle_group: newMuscleGroups.join(', '),
+                      category: newCategory,
+                      is_custom: 1,
+                    });
+                    // Refresh pickerExercises after adding
+                    const results = await db.select().from(schema.exercises);
+                    setPickerExercises(results.filter(ex =>
+                      ex.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+                      ex.muscle_group?.toLowerCase().includes(search.trim().toLowerCase()) ||
+                      ex.category?.toLowerCase().includes(search.trim().toLowerCase())
+                    ));
+                    setShowAddModal(false);
+                    // Do NOT close the main picker modal here
+                    // setModalVisible(false); <-- do not call this
+                    // setSearch(''); <-- do not clear search, keep the new exercise visible
+                  } catch (err) {
+                    // Optionally show error
+                  } finally {
+                    setAdding(false);
+                  }
+                }}
+              >
+                <Text style={{ color: theme.colors.background, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 16 }}>{adding ? 'ADDING...' : 'Add Exercise'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </View>

@@ -44,11 +44,7 @@ const testScenarios = {
     name: 'Test Template',
     description: 'A test template for validation',
     category: 'strength',
-<<<<<<< HEAD
-    difficulty: 'intermediate',
-=======
     difficulty: 'beginner',
->>>>>>> a784d5a (Removed problematic legacy code, added outlines and better color schemes to each screen)
     estimated_duration: 45,
     exercises: [
       {

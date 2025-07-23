@@ -203,9 +203,6 @@ export default function WorkoutDetailScreen() {
       <View style={styles.performanceSummary}>
         <View style={styles.performanceHeader}>
           <Text style={styles.performanceTitle}>PERFORMANCE SUMMARY</Text>
-          <View style={styles.completionBadge}>
-            <Text style={styles.completionText}>{completionPercentage}%</Text>
-          </View>
         </View>
         <View style={styles.performanceStats}>
           <View style={styles.performanceStat}>
@@ -307,7 +304,7 @@ export default function WorkoutDetailScreen() {
             disabled={deleting}
           >
             <Text style={styles.deleteButtonText}>
-              {deleting ? 'DELETING...' : '🗑️ DELETE WORKOUT'}
+              {deleting ? 'DELETING...' : 'DELETE WORKOUT'}
             </Text>
           </TouchableOpacity>
         </View>

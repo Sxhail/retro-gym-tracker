@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import theme from '../styles/theme';
 import { db } from '../db/client';
 import * as schema from '../db/schema';
@@ -11,23 +11,26 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('start');
   const [templates, setTemplates] = useState([]);
 
-  useEffect(() => {
-    async function fetchTemplates() {
-      // Fetch templates and their exercise counts
-      const templates = await db.select().from(schema.workout_templates).orderBy(schema.workout_templates.created_at);
-      const templatesWithCounts = await Promise.all(
-        templates.map(async (tpl) => {
-          const count = await db
-            .select({ count: schema.template_exercises.id })
-            .from(schema.template_exercises)
-            .where(sql`template_id = ${tpl.id}`);
-          return { ...tpl, exerciseCount: count[0]?.count || 0 };
-        })
-      );
-      setTemplates(templatesWithCounts.reverse()); // newest first
-    }
-    fetchTemplates();
-  }, []);
+  // Add useFocusEffect to refresh templates on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      async function fetchTemplates() {
+        // Fetch templates and their exercise counts
+        const templates = await db.select().from(schema.workout_templates).orderBy(schema.workout_templates.created_at);
+        const templatesWithCounts = await Promise.all(
+          templates.map(async (tpl) => {
+            const count = await db
+              .select({ count: schema.template_exercises.id })
+              .from(schema.template_exercises)
+              .where(sql`template_id = ${tpl.id}`);
+            return { ...tpl, exerciseCount: count[0]?.count || 0 };
+          })
+        );
+        setTemplates(templatesWithCounts.reverse()); // newest first
+      }
+      fetchTemplates();
+    }, [])
+  );
 
   // Template preview: just show template name for now
   const renderTemplatePreview = (template: WorkoutTemplate) => {

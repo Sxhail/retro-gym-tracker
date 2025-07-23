@@ -4,9 +4,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import theme from '../../styles/theme';
 import { getTemplateDetail, deleteTemplate, toggleFavorite, type TemplateDetail } from '../../services/workoutTemplates';
 
-const GREEN = '#00FF00';
-const LIGHT_GREEN = '#39FF14';
-const FONT = 'monospace';
 const { width } = require('react-native').Dimensions.get('window');
 const CARD_MARGIN = 18;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
@@ -117,14 +114,14 @@ export default function TemplateDetailScreen() {
   if (loading) {
     return (
       <View style={styles.root}>
+        <TouchableOpacity onPress={() => router.back()} style={{ alignSelf: 'flex-start', marginBottom: 12, marginLeft: CARD_MARGIN }}>
+          <Text style={styles.backButton}>← BACK</Text>
+        </TouchableOpacity>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>TEMPLATE DETAIL</Text>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backButton}>← BACK</Text>
-          </TouchableOpacity>
+          <Text style={[styles.title, { marginTop: 24 }]}>TEMPLATE DETAIL</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={GREEN} />
+          <ActivityIndicator size="large" color={theme.colors.neon} />
           <Text style={styles.loadingText}>LOADING TEMPLATE...</Text>
         </View>
       </View>
@@ -134,11 +131,11 @@ export default function TemplateDetailScreen() {
   if (error || !template) {
     return (
       <View style={styles.root}>
+        <TouchableOpacity onPress={() => router.back()} style={{ alignSelf: 'flex-start', marginBottom: 12, marginLeft: CARD_MARGIN }}>
+          <Text style={styles.backButton}>← BACK</Text>
+        </TouchableOpacity>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>TEMPLATE DETAIL</Text>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backButton}>← BACK</Text>
-          </TouchableOpacity>
+          <Text style={[styles.title, { marginTop: 24 }]}>TEMPLATE DETAIL</Text>
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>ERROR: {error || 'Template not found'}</Text>
@@ -160,11 +157,11 @@ export default function TemplateDetailScreen() {
       {/* Header Section */}
       
       {/* Header Row */}
+      <TouchableOpacity onPress={() => router.back()} style={{ alignSelf: 'flex-start', marginBottom: 12, marginLeft: CARD_MARGIN }}>
+        <Text style={styles.backButton}>← BACK</Text>
+      </TouchableOpacity>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>TEMPLATE DETAIL</Text>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>← BACK</Text>
-        </TouchableOpacity>
+        <Text style={[styles.title, { marginTop: 24 }]}>TEMPLATE DETAIL</Text>
       </View>
 
       {/* Template Header */}
@@ -268,19 +265,45 @@ export default function TemplateDetailScreen() {
       <SafeAreaView style={styles.actionContainer}>
         <View style={styles.actionButtons}>
           <TouchableOpacity 
-            style={[styles.actionButton, styles.loadButton]} 
+            style={{
+              backgroundColor: theme.colors.neon,
+              borderRadius: 12,
+              paddingVertical: theme.spacing.lg,
+              alignItems: 'center',
+              width: '100%',
+              marginTop: 8,
+            }}
             onPress={handleLoadTemplate}
           >
-            <Text style={styles.loadButtonText}>📋 LOAD TEMPLATE</Text>
+            <Text style={{
+              color: theme.colors.background,
+              fontFamily: theme.fonts.heading,
+              fontWeight: 'bold',
+              fontSize: 18,
+              letterSpacing: 1,
+              textAlign: 'center',
+            }}>LOAD TEMPLATE</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.deleteButton]} 
+          <TouchableOpacity
+            style={{
+              backgroundColor: theme.colors.error,
+              borderRadius: 12,
+              paddingVertical: theme.spacing.lg,
+              alignItems: 'center',
+              width: '100%',
+              marginTop: 16,
+            }}
             onPress={handleDeleteTemplate}
             disabled={deleting}
           >
-            <Text style={styles.deleteButtonText}>
-              {deleting ? 'DELETING...' : '🗑️ DELETE TEMPLATE'}
-            </Text>
+            <Text style={{
+              color: theme.colors.background,
+              fontFamily: theme.fonts.heading,
+              fontWeight: 'bold',
+              fontSize: 18,
+              letterSpacing: 1,
+              textAlign: 'center',
+            }}>{deleting ? 'DELETING...' : 'DELETE TEMPLATE'}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -296,7 +319,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   status: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 12,
     marginTop: 40,
@@ -305,7 +328,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   protocol: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 10,
     marginLeft: 18,
@@ -315,7 +338,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: GREEN,
+    backgroundColor: theme.colors.neon,
     marginHorizontal: 18,
     marginBottom: 24,
   },
@@ -327,14 +350,14 @@ const styles = StyleSheet.create({
     marginHorizontal: CARD_MARGIN,
   },
   title: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.display,
     fontSize: 24,
     fontWeight: 'bold',
     letterSpacing: 2,
   },
   backButton: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontSize: 14,
     fontWeight: 'bold',
@@ -351,7 +374,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   templateName: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontSize: 20,
     fontWeight: 'bold',
@@ -359,16 +382,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   favoriteIcon: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 24,
     marginLeft: 12,
   },
   favoriteIconActive: {
-    color: LIGHT_GREEN,
+    color: theme.colors.neonBright,
   },
   templateDescription: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 12,
     opacity: 0.8,
@@ -385,14 +408,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statNumber: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   statLabel: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 8,
     opacity: 0.6,
@@ -404,14 +427,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metaLabel: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 8,
     opacity: 0.6,
     marginBottom: 2,
   },
   metaValue: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 12,
     fontWeight: 'bold',
@@ -421,7 +444,7 @@ const styles = StyleSheet.create({
   },
   exerciseCard: {
     borderWidth: 1,
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
     borderRadius: 8,
     padding: 16,
     marginBottom: 12,
@@ -434,23 +457,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   exerciseNumber: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 12,
     fontWeight: 'bold',
     marginRight: 8,
     opacity: 0.7,
   },
   exerciseName: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
   },
   exerciseDistance: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 12,
     opacity: 0.8,
   },
@@ -459,7 +482,7 @@ const styles = StyleSheet.create({
   },
   setRow: {
     borderWidth: 1,
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
     borderRadius: 6,
     padding: 12,
     backgroundColor: 'rgba(0,255,0,0.03)',
@@ -468,8 +491,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   setNumber: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 12,
     fontWeight: 'bold',
     opacity: 0.8,
@@ -484,35 +507,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   setDetailLabel: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 8,
     opacity: 0.6,
     marginBottom: 2,
     textAlign: 'center',
   },
   setDetailValue: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   notesContainer: {
     borderTopWidth: 1,
-    borderTopColor: GREEN,
+    borderTopColor: theme.colors.neon,
     paddingTop: 8,
   },
   notesLabel: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 8,
     opacity: 0.6,
     marginBottom: 2,
   },
   notesText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 10,
     opacity: 0.8,
   },
@@ -522,7 +545,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: GREEN,
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 14,
     marginTop: 16,
@@ -543,14 +566,14 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     borderWidth: 1,
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
     borderRadius: 6,
     paddingHorizontal: 24,
     paddingVertical: 12,
   },
   retryButtonText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -569,22 +592,22 @@ const styles = StyleSheet.create({
   },
   loadButton: {
     backgroundColor: '#0066CC',
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
   },
   loadButtonText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
   deleteButton: {
     backgroundColor: '#CC0000',
-    borderColor: GREEN,
+    borderColor: theme.colors.neon,
   },
   deleteButtonText: {
-    color: GREEN,
-    fontFamily: FONT,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,

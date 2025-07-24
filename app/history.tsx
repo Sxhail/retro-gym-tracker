@@ -133,15 +133,7 @@ export default function HistoryListScreen() {
           )}
         </View>
         <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            style={styles.searchButton} 
-            onPress={() => setShowSearch(!showSearch)}
-          >
-            <Text style={styles.searchButtonText}>🔍</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backButton}>← BACK</Text>
-          </TouchableOpacity>
+          {/* Removed extra back button from right side */}
         </View>
       </View>
 
@@ -364,17 +356,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchButton: {
-    borderWidth: 1,
-    borderColor: GREEN,
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    backgroundColor: 'transparent',
+    // removed search button style
+    // borderWidth: 1,
+    // borderColor: GREEN,
+    // borderRadius: 6,
+    // paddingVertical: 4,
+    // paddingHorizontal: 8,
+    // backgroundColor: 'transparent',
   },
   searchButtonText: {
-    color: GREEN,
-    fontFamily: theme.fonts.body,
-    fontSize: 16,
+    // removed search button text style
+    // color: GREEN,
+    // fontFamily: theme.fonts.body,
+    // fontSize: 16,
   },
   backButton: {
     color: GREEN,

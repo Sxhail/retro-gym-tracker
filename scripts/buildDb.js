@@ -103,6 +103,8 @@ db.serialize(() => {
   );
 
   for (const ex of exercises) {
+    // Skip exercises with 'variation' in the name (case-insensitive)
+    if (ex.name && ex.name.toLowerCase().includes('variation')) continue;
     // Flatten categories and muscle_groups to comma-separated strings
     const category = Array.isArray(ex.categories) ? ex.categories.join(', ') : (ex.category || '');
     const muscle_group = Array.isArray(ex.muscle_groups) ? ex.muscle_groups.join(', ') : (ex.muscle_group || '');

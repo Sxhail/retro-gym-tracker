@@ -10,7 +10,7 @@ import { loadTemplateIntoSession } from '../services/workoutTemplates';
 export type Exercise = typeof schema.exercises.$inferSelect;
 
 // --- SetRow component for swipe-to-remove ---
-function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSetComplete, handleRemoveSet, theme }: any) {
+function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSetComplete, handleRemoveSet, theme, isLastCompleted }: any) {
   const pan = useRef(new Animated.Value(0)).current;
   const panResponder = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_: any, gestureState: any) => Math.abs(gestureState.dx) > 20,
@@ -77,6 +77,9 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
+
+  // Only show rest timer for the most recently completed set
+  const showRestTimer = restActive && restTime > 0 && isLastCompleted;
 
   return (
     <>
@@ -168,7 +171,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
         </TouchableOpacity>
       </Animated.View>
       {/* Rest timer below set row */}
-      {restActive && restTime > 0 && (
+      {showRestTimer && (
         <View style={{ alignItems: 'center', marginBottom: 8, flexDirection: 'row', justifyContent: 'center' }}>
           <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1.2, marginRight: 12 }}>
             REST: {formatRestTimer(restTime)}
@@ -711,24 +714,52 @@ export default function NewWorkoutScreen() {
               <View key={ex.id} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, marginBottom: 18, padding: 12, backgroundColor: 'transparent' }}>
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontWeight: 'bold', fontSize: 18, textTransform: 'uppercase', marginBottom: 8 }}>{ex.name.toUpperCase()}</Text>
                 {/* Sets List */}
-                {(ex.sets || []).map((set: any, setIdx: number) => (
-                  <SetRow
-                    key={setIdx}
-                    set={set}
-                    setIdx={setIdx}
-                    exerciseId={ex.id}
-                    handleSetFieldChange={handleSetFieldChange}
-                    handleToggleSetComplete={handleToggleSetComplete}
-                    handleRemoveSet={handleRemoveSet}
-                    theme={theme}
-                  />
-                ))}
+                {(ex.sets || []).map((set: any, setIdx: number, arr: any[]) => {
+                  // Find the last completed set index
+                  const lastCompletedIdx = arr.map((s, i) => s.completed ? i : -1).filter(i => i !== -1).pop();
+                  return (
+                    <SetRow
+                      key={setIdx}
+                      set={set}
+                      setIdx={setIdx}
+                      exerciseId={ex.id}
+                      handleSetFieldChange={handleSetFieldChange}
+                      handleToggleSetComplete={handleToggleSetComplete}
+                      handleRemoveSet={handleRemoveSet}
+                      theme={theme}
+                      isLastCompleted={set.completed && setIdx === lastCompletedIdx}
+                    />
+                  );
+                })}
                 <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingVertical: 10, alignItems: 'center', marginTop: 4, backgroundColor: 'transparent' }} onPress={() => handleAddSet(ex.id)}>
                   <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>ADD SET</Text>
                 </TouchableOpacity>
               </View>
             ))}
           </ScrollView>
+          {sessionExercises.length > 0 && isWorkoutActive && (
+            <View style={{ width: '100%', alignItems: 'center', marginBottom: 12 }}>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#222',
+                  borderRadius: 6,
+                  borderWidth: 2,
+                  borderColor: theme.colors.neon,
+                  paddingVertical: 16,
+                  paddingHorizontal: 32,
+                  marginHorizontal: 24,
+                  marginBottom: 8,
+                  alignItems: 'center',
+                  width: '90%',
+                }}
+                onPress={handleCancelWorkout}
+              >
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
+                  CANCEL WORKOUT
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <SafeAreaView style={{ width: '100%', paddingHorizontal: 0, paddingBottom: 8, backgroundColor: 'transparent' }}>
             <View style={{ width: '100%', paddingHorizontal: 0, marginTop: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 16, paddingHorizontal: 8 }}>

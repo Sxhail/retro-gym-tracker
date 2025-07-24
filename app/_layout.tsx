@@ -37,13 +37,15 @@ export default function RootLayout() {
           console.log('[Drizzle] exercises table row count:', count);
           if (count === 0) {
             const now = new Date().toISOString();
-            const seedRows = exerciseList.map((ex) => ({
-              name: ex.name,
-              category: Array.isArray(ex.categories) ? ex.categories.join(', ') : '',
-              muscle_group: Array.isArray(ex.muscle_groups) ? ex.muscle_groups.join(', ') : '',
-              is_custom: 0,
-              created_at: now,
-            }));
+            const seedRows = exerciseList
+              .filter(ex => !ex.name?.toLowerCase().includes('variation'))
+              .map((ex) => ({
+                name: ex.name,
+                category: Array.isArray(ex.categories) ? ex.categories.join(', ') : '',
+                muscle_group: Array.isArray(ex.muscle_groups) ? ex.muscle_groups.join(', ') : '',
+                is_custom: 0,
+                created_at: now,
+              }));
             try {
               await db.insert(schema.exercises).values(seedRows);
               console.log(`[Drizzle] Seeded ${seedRows.length} exercises from JSON.`);

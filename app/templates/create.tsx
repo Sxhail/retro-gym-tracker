@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
 import { db } from '../../db/client';
 import * as schema from '../../db/schema';
 
 export type Exercise = typeof schema.exercises.$inferSelect;
+
+const MUSCLE_GROUP_OPTIONS = [
+  'Chest', 'Back', 'Legs', 'Glutes', 'Shoulders', 'Triceps', 'Biceps', 'Core', 'Arms'
+];
+const CATEGORY_OPTIONS = [
+  'Barbell', 'Dumbbell', 'Machine', 'Smith Machine', 'Bodyweight', 'Cable', 'Trap Bar', 'Kettlebell', 'Band', 'Other'
+];
 
 export default function CreateTemplateScreen() {
   const [templateName, setTemplateName] = useState('');
@@ -16,6 +23,11 @@ export default function CreateTemplateScreen() {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('All');
   const [selectedEquipment, setSelectedEquipment] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('A-Z');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [newMuscleGroups, setNewMuscleGroups] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [adding, setAdding] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -123,6 +135,13 @@ export default function CreateTemplateScreen() {
             onChangeText={setSearch}
           />
         </View>
+        {/* Add New Exercise Button */}
+        <TouchableOpacity
+          style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, paddingVertical: 10, marginBottom: 8, alignItems: 'center' }}
+          onPress={() => setShowAddModal(true)}
+        >
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 14 }}>+ Add New Exercise</Text>
+        </TouchableOpacity>
         {/* Filter and Sort Row */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
           <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 }}>
@@ -281,6 +300,107 @@ export default function CreateTemplateScreen() {
           }}>SAVE TEMPLATE</Text>
         </TouchableOpacity>
       </View>
+      {/* Modal for Adding New Exercise */}
+      <Modal visible={showAddModal} animationType="slide" transparent={true} onRequestClose={() => setShowAddModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: theme.colors.background, borderRadius: 16, padding: 24, width: '90%', maxWidth: 400 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 20, marginBottom: 16, textAlign: 'center' }}>Add New Exercise</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: 'transparent', marginBottom: 16 }}
+              placeholder="Exercise Name"
+              placeholderTextColor={theme.colors.neon}
+              value={newExerciseName}
+              onChangeText={setNewExerciseName}
+            />
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14, marginBottom: 8 }}>Muscle Groups</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+              {MUSCLE_GROUP_OPTIONS.map((group) => (
+                <TouchableOpacity
+                  key={group}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme.colors.neon,
+                    borderRadius: 16,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    backgroundColor: newMuscleGroups.includes(group) ? theme.colors.neon : 'transparent',
+                  }}
+                  onPress={() => {
+                    if (newMuscleGroups.includes(group)) {
+                      setNewMuscleGroups(newMuscleGroups.filter(g => g !== group));
+                    } else {
+                      setNewMuscleGroups([...newMuscleGroups, group]);
+                    }
+                  }}
+                >
+                  <Text style={{ color: newMuscleGroups.includes(group) ? 'black' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>{group}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14, marginBottom: 8 }}>Category</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+              {CATEGORY_OPTIONS.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme.colors.neon,
+                    borderRadius: 16,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    backgroundColor: newCategory === cat ? theme.colors.neon : 'transparent',
+                  }}
+                  onPress={() => setNewCategory(cat)}
+                >
+                  <Text style={{ color: newCategory === cat ? 'black' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>{cat}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+              <TouchableOpacity onPress={() => setShowAddModal(false)} style={{ paddingVertical: 10, paddingHorizontal: 18 }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16 }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ backgroundColor: theme.colors.neon, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 18 }}
+                disabled={adding || !newExerciseName.trim() || newMuscleGroups.length === 0 || !newCategory}
+                onPress={async () => {
+                  setAdding(true);
+                  try {
+                    const [inserted] = await db.insert(schema.exercises).values({
+                      name: newExerciseName.trim(),
+                      muscle_group: newMuscleGroups.join(', '),
+                      category: newCategory,
+                      is_custom: 1,
+                    }).returning();
+                    // Refresh pickerExercises after adding
+                    const results = await db.select().from(schema.exercises);
+                    setPickerExercises(results);
+                    setShowAddModal(false);
+                    setSearch('');
+                    setNewExerciseName('');
+                    setNewMuscleGroups([]);
+                    setNewCategory('');
+                    // Auto-select the new exercise for the template
+                    if (inserted) {
+                      setSelectedExercises(prev => [...prev, inserted]);
+                    }
+                  } catch (err) {
+                    // Optionally show error
+                  } finally {
+                    setAdding(false);
+                  }
+                }}
+              >
+                <Text style={{ color: theme.colors.background, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 16 }}>{adding ? 'ADDING...' : 'Add Exercise'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 } 

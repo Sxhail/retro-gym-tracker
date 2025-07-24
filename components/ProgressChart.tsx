@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-// import Svg, { Polyline, Circle } from 'react-native-svg';
+import Svg, { Polyline, Circle } from 'react-native-svg';
 import theme from '../styles/theme';
 
 interface ProgressChartProps {
@@ -8,8 +8,9 @@ interface ProgressChartProps {
   maxGain: string;
   percentGain: string;
   sessions: number;
-  data: number[];
+  data: number[]; // weight data
   labels: string[];
+  // repsData?: number[]; // removed
 }
 
 const chartWidth = 180;
@@ -17,7 +18,7 @@ const chartHeight = 60;
 const chartPadding = 10;
 
 const ProgressChart: React.FC<ProgressChartProps> = ({ title, maxGain, percentGain, sessions, data, labels }) => {
-  // Normalize data for chart
+  // Normalize data for chart (weight)
   const min = Math.min(...data);
   const max = Math.max(...data);
   const points = data.map((val, i) => {
@@ -26,11 +27,13 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ title, maxGain, percentGa
     return `${x},${y}`;
   }).join(' ');
 
+  // Remove moving average and trend line code
+  // Remove PR marker code
+
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.icon}>📈</Text>
       </View>
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
@@ -42,8 +45,8 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ title, maxGain, percentGa
           <Text style={styles.statValue}>{sessions}</Text>
         </View>
       </View>
-      {/*
       <Svg width={chartWidth} height={chartHeight} style={styles.chartSvg}>
+        {/* Weight line */}
         <Polyline
           points={points}
           fill="none"
@@ -56,7 +59,11 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ title, maxGain, percentGa
           return <Circle key={i} cx={x} cy={y} r={3} fill={theme.colors.neon} />;
         })}
       </Svg>
-      */}
+      {/* Legend (only weight) */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+        <View style={{ width: 12, height: 3, backgroundColor: theme.colors.neon, marginRight: 4, borderRadius: 2 }} />
+        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.mono, fontSize: 10, marginRight: 12 }}>Weight</Text>
+      </View>
       <View style={styles.labelsRow}>
         {labels.map((label, i) => (
           <Text key={i} style={styles.label}>{label}</Text>

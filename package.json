@@ -14,6 +14,7 @@
     "@expo-google-fonts/press-start-2p": "^0.4.0",
     "@expo-google-fonts/share-tech-mono": "^0.4.0",
     "@expo-google-fonts/vt323": "^0.4.0",
+    "@react-native-picker/picker": "2.11.1",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.3",
     "expo": "^53.0.4",
@@ -31,6 +32,7 @@
     "react-native-gesture-handler": "~2.24.0",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
+    "react-native-svg": "15.11.2",
     "react-native-web": "^0.20.0",
     "sqlite3": "^5.1.7"
   },

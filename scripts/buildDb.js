@@ -6,7 +6,7 @@ const exercisesJsonPath = path.join(__dirname, '..', 'db', 'exercises.json');
 const dbPath = path.join(__dirname, '..', 'db', 'app.db');
 
 // Read and parse exercises.json
-const exercises = JSON.parse(fs.readFileSync(exercisesJsonPath, 'utf8'));
+const exercises = JSON.parse(fs.readFileSync(exercisesJsonPath, 'utf8')).exercises;
 
 // Remove old DB if exists
 if (fs.existsSync(dbPath)) {

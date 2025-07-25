@@ -37,7 +37,7 @@ export default function RootLayout() {
           console.log('[Drizzle] exercises table row count:', count);
           if (count === 0) {
             const now = new Date().toISOString();
-            const seedRows = exerciseList
+            const seedRows = (exerciseList.exercises || [])
               .filter(ex => !ex.name?.toLowerCase().includes('variation'))
               .map((ex) => ({
                 name: ex.name,

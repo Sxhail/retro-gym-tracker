@@ -123,11 +123,6 @@ Retro Gym Tracker is a cross-platform mobile app for tracking workouts, visualiz
 
 ---
 
-## Screenshots
-> _Add screenshots or GIFs here to showcase the UI and features._
-
----
-
 ## Contributing
 1. Fork the repo and create your feature branch (`git checkout -b feature/YourFeature`)
 2. Commit your changes (`git commit -am 'Add new feature'`)
@@ -135,12 +130,3 @@ Retro Gym Tracker is a cross-platform mobile app for tracking workouts, visualiz
 4. Open a Pull Request
 
 ---
-
-## Contact
-- **Author:** Suhail (suhail@example.com)
-- **LinkedIn:** [Your LinkedIn](https://www.linkedin.com/in/yourprofile)
-- **Portfolio:** [Your Portfolio](https://yourportfolio.com)
-
----
-
-> _This project demonstrates strong skills in React Native, TypeScript, data normalization, robust import/export logic, and user-focused design. Built with scalability, maintainability, and extensibility in mind._

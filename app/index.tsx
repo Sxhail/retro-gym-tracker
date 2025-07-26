@@ -60,14 +60,14 @@ export default function HomeScreen() {
       {/* Start an Empty Workout Button */}
       <View style={styles.section}>
         <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-          <Text style={styles.startButtonText}>+ NEW WORKOUT</Text>
+          <Text style={styles.startButtonText}>NEW WORKOUT</Text>
         </TouchableOpacity>
       </View>
 
       {/* + TEMPLATES Button Only */}
       <View style={[styles.section, { alignItems: 'center' }]}> {/* Center the button */}
         <TouchableOpacity style={styles.addTemplateButton} onPress={() => router.push('/templates')}>
-          <Text style={styles.addTemplateButtonText}>+ TEMPLATES</Text>
+          <Text style={styles.addTemplateButtonText}>TEMPLATES</Text>
         </TouchableOpacity>
       </View>
 

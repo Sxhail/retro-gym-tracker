@@ -421,9 +421,27 @@ export default function NewWorkoutScreen() {
   const handleSetFieldChange = (exerciseId: number, setIdx: number, field: 'weight' | 'reps' | 'notes', value: string) => {
     setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
-        const updatedSets = (ex.sets || []).map((set: any, idx: number) =>
-          idx === setIdx ? { ...set, [field]: field === 'notes' ? value : value.replace(/[^0-9]/g, '') } : set
-        );
+        const updatedSets = (ex.sets || []).map((set: any, idx: number) => {
+          if (idx === setIdx) {
+            let processedValue = value;
+            if (field === 'notes') {
+              processedValue = value;
+            } else if (field === 'weight') {
+              // Allow decimals for weight (numbers and one decimal point)
+              processedValue = value.replace(/[^0-9.]/g, '');
+              // Ensure only one decimal point
+              const parts = processedValue.split('.');
+              if (parts.length > 2) {
+                processedValue = parts[0] + '.' + parts.slice(1).join('');
+              }
+            } else {
+              // For reps, only allow integers
+              processedValue = value.replace(/[^0-9]/g, '');
+            }
+            return { ...set, [field]: processedValue };
+          }
+          return set;
+        });
         return { ...ex, sets: updatedSets };
       }
       return ex;

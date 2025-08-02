@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, PanResponder, Animated, SafeAreaView, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Audio } from 'expo-av';
 import theme from '../styles/theme';
 import { dbOperations } from '../services/database';
 import * as schema from '../db/schema';
@@ -22,6 +23,36 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
   const [restTime, setRestTime] = useState(set.rest ?? 120);
   const [restActive, setRestActive] = useState(false);
   const restInterval = useRef<any>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  // Sound function for rest timer finish
+  const playRestFinishSound = async () => {
+    try {
+      // Unload previous sound if any
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      
+      // Use the correct filename with spaces
+      const soundAsset = require('./assets/rest timer audio.wav');
+      
+      const { sound } = await Audio.Sound.createAsync(soundAsset);
+      soundRef.current = sound;
+      await sound.playAsync();
+
+      // Stop after 5 seconds
+      setTimeout(async () => {
+        if (soundRef.current) {
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+      }, 5000);
+    } catch (error) {
+      console.log('Error playing rest finish sound:', error);
+    }
+  };
 
   // Previous set state
   const [previousSet, setPreviousSet] = useState<{ weight: number, reps: number } | null>(null);
@@ -53,6 +84,8 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
         setRestTime((prev) => {
           if (prev > 0) return prev - 1;
           clearInterval(restInterval.current);
+          // Play sound when timer reaches 0
+          playRestFinishSound();
           return 0;
         });
       }, 1000);
@@ -63,6 +96,11 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     }
     return () => {
       if (restInterval.current) clearInterval(restInterval.current);
+      // Cleanup sound
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
     };
   }, [set.completed, canComplete, set.restActive, set.rest]);
 

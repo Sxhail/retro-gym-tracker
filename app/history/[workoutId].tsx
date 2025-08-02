@@ -243,11 +243,16 @@ export default function WorkoutDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: {
+  safeArea: {
     flex: 1,
     backgroundColor: 'black',
-    padding: 0,
-    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   status: {
     color: GREEN,

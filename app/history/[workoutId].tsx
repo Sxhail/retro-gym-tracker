@@ -90,41 +90,39 @@ export default function WorkoutDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.root}>
-              <View style={{ marginTop: 12, marginLeft: 8, marginBottom: 0, alignItems: 'flex-start' }}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>WORKOUT DETAIL</Text>
-      </View>
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButtonArea}>
+            <Text style={styles.backButton}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.pageTitle}>WORKOUT DETAIL</Text>
+          <View style={{ width: 44 }} />
+        </View>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={GREEN} />
           <Text style={styles.loadingText}>LOADING WORKOUT...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error || !workout) {
     return (
-      <View style={styles.root}>
-              <View style={{ marginTop: 12, marginLeft: 8, marginBottom: 0, alignItems: 'flex-start' }}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>WORKOUT DETAIL</Text>
-      </View>
-      <View style={styles.errorContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButtonArea}>
+            <Text style={styles.backButton}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.pageTitle}>WORKOUT DETAIL</Text>
+          <View style={{ width: 44 }} />
+        </View>
+        <View style={styles.errorContainer}>
           <Text style={styles.errorText}>ERROR: {error || 'Workout not found'}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={loadWorkoutDetail}>
             <Text style={styles.retryButtonText}>RETRY</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -150,14 +148,14 @@ export default function WorkoutDetailScreen() {
   const hasNotes = setsWithNotes > 0;
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.safeArea}>
       {/* Header Row */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButtonArea}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.pageTitle}>WORKOUT DETAIL</Text>
-        <View style={{ width: 36 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       {/* Workout Header */}
@@ -240,7 +238,7 @@ export default function WorkoutDetailScreen() {
       </ScrollView>
 
 
-    </View>
+    </SafeAreaView>
   );
 }
 

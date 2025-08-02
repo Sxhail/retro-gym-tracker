@@ -236,6 +236,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   pageTitle: {
     color: theme.colors.neon,

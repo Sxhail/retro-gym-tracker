@@ -84,7 +84,7 @@ export default function ExercisesScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       {/* Header */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, paddingHorizontal: 16, paddingBottom: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, paddingHorizontal: 16, paddingBottom: 8 }}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 36, fontWeight: 'bold' }}>←</Text>
         </TouchableOpacity>

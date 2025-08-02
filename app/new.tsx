@@ -616,7 +616,7 @@ export default function NewWorkoutScreen() {
     <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 0, paddingTop: 0 }}>
 
       {/* Header with back button, workout name, and cancel cross */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 16, marginBottom: 8, marginTop: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 16, marginBottom: 8, paddingTop: 16, paddingBottom: 8 }}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ 
             color: theme.colors.neon, 

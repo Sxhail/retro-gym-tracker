@@ -278,9 +278,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 18,
     marginBottom: 8,
     marginHorizontal: CARD_MARGIN,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   pageTitle: {
     color: theme.colors.neon,

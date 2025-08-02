@@ -66,6 +66,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   back: {
     color: theme.colors.neon,

@@ -352,6 +352,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
     marginHorizontal: CARD_MARGIN,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   pageTitle: {
     color: theme.colors.neon,

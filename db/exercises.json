@@ -1,0 +1,184 @@
+{
+  "exercises": [
+    {
+      "name": "Arnold Press (Dumbbell)",
+      "muscle_groups": ["Shoulders", "Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Barbell RDL",
+      "muscle_groups": ["Legs", "Back"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Bench Press (Barbell)",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Bench Press (Dumbbell)",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Bent Over Row (Barbell)",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Bicep Curl (Machine)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Cable Crossover",
+      "muscle_groups": ["Chest", "Shoulders"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Cable curl",
+      "muscle_groups": ["Arms"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Cable Shoulder Fly",
+      "muscle_groups": ["Shoulders", "Chest"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Crunch",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "EZ Bar curl",
+      "muscle_groups": ["Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Goblet Squat (Kettlebell)",
+      "muscle_groups": ["Legs", "Core"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Hip Adductor (Machine)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Incline Bench Press (Barbell)",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Lat Pulldown (Cable)",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Lat Pulldown (Machine)",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Lateral Raise (Cable)",
+      "muscle_groups": ["Shoulders"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Leg Extension (Machine)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Leg Press",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Low row",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Lunge (Bodyweight)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Lying Leg Curl (Machine)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Pull Up (Assisted)",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Pull Up (Band)",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Push Up",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Seated Calf Raise (Machine)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Seated Leg Curl (Machine)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Shoulder Press (Machine)",
+      "muscle_groups": ["Shoulders", "Arms"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Shrug (Dumbbell)",
+      "muscle_groups": ["Back"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Shrug (Machine)",
+      "muscle_groups": ["Back"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Squat (Barbell)",
+      "muscle_groups": ["Legs", "Core"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Standing Calf Raise (Machine)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "T Bar Row",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Triceps Dip",
+      "muscle_groups": ["Arms", "Chest", "Shoulders"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Triceps Dip (Assisted)",
+      "muscle_groups": ["Arms", "Chest", "Shoulders"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Triceps Pushdown (Cable - Straight Bar)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Cable"]
+    }
+  ]
+}

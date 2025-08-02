@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1752856563543,
+      "tag": "0000_mushy_starfox",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1752961712166,
+      "tag": "0001_conscious_arachne",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1752964430149,
+      "tag": "0002_premium_hawkeye",
+      "breakpoints": true
+    }
+  ]
+}

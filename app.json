@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "scheme": "acme",
+    "platforms": ["ios", "android"],
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-asset"
+    ],
+    "name": "gymtracker",
+    "slug": "gymtracker",
+    "assetBundlePatterns": [
+      "assets/*"
+    ]
+  }
+}

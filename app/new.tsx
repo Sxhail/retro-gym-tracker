@@ -160,7 +160,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
                   onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'weight', v)}
                   placeholder=""
                   placeholderTextColor={theme.colors.neon}
-                  keyboardType="numeric"
+                  keyboardType="decimal-pad"
                 />
               </View>
               {/* REPS label and input */}

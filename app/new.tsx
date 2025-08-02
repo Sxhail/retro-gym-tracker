@@ -261,13 +261,8 @@ export default function NewWorkoutScreen() {
   const [sortBy, setSortBy] = useState<string>('A-Z');
   const router = useRouter();
   const { templateId } = useLocalSearchParams<{ templateId?: string }>();
-  const [elapsed, setElapsed] = useState(0);
-  const timerRef = useRef<any>(null);
   const [workoutDate, setWorkoutDate] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
-
-  // Add state for pause
-  const [isPaused, setIsPaused] = useState(false);
 
   // Add state for custom exercise modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -292,6 +287,9 @@ export default function NewWorkoutScreen() {
     setWorkoutName,
     sessionStartTime,
     isWorkoutActive,
+    elapsedTime,
+    isPaused,
+    setIsPaused,
     startWorkout,
     endWorkout,
     saveWorkout,
@@ -472,29 +470,18 @@ export default function NewWorkoutScreen() {
     }));
   };
 
-  // Start timer and set date when first exercise is added
+  // Start workout and set date when first exercise is added
   useEffect(() => {
     if (sessionExercises.length > 0 && !isWorkoutActive) {
       startWorkout();
-      setElapsed(0);
       // Set the workout date to today
       const now = new Date();
       const formatted = `${now.getFullYear()}.${(now.getMonth()+1).toString().padStart(2, '0')}.${now.getDate().toString().padStart(2, '0')}`;
       setWorkoutDate(formatted);
     }
-    // Keep timer running even if all exercises are removed
-    // Only reset timer and date if workout is explicitly cancelled
+    // Keep workout active even if all exercises are removed
+    // Only reset if workout is explicitly cancelled
   }, [sessionExercises.length, isWorkoutActive]);
-
-  // In the timer effect, ensure timer only runs when not paused
-  useEffect(() => {
-    if (!sessionStartTime || isPaused) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      return;
-    }
-    timerRef.current = setInterval(() => setElapsed((prev) => prev + 1), 1000);
-    return () => clearInterval(timerRef.current);
-  }, [sessionStartTime, isPaused]);
 
   // Format timer mm:ss
   function formatElapsed(seconds: number) {
@@ -768,7 +755,7 @@ export default function NewWorkoutScreen() {
                   backgroundColor: 'transparent',
                 }}
               >
-                {isPaused ? 'PAUSED' : formatElapsed(elapsed)}
+                {isPaused ? 'PAUSED' : formatElapsed(elapsedTime)}
               </Text>
             )}
           </View>

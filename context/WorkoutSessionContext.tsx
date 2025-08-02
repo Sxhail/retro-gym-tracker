@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { saveWorkout, getNextWorkoutNumber, type WorkoutSessionData } from '../services/workoutHistory';
 
 export interface Exercise {
@@ -29,6 +29,10 @@ interface WorkoutSessionContextType {
   isWorkoutActive: boolean;
   workoutName: string;
   setWorkoutName: (name: string) => void;
+  elapsedTime: number;
+  setElapsedTime: (time: number) => void;
+  isPaused: boolean;
+  setIsPaused: (paused: boolean) => void;
   startWorkout: () => void;
   endWorkout: () => void;
   saveWorkout: () => Promise<number | null>;
@@ -58,11 +62,37 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const [sessionEndTime, setSessionEndTime] = useState<Date | null>(null);
   const [isWorkoutActive, setIsWorkoutActive] = useState<boolean>(false);
   const [workoutName, setWorkoutName] = useState<string>('WORKOUT 1');
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const timerRef = useRef<any>(null);
+
+  // Timer effect - runs when workout is active and not paused
+  useEffect(() => {
+    if (isWorkoutActive && !isPaused) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isWorkoutActive, isPaused]);
 
   const startWorkout = () => {
     if (!isWorkoutActive) {
       setSessionStartTime(new Date());
       setIsWorkoutActive(true);
+      setElapsedTime(0); // Reset timer when starting new workout
+      setIsPaused(false);
       console.log('Workout session started');
     }
   };
@@ -125,6 +155,8 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     setSessionEndTime(null);
     setIsWorkoutActive(false);
     setWorkoutName(nextWorkoutName);
+    setElapsedTime(0);
+    setIsPaused(false);
     console.log('Workout session reset');
   };
 
@@ -139,6 +171,10 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       isWorkoutActive,
       workoutName,
       setWorkoutName,
+      elapsedTime,
+      setElapsedTime,
+      isPaused,
+      setIsPaused,
       startWorkout,
       endWorkout,
       saveWorkout: saveWorkoutToDatabase,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
 import ProgressChart from '../../components/ProgressChart';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -21,7 +21,7 @@ export default function ProgressAnalysis() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerRow}>
         <Text style={styles.back} onPress={() => router.back()}>{'←'}</Text>
         <Text style={styles.analysis}>PROGRESS.ANALYSIS</Text>
@@ -33,16 +33,15 @@ export default function ProgressAnalysis() {
       ) : (
         chart && <ProgressChart {...(chart || {})} />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    padding: 12,
-    paddingTop: 8,
+    paddingHorizontal: 16,
   },
   statusBar: {
     color: theme.colors.neon,
@@ -65,9 +64,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
     paddingTop: 16,
     paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   back: {
     color: theme.colors.neon,

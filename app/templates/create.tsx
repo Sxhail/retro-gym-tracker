@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Modal, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
 import { db } from '../../db/client';
@@ -104,9 +104,9 @@ export default function CreateTemplateScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView style={styles.safeArea}>
       {/* Header */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 16, marginBottom: 8, paddingTop: 16, paddingBottom: 8 }}>
+      <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 36, fontWeight: 'bold' }}>←</Text>
         </TouchableOpacity>
@@ -358,4 +358,27 @@ export default function CreateTemplateScreen() {
       </Modal>
     </SafeAreaView>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+}); 

@@ -628,4 +628,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1,
   },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'black',
+    paddingHorizontal: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 }); 

@@ -613,11 +613,11 @@ export default function NewWorkoutScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 0, paddingTop: 0 }}>
+    <SafeAreaView style={styles.safeArea}>
 
       {/* Header with back button, workout name, and cancel cross */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 16, marginBottom: 8, paddingTop: 16, paddingBottom: 8 }}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButtonArea}>
           <Text style={{ 
             color: theme.colors.neon, 
             fontFamily: theme.fonts.body, 
@@ -1082,16 +1082,15 @@ export default function NewWorkoutScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    padding: theme.spacing.lg,
-    paddingTop: theme.spacing.xl + 12,
+    paddingHorizontal: 16,
   },
   statusBar: {
     color: theme.colors.text,
@@ -1116,7 +1115,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    paddingTop: 16,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   back: {
     color: theme.colors.text,

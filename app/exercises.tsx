@@ -15,6 +15,29 @@ const CATEGORY_OPTIONS = [
   'Barbell', 'Dumbbell', 'Machine', 'Smith Machine', 'Bodyweight', 'Cable', 'Trap Bar', 'Kettlebell', 'Band', 'Other'
 ];
 
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
 export default function ExercisesScreen() {
   const [search, setSearch] = useState('');
   const [pickerExercises, setPickerExercises] = useState<Exercise[]>([]);
@@ -82,9 +105,9 @@ export default function ExercisesScreen() {
   }, [search, selectedMuscleGroup, selectedEquipment, sortBy]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView style={styles.safeArea}>
       {/* Header */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, paddingHorizontal: 16, paddingBottom: 8 }}>
+      <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 36, fontWeight: 'bold' }}>←</Text>
         </TouchableOpacity>

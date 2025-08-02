@@ -125,7 +125,7 @@ export default function TemplatesScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.root}>
+      <SafeAreaView style={styles.safeArea}>
               <TouchableOpacity onPress={() => router.back()} style={{ alignSelf: 'flex-start', marginBottom: 12 }}>
         <Text style={styles.backButton}>←</Text>
       </TouchableOpacity>
@@ -136,12 +136,12 @@ export default function TemplatesScreen() {
           <ActivityIndicator size="large" color={theme.colors.neon} />
           <Text style={styles.loadingText}>LOADING TEMPLATES...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView style={styles.safeArea}>
       {/* Header Section */}
       {/* Header Row */}
       <View style={styles.headerRow}>
@@ -272,11 +272,10 @@ export default function TemplatesScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    padding: 0,
-    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
   },
   status: {
     color: theme.colors.neon,
@@ -306,10 +305,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    marginHorizontal: CARD_MARGIN,
     paddingTop: 16,
     paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pageTitle: {
     color: theme.colors.neon,

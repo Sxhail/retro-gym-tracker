@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, SafeAreaView } from 'react-native';
 import ProgressChart from '../components/ProgressChart';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -91,7 +91,7 @@ export default function ProgressOverview() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.back}>←</Text>
@@ -203,41 +203,30 @@ export default function ProgressOverview() {
           ))}
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    padding: 12,
-    paddingTop: 8,
-  },
-  statusBar: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  protocol: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  divider: {
-    borderBottomWidth: theme.borderWidth,
-    borderBottomColor: theme.colors.neon,
-    marginBottom: 16,
+    paddingHorizontal: 16,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
     paddingTop: 16,
     paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pageTitle: {
     color: theme.colors.neon,

@@ -278,10 +278,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    marginHorizontal: CARD_MARGIN,
     paddingTop: 16,
     paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
   },
   pageTitle: {
     color: theme.colors.neon,
@@ -608,5 +608,16 @@ const styles = StyleSheet.create({
     fontFamily: FONT,
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 16,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

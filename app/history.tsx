@@ -519,7 +519,7 @@ export default function HistoryListScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.safeArea}>
       {/* Header Row */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -851,11 +851,16 @@ export default function HistoryListScreen() {
       </Modal>
 
 
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 16,
+  },
   root: {
     flex: 1,
     backgroundColor: 'black',
@@ -889,10 +894,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    marginHorizontal: CARD_MARGIN,
     paddingTop: 16,
     paddingBottom: 8,
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  backButtonArea: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pageTitle: {
     color: theme.colors.neon,

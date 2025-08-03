@@ -204,7 +204,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       {/* Rest timer below set row */}
       {showRestTimer && (
         <View style={{ alignItems: 'center', marginBottom: 8, flexDirection: 'row', justifyContent: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.9 }}>
             {/* Minus button */}
             <TouchableOpacity onPress={() => handleRestChange(-15)} style={{ 
               width: 32, 
@@ -786,7 +786,14 @@ export default function NewWorkoutScreen() {
                     />
                   );
                 })}
-                <TouchableOpacity style={{ paddingVertical: 12, alignItems: 'center', marginTop: 8, backgroundColor: 'rgba(0, 255, 0, 0.1)', borderRadius: 6 }} onPress={() => handleAddSet(ex.id)}>
+                <TouchableOpacity style={{ 
+                  paddingVertical: 12, 
+                  paddingHorizontal: 24,
+                  alignItems: 'center', 
+                  marginTop: 12,
+                  backgroundColor: 'rgba(0, 255, 0, 0.08)',
+                  borderRadius: 8
+                }} onPress={() => handleAddSet(ex.id)}>
                   <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>ADD SET</Text>
                 </TouchableOpacity>
               </View>

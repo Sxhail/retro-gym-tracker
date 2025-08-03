@@ -526,24 +526,18 @@ export default function HistoryListScreen() {
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.pageTitle}>HISTORY</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            onPress={() => setShowSearch(!showSearch)}
-            style={styles.headerIconButton}
-          >
-            <Text style={styles.headerIconText}>🔍</Text>
-          </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <TouchableOpacity
             onPress={() => handleImportCsv()}
-            style={styles.importButton}
+            style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 12, backgroundColor: 'transparent' }}
           >
-            <Text style={styles.importButtonText}>CSV</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14 }}>IMPORT CSV</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={handleDeleteAllHistory}
-            style={styles.deleteButton}
+            style={{ borderWidth: 1, borderColor: '#FF4444', borderRadius: 6, paddingVertical: 4, paddingHorizontal: 8, backgroundColor: 'transparent' }}
           >
-            <Text style={styles.deleteButtonText}>✕</Text>
+            <Text style={{ color: '#FF4444', fontFamily: theme.fonts.body, fontSize: 16, fontWeight: 'bold' }}>✕</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -605,61 +599,45 @@ export default function HistoryListScreen() {
       {/* Calendar View */}
       {viewMode === 'calendar' && (
         <View style={styles.calendarContainer}>
-          <View style={styles.calendarHeader}>
-            <Text style={styles.calendarTitle}>WORKOUT CALENDAR</Text>
-            <Text style={styles.calendarSubtitle}>Tap a date to view workouts</Text>
-          </View>
-          <View style={styles.calendarWrapper}>
-            <AttendanceCalendar
-              year={currentYear}
-              month={currentMonth}
-              onDatePress={(date) => {
-                // Filter workouts for the selected date
-                setSearchQuery(date);
-                setViewMode('list');
-              }}
-              onMonthChange={(year, month) => {
-                setCurrentYear(year);
-                setCurrentMonth(month);
-              }}
-            />
-          </View>
-          <View style={styles.calendarFooter}>
-            <TouchableOpacity 
-              style={styles.switchToListButton}
-              onPress={() => setViewMode('list')}
-            >
-              <Text style={styles.switchToListText}>VIEW ALL WORKOUTS</Text>
-            </TouchableOpacity>
-          </View>
+          <AttendanceCalendar
+            year={currentYear}
+            month={currentMonth}
+            onDatePress={(date) => {
+              // Filter workouts for the selected date
+              setSearchQuery(date);
+              setViewMode('list');
+            }}
+            onMonthChange={(year, month) => {
+              setCurrentYear(year);
+              setCurrentMonth(month);
+            }}
+          />
         </View>
       )}
 
       {/* Enhanced Stats Row - Only show in list view */}
       {viewMode === 'list' && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {searchQuery ? filteredWorkoutsCount : totalStats.totalWorkouts}
-              </Text>
-              <Text style={styles.statLabel}>
-                {searchQuery ? 'FOUND' : 'WORKOUTS'}
-              </Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{formatDuration(totalStats.totalDuration)}</Text>
-              <Text style={styles.statLabel}>TOTAL TIME</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{totalStats.totalSets}</Text>
-              <Text style={styles.statLabel}>TOTAL SETS</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{formatDuration(totalStats.averageWorkoutDuration)}</Text>
-              <Text style={styles.statLabel}>AVG TIME</Text>
-            </View>
-          </View>
+        <View style={styles.statsRow}>
+                  <View style={styles.statItem}>
+          <Text style={styles.statNumber}>
+            {searchQuery ? filteredWorkoutsCount : totalStats.totalWorkouts}
+          </Text>
+          <Text style={styles.statLabel}>
+            {searchQuery ? 'FOUND' : 'WORKOUTS'}
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>{formatDuration(totalStats.totalDuration)}</Text>
+          <Text style={styles.statLabel}>TOTAL TIME</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>{totalStats.totalSets}</Text>
+          <Text style={styles.statLabel}>TOTAL SETS</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>{formatDuration(totalStats.averageWorkoutDuration)}</Text>
+          <Text style={styles.statLabel}>AVG TIME</Text>
+        </View>
         </View>
       )}
 
@@ -951,28 +929,21 @@ const styles = StyleSheet.create({
   viewToggleContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
     marginHorizontal: CARD_MARGIN,
-    backgroundColor: 'rgba(0, 255, 0, 0.05)',
-    borderRadius: 12,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 0, 0.2)',
   },
   viewToggleButton: {
     flex: 1,
-    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    marginHorizontal: 2,
-    borderRadius: 8,
+    marginHorizontal: 4,
+    borderRadius: 6,
     backgroundColor: 'transparent',
   },
   viewToggleButtonActive: {
     backgroundColor: theme.colors.neon,
-    shadowColor: theme.colors.neon,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
   },
   viewToggleText: {
     color: theme.colors.neon,
@@ -985,58 +956,7 @@ const styles = StyleSheet.create({
     color: theme.colors.background,
   },
   calendarContainer: {
-    marginBottom: 20,
-    marginHorizontal: CARD_MARGIN,
-  },
-  calendarHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(0, 255, 0, 0.05)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 0, 0.15)',
-  },
-  calendarTitle: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.heading,
-    fontSize: 20,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  calendarSubtitle: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.body,
-    fontSize: 13,
-    opacity: 0.7,
-    letterSpacing: 0.5,
-  },
-  calendarWrapper: {
-    backgroundColor: 'rgba(0, 255, 0, 0.02)',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 0, 0.1)',
-    marginBottom: 20,
-  },
-  calendarFooter: {
-    alignItems: 'center',
-  },
-  switchToListButton: {
-    backgroundColor: 'rgba(0, 255, 0, 0.15)',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 0, 0.3)',
-  },
-  switchToListText: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
+    marginBottom: 16,
   },
   workoutCountBadge: {
     backgroundColor: LIGHT_GREEN,
@@ -1056,48 +976,7 @@ const styles = StyleSheet.create({
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
-  headerIconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 255, 0, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerIconText: {
-    fontSize: 14,
-  },
-  importButton: {
-    backgroundColor: 'rgba(0, 255, 0, 0.15)',
-    borderRadius: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 0, 0.3)',
-  },
-  importButtonText: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 68, 68, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 68, 68, 0.3)',
-  },
-  deleteButtonText: {
-    color: '#FF4444',
-    fontFamily: theme.fonts.body,
-    fontSize: 16,
-    fontWeight: 'bold',
+    gap: 8,
   },
   searchButton: {
     // removed search button style
@@ -1152,19 +1031,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  statsContainer: {
-    backgroundColor: 'rgba(0, 255, 0, 0.05)',
-    borderRadius: 12,
-    marginHorizontal: CARD_MARGIN,
-    marginBottom: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 0, 0.15)',
-  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 18,
+    marginHorizontal: CARD_MARGIN,
   },
   statItem: {
     alignItems: 'center',
@@ -1173,17 +1044,16 @@ const styles = StyleSheet.create({
   statNumber: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statLabel: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.body,
-    fontSize: 11,
-    opacity: 0.7,
+    fontSize: 10,
+    opacity: 0.8,
     textAlign: 'center',
-    letterSpacing: 0.5,
   },
   list: {
     marginTop: 0,
@@ -1191,71 +1061,51 @@ const styles = StyleSheet.create({
   },
   workoutCard: {
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 0, 0.3)',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    backgroundColor: 'rgba(0, 255, 0, 0.02)',
+    borderColor: theme.colors.neon,
+    borderRadius: 8,
+    padding: 18,
+    marginBottom: 18,
+    backgroundColor: 'transparent',
     width: '100%',
-    shadowColor: theme.colors.neon,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   workoutHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 255, 0, 0.15)',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   workoutTitle: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
-    fontSize: 22,
-    letterSpacing: 1,
+    fontSize: 20,
+    letterSpacing: 1.2,
     flex: 1,
-    marginRight: 12,
   },
   workoutDate: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 13,
-    opacity: 0.6,
-    backgroundColor: 'rgba(0, 255, 0, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    opacity: 0.8,
   },
   workoutDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 4,
   },
   detailItem: {
     alignItems: 'center',
     flex: 1,
-    backgroundColor: 'rgba(0, 255, 0, 0.08)',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginHorizontal: 2,
   },
   detailLabel: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 11,
-    opacity: 0.6,
+    fontFamily: theme.fonts.body,
+    fontSize: 10,
+    opacity: 0.7,
     textAlign: 'center',
-    marginBottom: 4,
-    letterSpacing: 0.5,
   },
   detailValue: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1318,37 +1168,29 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 80,
-    marginHorizontal: CARD_MARGIN,
+    paddingVertical: 60,
   },
   emptyTitle: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
     letterSpacing: 1,
-    textAlign: 'center',
   },
   emptyText: {
     color: theme.colors.textSecondary,
     fontFamily: theme.fonts.body,
     fontSize: 14,
     marginTop: 8,
-    textAlign: 'center',
-    opacity: 0.7,
   },
   newWorkoutButton: {
     backgroundColor: theme.colors.neon,
     borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingVertical: theme.spacing.lg,
     alignItems: 'center',
-    marginTop: 24,
-    shadowColor: theme.colors.neon,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    marginBottom: theme.spacing.md,
+    width: '100%',
   },
   newWorkoutButtonText: {
     color: theme.colors.background,

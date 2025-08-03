@@ -786,7 +786,7 @@ export default function NewWorkoutScreen() {
                     />
                   );
                 })}
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingVertical: 10, alignItems: 'center', marginTop: 4, backgroundColor: 'transparent' }} onPress={() => handleAddSet(ex.id)}>
+                <TouchableOpacity style={{ paddingVertical: 12, alignItems: 'center', marginTop: 8, backgroundColor: 'rgba(0, 255, 0, 0.1)', borderRadius: 6 }} onPress={() => handleAddSet(ex.id)}>
                   <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>ADD SET</Text>
                 </TouchableOpacity>
               </View>

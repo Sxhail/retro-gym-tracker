@@ -204,7 +204,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       {/* Rest timer below set row */}
       {showRestTimer && (
         <View style={{ alignItems: 'center', marginBottom: 8, flexDirection: 'row', justifyContent: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.8 }}>
             {/* Minus button */}
             <TouchableOpacity onPress={() => handleRestChange(-15)} style={{ 
               width: 32, 

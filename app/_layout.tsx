@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { DatabaseProvider } from '../context/DatabaseContext';
 import { WorkoutSessionProvider } from '../context/WorkoutSessionContext';
 import { initializeDatabase } from '../db/client';
+import AppLayout from '../components/AppLayout';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -40,12 +41,14 @@ export default function Layout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DatabaseProvider>
         <WorkoutSessionProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'none',
-            }}
-          />
+          <AppLayout>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'none',
+              }}
+            />
+          </AppLayout>
         </WorkoutSessionProvider>
       </DatabaseProvider>
     </GestureHandlerRootView>

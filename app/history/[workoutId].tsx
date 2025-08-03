@@ -160,31 +160,44 @@ export default function WorkoutDetailScreen() {
 
       {/* Workout Header */}
       <View style={styles.workoutHeader}>
-        <Text style={styles.workoutName}>{workout.name}</Text>
-        <Text style={styles.workoutDate}>{formatDate(workout.date)}</Text>
-        <Text style={styles.workoutDuration}>Duration: {formatDuration(workout.duration)}</Text>
+        <View style={styles.workoutHeaderContent}>
+          <Text style={styles.workoutName}>{workout.name}</Text>
+          <View style={styles.workoutMetadata}>
+            <Text style={styles.workoutDate}>{formatDate(workout.date)}</Text>
+            <View style={styles.durationBadge}>
+              <Text style={styles.workoutDuration}>{formatDuration(workout.duration)}</Text>
+            </View>
+          </View>
+        </View>
       </View>
 
 
 
       {/* Workout Stats */}
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{workout.exercises.length}</Text>
-          <Text style={styles.statLabel}>EXERCISES</Text>
+      <View style={styles.statsContainer}>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{workout.exercises.length}</Text>
+            <Text style={styles.statLabel}>EXERCISES</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{totalSets}</Text>
+            <Text style={styles.statLabel}>TOTAL SETS</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{completedSets}</Text>
+            <Text style={styles.statLabel}>COMPLETED</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{Math.round(averageWeight)}</Text>
+            <Text style={styles.statLabel}>AVG KG</Text>
+          </View>
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{totalSets}</Text>
-          <Text style={styles.statLabel}>TOTAL SETS</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{completedSets}</Text>
-          <Text style={styles.statLabel}>COMPLETED</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{Math.round(averageWeight)}</Text>
-          <Text style={styles.statLabel}>AVG KG</Text>
-        </View>
+        {hasNotes && (
+          <View style={styles.notesIndicator}>
+            <Text style={styles.notesIndicatorText}>📝 {setsWithNotes} sets with notes</Text>
+          </View>
+        )}
       </View>
 
       {/* Exercises List */}
@@ -316,29 +329,49 @@ const styles = StyleSheet.create({
   },
   workoutHeader: {
     marginHorizontal: CARD_MARGIN,
-    marginBottom: 18,
+    marginBottom: 20,
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 0, 0.15)',
+  },
+  workoutHeaderContent: {
     alignItems: 'center',
   },
   workoutName: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
-    fontSize: 24,
+    fontSize: 26,
     letterSpacing: 1.5,
-    marginBottom: 4,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  workoutMetadata: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   workoutDate: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.body,
-    fontSize: 16,
-    opacity: 0.8,
-    marginBottom: 4,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  durationBadge: {
+    backgroundColor: 'rgba(0, 255, 0, 0.15)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 0, 0.3)',
   },
   workoutDuration: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 14,
-    opacity: 0.8,
+    fontWeight: 'bold',
   },
   performanceSummary: {
     marginHorizontal: CARD_MARGIN,
@@ -411,11 +444,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.8,
   },
+  statsContainer: {
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+    borderRadius: 12,
+    marginHorizontal: CARD_MARGIN,
+    marginBottom: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 0, 0.15)',
+  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 18,
-    marginHorizontal: CARD_MARGIN,
+    marginBottom: 8,
+  },
+  notesIndicator: {
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 255, 0, 0.2)',
+  },
+  notesIndicatorText: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
+    fontSize: 12,
+    opacity: 0.7,
   },
   statItem: {
     alignItems: 'center',
@@ -424,16 +478,17 @@ const styles = StyleSheet.create({
   statNumber: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   statLabel: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.body,
-    fontSize: 10,
-    opacity: 0.8,
+    fontSize: 11,
+    opacity: 0.7,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   exercisesList: {
     marginHorizontal: CARD_MARGIN,
@@ -441,23 +496,30 @@ const styles = StyleSheet.create({
   },
   exerciseCard: {
     borderWidth: 1,
-    borderColor: theme.colors.neon,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 18,
-    backgroundColor: 'transparent',
+    borderColor: 'rgba(0, 255, 0, 0.3)',
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 16,
+    backgroundColor: 'rgba(0, 255, 0, 0.02)',
+    shadowColor: theme.colors.neon,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   exerciseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 255, 0, 0.15)',
   },
   exerciseName: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 20,
     letterSpacing: 1,
     flex: 1,
   },
@@ -472,32 +534,35 @@ const styles = StyleSheet.create({
   },
   setRow: {
     borderWidth: 1,
-    borderColor: theme.colors.neon,
-    borderRadius: 6,
-    padding: 12,
-    backgroundColor: 'rgba(0,255,0,0.05)',
+    borderColor: 'rgba(0, 255, 0, 0.25)',
+    borderRadius: 8,
+    padding: 14,
+    backgroundColor: 'rgba(0, 255, 0, 0.08)',
+    marginBottom: 8,
   },
   setHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   setNumber: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 14,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
   completedBadge: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.body,
-    fontSize: 10,
+    fontFamily: theme.fonts.code,
+    fontSize: 11,
     fontWeight: 'bold',
-    backgroundColor: 'rgba(0,255,0,0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    backgroundColor: 'rgba(0, 255, 0, 0.25)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    letterSpacing: 0.5,
   },
   setDetails: {
     flexDirection: 'row',
@@ -507,18 +572,24 @@ const styles = StyleSheet.create({
   setDetailItem: {
     alignItems: 'center',
     flex: 1,
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginHorizontal: 2,
   },
   setDetailLabel: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.body,
+    fontFamily: theme.fonts.code,
     fontSize: 10,
-    opacity: 0.7,
-    marginBottom: 2,
+    opacity: 0.6,
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   setDetailValue: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   notesContainer: {
@@ -611,16 +682,5 @@ const styles = StyleSheet.create({
     fontFamily: FONT,
     fontSize: 14,
     fontWeight: 'bold',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: 16,
-  },
-  backButtonArea: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 }); 

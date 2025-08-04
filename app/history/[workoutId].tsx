@@ -612,15 +612,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: 16,
-  },
-  backButtonArea: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 }); 

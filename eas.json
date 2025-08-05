@@ -9,7 +9,7 @@
       "distribution": "internal"
     },
     "production": {
-      "distribution": "app-store",
+      "distribution": "store",
       "releaseChannel": "production"
     }
   }

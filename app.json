@@ -21,6 +21,7 @@
       "buildNumber": "1",
       "supportsTablet": true,
       "requireFullScreen": false,
+      "icon": "./app/assets/icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -43,7 +44,8 @@
       "expo-font"
     ],
     "assetBundlePatterns": [
-      "**/*"
+      "**/*",
+      "app/assets/**/*"
     ],
     "extra": {
       "router": {

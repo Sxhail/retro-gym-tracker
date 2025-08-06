@@ -3,6 +3,8 @@ import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { openDatabaseSync } from 'expo-sqlite';
 import * as schema from './schema';
 import migrations from '../drizzle/migrations/migrations';
+import { sql } from 'drizzle-orm';
+import exercisesData from './exercises.json';
 
 // Initialize the Expo SQLite database
 const expoDb = openDatabaseSync('app.db', { 
@@ -78,10 +80,53 @@ export async function initializeDatabase(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_sets_set_index ON sets(set_index);
     `);
     
+    // Check if exercises table is empty and populate with default exercises
+    await populateDefaultExercises();
+    
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
     throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Populate the exercises table with default exercises if it's empty
+ */
+async function populateDefaultExercises(): Promise<void> {
+  try {
+    // Check if exercises table has any data
+    const existingExercises = await db.select({ count: sql<number>`count(*)` }).from(schema.exercises);
+    const exerciseCount = existingExercises[0]?.count || 0;
+    
+    if (exerciseCount === 0) {
+      console.log('Exercises table is empty, populating with default exercises...');
+      
+      // Prepare exercises data for insertion
+      const exercisesToInsert = exercisesData.exercises
+        .filter(ex => ex.name && !ex.name.toLowerCase().includes('variation')) // Skip variations
+        .map(ex => ({
+          name: ex.name,
+          category: Array.isArray(ex.categories) ? ex.categories.join(', ') : (ex.categories || ''),
+          muscle_group: Array.isArray(ex.muscle_groups) ? ex.muscle_groups.join(', ') : (ex.muscle_groups || ''),
+          is_custom: 0,
+          created_at: new Date().toISOString()
+        }));
+      
+      // Insert exercises in batches to avoid potential issues with large inserts
+      const batchSize = 50;
+      for (let i = 0; i < exercisesToInsert.length; i += batchSize) {
+        const batch = exercisesToInsert.slice(i, i + batchSize);
+        await db.insert(schema.exercises).values(batch);
+      }
+      
+      console.log(`Successfully inserted ${exercisesToInsert.length} default exercises`);
+    } else {
+      console.log(`Exercises table already contains ${exerciseCount} exercises`);
+    }
+  } catch (error) {
+    console.error('Error populating default exercises:', error);
+    throw new Error(`Failed to populate default exercises: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

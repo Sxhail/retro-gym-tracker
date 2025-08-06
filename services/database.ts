@@ -20,10 +20,10 @@ export const dbOperations = {
   },
 
   async getWorkoutSets() {
-    return db.select().from(schema.workout_sets);
+    return db.select().from(schema.sets);
   },
 
   async addWorkoutSet(set: any) {
-    return db.insert(schema.workout_sets).values(set).returning();
+    return db.insert(schema.sets).values(set).returning();
   }
 }; 

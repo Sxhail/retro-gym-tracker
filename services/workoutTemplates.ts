@@ -70,6 +70,35 @@ export interface CreateTemplateData {
   }[];
 }
 
+// Check if a template name already exists
+export async function checkTemplateNameExists(name: string, excludeId?: number): Promise<boolean> {
+  try {
+    const trimmedName = name.trim();
+    if (!trimmedName) return false;
+    
+    let query = db
+      .select({ id: workout_templates.id })
+      .from(workout_templates)
+      .where(sql`LOWER(TRIM(${workout_templates.name})) = LOWER(${trimmedName})`);
+    
+    if (excludeId) {
+      query = db
+        .select({ id: workout_templates.id })
+        .from(workout_templates)
+        .where(and(
+          sql`LOWER(TRIM(${workout_templates.name})) = LOWER(${trimmedName})`,
+          sql`${workout_templates.id} != ${excludeId}`
+        ));
+    }
+
+    const existing = await query.limit(1);
+    return existing.length > 0;
+  } catch (error) {
+    console.error('Error checking template name:', error);
+    return false;
+  }
+}
+
 // Get all templates with basic info
 export async function getTemplates(includeFavorites = false): Promise<WorkoutTemplate[]> {
   let retryCount = 0;

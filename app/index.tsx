@@ -1,68 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Alert, Image } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { Swipeable } from 'react-native-gesture-handler';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
-import { db } from '../db/client';
-import * as schema from '../db/schema';
-import { sql } from 'drizzle-orm';
-import { deleteTemplate, type WorkoutTemplate } from '../services/workoutTemplates';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('start');
-  const [templates, setTemplates] = useState([]);
-
-  // Add useFocusEffect to refresh templates on focus
-  useFocusEffect(
-    React.useCallback(() => {
-      async function fetchTemplates() {
-        // Fetch templates and their exercise counts
-        const templates = await db.select().from(schema.workout_templates).orderBy(schema.workout_templates.created_at);
-        const templatesWithCounts = await Promise.all(
-          templates.map(async (tpl) => {
-            const countResult = await db
-              .select({ count: sql<number>`count(*)` })
-              .from(schema.template_exercises)
-              .where(sql`template_id = ${tpl.id}`);
-            return { ...tpl, exerciseCount: countResult[0]?.count || 0 };
-          })
-        );
-        setTemplates(templatesWithCounts.reverse()); // newest first
-      }
-      fetchTemplates();
-    }, [])
-  );
-
-  // Handle template deletion
-  const handleDeleteTemplate = async (templateId: number, templateName: string) => {
-    Alert.alert(
-      'Delete Template',
-      `Are you sure you want to delete "${templateName}"? This action cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteTemplate(templateId);
-              // Refresh templates after deletion
-              const updatedTemplates = templates.filter(tpl => tpl.id !== templateId);
-              setTemplates(updatedTemplates);
-            } catch (err) {
-              Alert.alert('Error', 'Failed to delete template. Please try again.');
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  // Template preview: just show template name for now
-  const renderTemplatePreview = (template: WorkoutTemplate) => {
-    return template.name;
-  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -92,67 +35,6 @@ export default function HomeScreen() {
           resizeMode="contain"
         />
       </View>
-
-      {/* Templates Preview List */}
-      {templates.length > 0 && (
-        <View style={{ width: '100%', marginBottom: 16 }}>
-          {templates.map((tpl) => {
-            const renderRightActions = () => (
-              <View
-                style={{
-                  backgroundColor: '#8B0000',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  width: 60,
-                  height: '100%',
-                  borderTopRightRadius: 8,
-                  borderBottomRightRadius: 8,
-                }}
-              >
-                <Text style={{
-                  color: 'white',
-                  fontFamily: theme.fonts.heading,
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                }}>
-                  DEL
-                </Text>
-              </View>
-            );
-
-                          return (
-                <Swipeable
-                  key={tpl.id}
-                  renderRightActions={renderRightActions}
-                  rightThreshold={40}
-                  onSwipeableOpen={() => handleDeleteTemplate(tpl.id, tpl.name)}
-                >
-                <TouchableOpacity
-                  style={{
-                    borderWidth: 1,
-                    borderColor: theme.colors.neon,
-                    borderRadius: 8,
-                    padding: 16,
-                    marginHorizontal: 16,
-                    marginBottom: 16,
-                    backgroundColor: 'transparent',
-                  }}
-                  onPress={() => router.push(`/templates/${tpl.id}`)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 18, marginBottom: 2 }}>
-                    {tpl.name}
-                  </Text>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 13, opacity: 0.8 }}>
-                    {tpl.exerciseCount} exercises
-                  </Text>
-                </TouchableOpacity>
-              </Swipeable>
-            );
-          })}
-        </View>
-      )}
 
       {/* Action Buttons at Bottom */}
       <View style={styles.bottomActionSection}>

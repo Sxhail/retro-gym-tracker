@@ -1,6 +1,8 @@
 import { drizzle } from 'drizzle-orm/expo-sqlite';
+import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { openDatabaseSync } from 'expo-sqlite';
 import * as schema from './schema';
+import migrations from '../drizzle/migrations/migrations';
 
 // Initialize the Expo SQLite database
 const expoDb = openDatabaseSync('app.db', { 
@@ -11,7 +13,49 @@ const expoDb = openDatabaseSync('app.db', {
 const db = drizzle(expoDb, { schema });
 
 // Export the database instances
-export { expoDb, db }; 
+export { expoDb, db };
+
+/**
+ * Custom hook to handle database migrations
+ * Should be called in the app root component
+ */
+export function useDatabaseMigrations() {
+  return useMigrations(db, migrations);
+}
+
+/**
+ * Check if all migrations have been applied
+ * This function can be used for debugging migration status
+ */
+export async function checkMigrationStatus(): Promise<{ 
+  appliedMigrations: string[], 
+  totalMigrations: number,
+  isUpToDate: boolean 
+}> {
+  try {
+    // Query the __drizzle_migrations table to see what's been applied
+    const result = await expoDb.getAllAsync(
+      "SELECT name FROM __drizzle_migrations ORDER BY id"
+    ) as { name: string }[];
+    
+    const appliedMigrations = result.map(row => row.name);
+    const totalMigrations = Object.keys(migrations.migrations).length;
+    const isUpToDate = appliedMigrations.length === totalMigrations;
+    
+    return {
+      appliedMigrations,
+      totalMigrations,
+      isUpToDate
+    };
+  } catch (error) {
+    console.error('Error checking migration status:', error);
+    return {
+      appliedMigrations: [],
+      totalMigrations: Object.keys(migrations.migrations).length,
+      isUpToDate: false
+    };
+  }
+} 
 
 /**
  * Initialize database tables and ensure they exist

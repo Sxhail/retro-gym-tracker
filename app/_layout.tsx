@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useFonts as useOrbitron, Orbitron_700Bold } from '@expo-google-fonts/orbitron';
@@ -9,7 +9,7 @@ import { useFonts as useShareTechMono, ShareTechMono_400Regular } from '@expo-go
 import * as SplashScreen from 'expo-splash-screen';
 import { DatabaseProvider } from '../context/DatabaseContext';
 import { WorkoutSessionProvider } from '../context/WorkoutSessionContext';
-import { initializeDatabase } from '../db/client';
+import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
 
 // Keep the splash screen visible while we fetch resources
@@ -23,17 +23,36 @@ export default function Layout() {
   
   const fontsLoaded = orbitronLoaded && pressStart2PLoaded && vt323Loaded && shareTechMonoLoaded;
 
+  // Apply database migrations
+  const { success: migrationsSuccess, error: migrationsError } = useDatabaseMigrations();
+
+  // State to track if minimum splash time has elapsed
+  const [splashTimeElapsed, setSplashTimeElapsed] = useState(false);
+
+  // Start 3-second timer when component mounts
   useEffect(() => {
-    if (fontsLoaded) {
-      // Initialize database when fonts are loaded
+    const timer = setTimeout(() => {
+      setSplashTimeElapsed(true);
+    }, 3000); // 3 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded && migrationsSuccess && splashTimeElapsed) {
+      // Initialize database when fonts are loaded, migrations are complete, and 3 seconds have passed
       initializeDatabase().catch(console.error);
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+    
+    if (migrationsError) {
+      console.error('Database migration failed:', migrationsError);
+    }
+  }, [fontsLoaded, migrationsSuccess, migrationsError, splashTimeElapsed]);
 
 
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !migrationsSuccess || !splashTimeElapsed) {
     return null;
   }
 

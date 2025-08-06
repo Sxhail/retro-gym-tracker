@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, SafeAreaView, TextInput, Animated } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { Swipeable } from 'react-native-gesture-handler';
 import theme from '../styles/theme';
 import { getTemplates, getTemplatesByCategory, searchTemplates, loadTemplateIntoSession, deleteTemplate, type WorkoutTemplate } from '../services/workoutTemplates';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
@@ -10,7 +10,7 @@ const { width } = require('react-native').Dimensions.get('window');
 const CARD_MARGIN = 18;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 
-// Swipeable Template Card Component
+// Simple Swipeable Template Card Component (matches existing swipe-to-delete pattern)
 interface SwipeableTemplateCardProps {
   template: WorkoutTemplate;
   onPress: () => void;
@@ -26,127 +26,65 @@ const SwipeableTemplateCard: React.FC<SwipeableTemplateCardProps> = ({
   disabled, 
   loading 
 }) => {
-  const translateX = new Animated.Value(0);
-  const [isSwipedOpen, setIsSwipedOpen] = useState(false);
-
-  const onGestureEvent = (event: any) => {
-    if (event.nativeEvent.translationX < 0 && event.nativeEvent.translationX > -120) {
-      translateX.setValue(event.nativeEvent.translationX);
-    }
-  };
-
-  const onHandlerStateChange = (event: any) => {
-    if (event.nativeEvent.state === State.END) {
-      const { translationX, velocityX } = event.nativeEvent;
-      
-      if (translationX < -60 || velocityX < -500) {
-        // Open the swipe
-        Animated.spring(translateX, {
-          toValue: -120,
-          useNativeDriver: false,
-        }).start();
-        setIsSwipedOpen(true);
-      } else {
-        // Close the swipe
-        Animated.spring(translateX, {
-          toValue: 0,
-          useNativeDriver: false,
-        }).start();
-        setIsSwipedOpen(false);
-      }
-    }
-  };
-
-  const closeSwipe = () => {
-    Animated.spring(translateX, {
-      toValue: 0,
-      useNativeDriver: false,
-    }).start();
-    setIsSwipedOpen(false);
-  };
+  // Render right action for swipe-to-delete (transparent, allows row to slide left)
+  const renderRightActions = () => (
+    <View style={{ width: 9999, backgroundColor: 'transparent' }} />
+  );
 
   return (
-    <View style={styles.swipeContainer}>
-      {/* Delete button (hidden behind) */}
-      <View style={styles.deleteAction}>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => {
-            closeSwipe();
-            onDelete();
-          }}
-        >
-          <Text style={styles.deleteButtonText}>DELETE</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Template card (swipeable) */}
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
+    <Swipeable
+      renderRightActions={renderRightActions}
+      onSwipeableRightOpen={onDelete}
+      overshootRight={false}
+      rightThreshold={40}
+      friction={2}
+    >
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled}
+        style={styles.templateCard}
       >
-        <Animated.View
-          style={[
-            styles.templateCard,
-            {
-              transform: [{ translateX }],
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={() => {
-              if (isSwipedOpen) {
-                closeSwipe();
-              } else {
-                onPress();
-              }
-            }}
-            disabled={disabled}
-            style={{ flex: 1 }}
-          >
-            <View style={styles.templateHeader}>
-              <Text style={styles.templateName}>{template.name}</Text>
-              {template.is_favorite && (
-                <Text style={styles.favoriteBadge}>★</Text>
-              )}
+        <View style={styles.templateHeader}>
+          <Text style={styles.templateName}>{template.name}</Text>
+          {template.is_favorite && (
+            <Text style={styles.favoriteBadge}>★</Text>
+          )}
+        </View>
+        {template.description && (
+          <Text style={styles.templateDescription}>{template.description}</Text>
+        )}
+        <View style={styles.templateMeta}>
+          {template.category && (
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>CATEGORY</Text>
+              <Text style={styles.metaValue}>{template.category.toUpperCase()}</Text>
             </View>
-            {template.description && (
-              <Text style={styles.templateDescription}>{template.description}</Text>
-            )}
-            <View style={styles.templateMeta}>
-              {template.category && (
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>CATEGORY</Text>
-                  <Text style={styles.metaValue}>{template.category.toUpperCase()}</Text>
-                </View>
-              )}
-              {template.difficulty && (
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>DIFFICULTY</Text>
-                  <Text style={styles.metaValue}>{template.difficulty.toUpperCase()}</Text>
-                </View>
-              )}
-              {template.estimated_duration && (
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>DURATION</Text>
-                  <Text style={styles.metaValue}>{template.estimated_duration} MIN</Text>
-                </View>
-              )}
+          )}
+          {template.difficulty && (
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>DIFFICULTY</Text>
+              <Text style={styles.metaValue}>{template.difficulty.toUpperCase()}</Text>
             </View>
-            <View style={styles.templateAction}>
-              {loading ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <ActivityIndicator size="small" color={theme.colors.neon} style={{ marginRight: 8 }} />
-                  <Text style={styles.templateActionText}>LOADING...</Text>
-                </View>
-              ) : (
-                <Text style={styles.templateActionText}>TAP TO START WORKOUT</Text>
-              )}
+          )}
+          {template.estimated_duration && (
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>DURATION</Text>
+              <Text style={styles.metaValue}>{template.estimated_duration} MIN</Text>
             </View>
-          </TouchableOpacity>
-        </Animated.View>
-      </PanGestureHandler>
-    </View>
+          )}
+        </View>
+        <View style={styles.templateAction}>
+          {loading ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="small" color={theme.colors.neon} style={{ marginRight: 8 }} />
+              <Text style={styles.templateActionText}>LOADING...</Text>
+            </View>
+          ) : (
+            <Text style={styles.templateActionText}>TAP TO START WORKOUT</Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    </Swipeable>
   );
 };
 
@@ -494,6 +432,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.neon,
     borderRadius: 10,
     padding: 14,
+    marginBottom: 16,
     marginHorizontal: CARD_MARGIN,
     backgroundColor: theme.colors.background,
   },
@@ -642,35 +581,6 @@ const styles = StyleSheet.create({
     color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  // Swipe-to-delete styles
-  swipeContainer: {
-    marginBottom: 16,
-    position: 'relative',
-  },
-  deleteAction: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FF4444',
-    borderRadius: 12,
-  },
-  deleteButton: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: 'white',
-    fontFamily: theme.fonts.heading,
-    fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 1,
   },

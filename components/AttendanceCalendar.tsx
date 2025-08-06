@@ -38,18 +38,30 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
     const days = [];
     const currentDate = new Date(startDate);
 
+    // Helper function to format date as YYYY-MM-DD in local timezone
+    const formatLocalDate = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     // Generate 6 weeks of calendar (42 days)
     for (let i = 0; i < 42; i++) {
-      const dateString = currentDate.toISOString().split('T')[0];
+      const dateString = formatLocalDate(currentDate);
       const attendanceData = attendance.find(a => a.date === dateString);
       const workoutCount = attendanceData?.count || 0;
+
+      // Get today's date in local timezone for comparison
+      const today = new Date();
+      const todayString = formatLocalDate(today);
 
       days.push({
         date: new Date(currentDate),
         dateString,
         workoutCount,
         isCurrentMonth: currentDate.getMonth() === month - 1,
-        isToday: dateString === new Date().toISOString().split('T')[0]
+        isToday: dateString === todayString
       });
 
       currentDate.setDate(currentDate.getDate() + 1);

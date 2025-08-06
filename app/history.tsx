@@ -481,6 +481,78 @@ export default function HistoryListScreen() {
     setTimeout(() => setSuccessMessage(''), 4000);
   };
 
+  // Export workout history to CSV
+  const handleExportCsv = async () => {
+    try {
+      // Get all workout history
+      const allWorkouts = await getWorkoutHistory(10000, 0); // Get a large number to get all workouts
+      
+      if (allWorkouts.length === 0) {
+        Alert.alert('No Data', 'No workout history to export.');
+        return;
+      }
+
+      // Prepare CSV data - flatten workouts with exercises and sets
+      const csvData = [];
+      
+      for (const workout of allWorkouts) {
+        try {
+          // Get workout details including exercises and sets
+          const workoutDetail = await require('../services/workoutHistory').getWorkoutDetail(workout.id);
+          
+          if (workoutDetail && workoutDetail.exercises) {
+            for (const exercise of workoutDetail.exercises) {
+              for (const set of exercise.sets) {
+                csvData.push({
+                  WorkoutName: workout.name,
+                  WorkoutDate: formatDate(workout.date),
+                  ExerciseName: exercise.exerciseName,
+                  SetNumber: set.setNumber,
+                  Weight: set.weight,
+                  Reps: set.reps,
+                  Rest: set.rest || '',
+                  Notes: set.notes || '',
+                  MuscleGroup: exercise.muscleGroup || '',
+                  Category: exercise.category || ''
+                });
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Error getting workout detail for export:', err);
+        }
+      }
+
+      if (csvData.length === 0) {
+        Alert.alert('No Data', 'No workout data to export.');
+        return;
+      }
+
+      // Convert to CSV
+      const csv = Papa.unparse(csvData);
+      
+      // Create filename with current date
+      const now = new Date();
+      const filename = `workout-history-${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}.csv`;
+      
+      // Write to file
+      const fileUri = FileSystem.documentDirectory + filename;
+      await FileSystem.writeAsStringAsync(fileUri, csv);
+      
+      // Share/save the file
+      if (await FileSystem.getInfoAsync(fileUri)) {
+        Alert.alert(
+          'Export Complete', 
+          `Workout history exported to ${filename}.\n\nLocation: ${fileUri}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      Alert.alert('Export Failed', 'Could not export workout history. Please try again.');
+    }
+  };
+
   // Delete all workout history handler
   const handleDeleteAllHistory = () => {
     Alert.alert(
@@ -528,10 +600,16 @@ export default function HistoryListScreen() {
         <Text style={styles.pageTitle}>HISTORY</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <TouchableOpacity
+            onPress={() => handleExportCsv()}
+            style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 12, backgroundColor: 'transparent' }}
+          >
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14 }}>EXPORT</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => handleImportCsv()}
             style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 12, backgroundColor: 'transparent' }}
           >
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14 }}>IMPORT CSV</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14 }}>IMPORT</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={handleDeleteAllHistory}

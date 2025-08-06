@@ -199,33 +199,7 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ title, maxGain, percentGa
             strokeLinejoin="round"
           />
 
-          {/* Single circle data points (only key points) */}
-          {data.map((val, i) => {
-            if (!showDataPoint(i)) return null;
-            
-            const x = chartPadding + (i * chartInnerWidth) / (data.length - 1);
-            const y = chartHeight - chartPadding - ((val - adjustedMinWeight) / adjustedWeightRange) * chartInnerHeight;
-            
-            return (
-              <Circle 
-                key={i}
-                cx={x} 
-                cy={y} 
-                r={6} 
-                fill={theme.colors.neon}
-                stroke="rgba(0, 255, 0, 0.5)"
-                strokeWidth="2"
-                onPress={() => {
-                  setSelectedPoint({
-                    weight: val,
-                    date: labels[i] || `Session ${i + 1}`,
-                    index: i + 1
-                  });
-                  setModalVisible(true);
-                }}
-              />
-            );
-          })}
+          {/* Circle data points removed - now showing only line path */}
 
 
         </Svg>

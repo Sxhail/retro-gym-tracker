@@ -22,8 +22,27 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
   // Rest timer state (per set)
   const [restTime, setRestTime] = useState(set.rest ?? 120);
   const [restActive, setRestActive] = useState(false);
+  const [timerPaused, setTimerPaused] = useState(false);
   const restInterval = useRef<any>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+
+  // Setup audio session for background playback on component mount
+  useEffect(() => {
+    const setupAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          staysActiveInBackground: true,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+      } catch (error) {
+        console.log('Error setting up audio session:', error);
+      }
+    };
+    setupAudio();
+  }, []);
 
   // Sound function for rest timer finish
   const playRestFinishSound = async () => {
@@ -41,14 +60,14 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       soundRef.current = sound;
       await sound.playAsync();
 
-      // Stop after 5 seconds
+      // Stop after 1 second (shortened from 5 seconds)
       setTimeout(async () => {
         if (soundRef.current) {
           await soundRef.current.stopAsync();
           await soundRef.current.unloadAsync();
           soundRef.current = null;
         }
-      }, 5000);
+      }, 1000);
     } catch (error) {
       console.log('Error playing rest finish sound:', error);
     }
@@ -74,11 +93,25 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     }
   };
 
+  // Handle rest timer pause/resume
+  const toggleTimerPause = () => {
+    setTimerPaused(!timerPaused);
+  };
+
+  // Handle rest timer skip
+  const skipTimer = () => {
+    if (restInterval.current) clearInterval(restInterval.current);
+    setRestActive(false);
+    setRestTime(Number(set.rest ?? 120));
+    setTimerPaused(false);
+  };
+
   // Start/stop rest timer when set is marked/unmarked as complete
   useEffect(() => {
     if (set.completed && canComplete) {
       setRestActive(true);
       setRestTime(Number(set.rest ?? 120));
+      setTimerPaused(false);
       if (restInterval.current) clearInterval(restInterval.current);
       restInterval.current = setInterval(() => {
         setRestTime((prev) => {
@@ -86,12 +119,14 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
           clearInterval(restInterval.current);
           // Play sound when timer reaches 0
           playRestFinishSound();
+          setRestActive(false);
           return 0;
         });
       }, 1000);
     } else {
       setRestActive(false);
       setRestTime(Number(set.rest ?? 120));
+      setTimerPaused(false);
       if (restInterval.current) clearInterval(restInterval.current);
     }
     return () => {
@@ -103,6 +138,32 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       }
     };
   }, [set.completed, canComplete, set.restActive, set.rest]);
+
+  // Handle timer pause/resume
+  useEffect(() => {
+    if (restActive && restTime > 0) {
+      if (timerPaused) {
+        // Pause timer
+        if (restInterval.current) clearInterval(restInterval.current);
+      } else {
+        // Resume or start timer
+        if (restInterval.current) clearInterval(restInterval.current);
+        restInterval.current = setInterval(() => {
+          setRestTime((prev) => {
+            if (prev > 0) return prev - 1;
+            clearInterval(restInterval.current);
+            // Play sound when timer reaches 0
+            playRestFinishSound();
+            setRestActive(false);
+            return 0;
+          });
+        }, 1000);
+      }
+    }
+    return () => {
+      if (restInterval.current) clearInterval(restInterval.current);
+    };
+  }, [timerPaused, restActive]);
 
   // Format rest timer mm:ss
   function formatRestTimer(seconds: number) {
@@ -203,8 +264,9 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       </Swipeable>
       {/* Rest timer below set row */}
       {showRestTimer && (
-        <View style={{ alignItems: 'center', marginBottom: 8, flexDirection: 'row', justifyContent: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.8 }}>
+        <View style={{ alignItems: 'center', marginBottom: 8 }}>
+          {/* Timer controls row 1: Time adjustment */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.8, marginBottom: 8 }}>
             {/* Minus button */}
             <TouchableOpacity onPress={() => handleRestChange(-15)} style={{ 
               width: 32, 
@@ -223,8 +285,8 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
             <View style={{ width: 20, height: 2, backgroundColor: theme.colors.neon, marginRight: 8 }} />
             
             {/* Timer display */}
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>
-              {formatRestTimer(restTime)}
+            <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>
+              {timerPaused ? '⏸ ' : ''}{formatRestTimer(restTime)}
             </Text>
             
             {/* Connecting line */}
@@ -242,6 +304,41 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
               marginLeft: 8
             }}>
               <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, fontWeight: 'bold' }}>+</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Timer controls row 2: Pause and Skip */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {/* Pause/Resume button */}
+            <TouchableOpacity onPress={toggleTimerPause} style={{ 
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 8, 
+              borderWidth: 1, 
+              borderColor: timerPaused ? '#FFA500' : theme.colors.neon, 
+              backgroundColor: timerPaused ? 'rgba(255, 165, 0, 0.1)' : 'rgba(0, 255, 0, 0.1)',
+              justifyContent: 'center', 
+              alignItems: 'center',
+            }}>
+              <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, fontWeight: 'bold' }}>
+                {timerPaused ? '▶ RESUME' : '⏸ PAUSE'}
+              </Text>
+            </TouchableOpacity>
+            
+            {/* Skip button */}
+            <TouchableOpacity onPress={skipTimer} style={{ 
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 8, 
+              borderWidth: 1, 
+              borderColor: '#FF4444', 
+              backgroundColor: 'rgba(255, 68, 68, 0.1)',
+              justifyContent: 'center', 
+              alignItems: 'center',
+            }}>
+              <Text style={{ color: '#FF4444', fontFamily: theme.fonts.code, fontSize: 12, fontWeight: 'bold' }}>
+                ⏭ SKIP
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

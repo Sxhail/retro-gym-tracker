@@ -7,6 +7,10 @@
     "icon": "./app/assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "retro-gym-tracker",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/2955f480-ac00-4dd4-be3e-35c023cc436b"
+    },
     "platforms": [
       "ios",
       "android"
@@ -18,7 +22,6 @@
     },
     "ios": {
       "bundleIdentifier": "com.sxhail.retrogymtracker",
-      "buildNumber": "1",
       "supportsTablet": true,
       "requireFullScreen": false,
       "icon": "./app/assets/icon.png",
@@ -28,7 +31,6 @@
     },
     "android": {
       "package": "com.sxhail.retrogymtracker",
-      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#000000"

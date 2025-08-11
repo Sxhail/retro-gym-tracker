@@ -1078,7 +1078,7 @@ const styles = StyleSheet.create({
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: 24,
     letterSpacing: 1.2,
     flex: 1,
   },

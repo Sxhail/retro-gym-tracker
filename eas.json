@@ -7,7 +7,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
-      "ios": { "simulator": false }
+      "ios": {
+        "simulator": false
+      }
     },
     "preview": {
       "distribution": "internal",

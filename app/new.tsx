@@ -286,7 +286,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
             
             {/* Timer display */}
             <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>
-              {timerPaused ? '⏸ ' : ''}{formatRestTimer(restTime)}
+              {timerPaused ? 'PAUSED ' : ''}{formatRestTimer(restTime)}
             </Text>
             
             {/* Connecting line */}
@@ -307,37 +307,37 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
             </TouchableOpacity>
           </View>
           
-          {/* Timer controls row 2: Pause and Skip */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          {/* Timer controls - inline with timer */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 8 }}>
             {/* Pause/Resume button */}
             <TouchableOpacity onPress={toggleTimerPause} style={{ 
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 8, 
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 6, 
               borderWidth: 1, 
               borderColor: timerPaused ? '#FFA500' : theme.colors.neon, 
-              backgroundColor: timerPaused ? 'rgba(255, 165, 0, 0.1)' : 'rgba(0, 255, 0, 0.1)',
+              backgroundColor: 'transparent',
               justifyContent: 'center', 
               alignItems: 'center',
             }}>
-              <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, fontWeight: 'bold' }}>
-                {timerPaused ? '▶ RESUME' : '⏸ PAUSE'}
+              <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 10, fontWeight: 'bold' }}>
+                {timerPaused ? 'RESUME' : 'PAUSE'}
               </Text>
             </TouchableOpacity>
             
             {/* Skip button */}
             <TouchableOpacity onPress={skipTimer} style={{ 
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 8, 
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 6, 
               borderWidth: 1, 
               borderColor: '#FF4444', 
-              backgroundColor: 'rgba(255, 68, 68, 0.1)',
+              backgroundColor: 'transparent',
               justifyContent: 'center', 
               alignItems: 'center',
             }}>
-              <Text style={{ color: '#FF4444', fontFamily: theme.fonts.code, fontSize: 12, fontWeight: 'bold' }}>
-                ⏭ SKIP
+              <Text style={{ color: '#FF4444', fontFamily: theme.fonts.code, fontSize: 10, fontWeight: 'bold' }}>
+                SKIP
               </Text>
             </TouchableOpacity>
           </View>

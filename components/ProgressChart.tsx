@@ -194,7 +194,7 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ title, maxGain, percentGa
             points={points}
             fill="none"
             stroke={theme.colors.neon}
-            strokeWidth="4"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -251,16 +251,16 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ title, maxGain, percentGa
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderColor: theme.colors.neonDim,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    backgroundColor: theme.colors.backgroundOverlay,
+    borderColor: 'rgba(0, 255, 0, 0.15)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     shadowColor: theme.colors.neon,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -304,12 +304,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-    backgroundColor: 'rgba(0, 255, 0, 0.03)',
-    borderRadius: 12,
-    padding: 16,
+    marginBottom: 16,
+    backgroundColor: 'rgba(0, 255, 0, 0.02)',
+    borderRadius: 8,
+    padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 0, 0.1)',
+    borderColor: 'rgba(0, 255, 0, 0.08)',
   },
   statBox: {
     flex: 1,
@@ -343,10 +343,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 0, 0.2)',
   },
   chartContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 0, 0.08)',
   },
   chartSvg: {
     alignSelf: 'center',

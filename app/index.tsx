@@ -31,15 +31,6 @@ export default function HomeScreen() {
         <Text style={styles.title}>GYM.TRACKER</Text>
       </View>
 
-      {/* Center Image */}
-      <View style={styles.imageContainer}>
-        <Image
-          source={require('./assets/bodybuilder.jpeg')}
-          style={styles.centerImage}
-          resizeMode="contain"
-        />
-      </View>
-
       {/* Action Buttons at Bottom */}
       <View style={styles.bottomActionSection}>
         <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
@@ -109,17 +100,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginTop: 8,
     textAlign: 'center',
-  },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  centerImage: {
-    width: 350,
-    height: 350,
-    opacity: 0.8,
   },
   subtitle: {
     color: theme.colors.neonDim,

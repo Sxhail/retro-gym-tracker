@@ -13,7 +13,7 @@ const SPLASH_SCREENS = [
     id: 2,
     title: 'IRON.FORGE',
     subtitle: 'MUSCLE MEMORY SYSTEM',
-    image: require('../app/assets/splash2.png'),
+    image: require('../app/assets/bodybuilder.jpeg'),
   },
   {
     id: 3,
@@ -25,21 +25,8 @@ const SPLASH_SCREENS = [
     id: 4,
     title: 'LIFT.PROTOCOL',
     subtitle: 'BIOMECHANICAL ENHANCEMENT',
-    image: require('../app/assets/splash2.png'),
-  },
-  {
-    id: 5,
-    title: 'MUSCLE.CORE',
-    subtitle: 'NEURAL ADAPTATION MATRIX',
     image: require('../app/assets/bodybuilder.jpeg'),
   },
-  {
-    id: 6,
-    title: 'POWER.GRID',
-    subtitle: 'KINETIC FORCE AMPLIFIER',
-    image: require('../app/assets/splash2.png'),
-  },
-  // You can add more splash variations here with either image
 ];
 
 interface RandomSplashScreenProps {
@@ -85,7 +72,7 @@ export default function RandomSplashScreen({ onFinish, duration = 2000 }: Random
       <View style={styles.statusHeader}>
         <View style={styles.statusRow}>
           <View style={styles.statusIndicatorRed} />
-          <Text style={styles.statusTextRed}>SYSTEM ONLINE</Text>
+          <Text style={styles.statusTextRed}>SYSTEM OFFLINE</Text>
         </View>
       </View>
 

@@ -13,6 +13,7 @@ import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
 import RandomSplashScreen from '../components/RandomSplashScreen';
+import NativeSplashRandomizer from '../components/NativeSplashRandomizer';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +34,9 @@ export default function Layout() {
   
   // State to control our custom random splash screen
   const [showRandomSplash, setShowRandomSplash] = useState(true);
+  
+  // State to control native splash randomizer
+  const [showNativeSplash, setShowNativeSplash] = useState(true);
 
   // Start 3-second timer when component mounts
   useEffect(() => {
@@ -54,6 +58,16 @@ export default function Layout() {
       console.error('Database migration failed:', migrationsError);
     }
   }, [fontsLoaded, migrationsSuccess, migrationsError, splashTimeElapsed]);
+
+  // Show native splash randomizer first
+  if (showNativeSplash) {
+    return (
+      <NativeSplashRandomizer
+        onFinish={() => setShowNativeSplash(false)}
+        duration={1500}
+      />
+    );
+  }
 
   // Show random splash screen if everything is ready but we haven't finished the custom splash
   if (fontsLoaded && migrationsSuccess && splashTimeElapsed && showRandomSplash) {

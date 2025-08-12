@@ -283,37 +283,6 @@ export default function ProgramScreen() {
       </View>
     </ScrollView>
   );
-    <ScrollView style={styles.content}>
-      <View style={styles.configSection}>
-        <View style={styles.configHeader}>
-          <Text style={styles.configTitle}>CREATION METHOD</Text>
-          <Text style={styles.configStatus}>SELECT APPROACH</Text>
-        </View>
-        <View style={styles.methodGrid}>
-          <TouchableOpacity style={styles.methodCard}>
-            <Text style={styles.methodIcon}>🤖</Text>
-            <Text style={styles.methodTitle}>AUTO-GENERATE</Text>
-            <Text style={styles.methodDescription}>AI creates optimized program with periodization</Text>
-            <Text style={styles.methodBadge}>RECOMMENDED</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.methodCard}>
-            <Text style={styles.methodIcon}>📋</Text>
-            <Text style={styles.methodTitle}>TEMPLATE-BASED</Text>
-            <Text style={styles.methodDescription}>Start with proven programs (5/3/1, nSuns, etc.)</Text>
-            <Text style={styles.methodBadge}>PROVEN</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.methodCard}>
-            <Text style={styles.methodIcon}>⚙️</Text>
-            <Text style={styles.methodTitle}>MANUAL BUILD</Text>
-            <Text style={styles.methodDescription}>Complete custom control over every aspect</Text>
-            <Text style={styles.methodBadge}>ADVANCED</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
-  );
 
   const renderFooter = () => (
     <View style={styles.footer}>

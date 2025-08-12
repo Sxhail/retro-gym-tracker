@@ -205,7 +205,7 @@ export default function WorkoutDetailScreen() {
                   <View style={styles.setHeader}>
                     <Text style={styles.setNumber}>SET {setIndex + 1}</Text>
                     {set.completed && (
-                      <Text style={styles.completedBadge}>✓ COMPLETED</Text>
+                      <Text style={styles.completedBadge}>COMPLETED</Text>
                     )}
                   </View>
                   

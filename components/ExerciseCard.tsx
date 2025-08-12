@@ -65,7 +65,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
     {showAction && (
       <View style={styles.actionContainer}>
         {isAlreadyAdded ? (
-          <Text style={styles.checkIcon}>✔</Text>
+          <Text style={styles.checkIcon}>ADDED</Text>
         ) : (
           <TouchableOpacity onPress={onPress}>
             <Text style={styles.addIcon}>+</Text>

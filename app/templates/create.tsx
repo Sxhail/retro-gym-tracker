@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Modal, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Modal, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
 import { db } from '../../db/client';
 import * as schema from '../../db/schema';
+import { checkTemplateNameExists } from '../../services/workoutTemplates';
 
 export type Exercise = typeof schema.exercises.$inferSelect;
 
@@ -28,7 +29,33 @@ export default function CreateTemplateScreen() {
   const [newMuscleGroups, setNewMuscleGroups] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [nameValidation, setNameValidation] = useState<{ isValid: boolean; message: string }>({ isValid: true, message: '' });
   const router = useRouter();
+
+  // Validate template name with debounce
+  useEffect(() => {
+    if (!templateName.trim()) {
+      setNameValidation({ isValid: true, message: '' });
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const nameExists = await checkTemplateNameExists(templateName.trim());
+        if (nameExists) {
+          setNameValidation({ isValid: false, message: 'A template with this name already exists' });
+        } else {
+          setNameValidation({ isValid: true, message: '' });
+        }
+      } catch (error) {
+        console.error('Error validating template name:', error);
+        setNameValidation({ isValid: true, message: '' });
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [templateName]);
 
   useEffect(() => {
     let isActive = true;
@@ -88,18 +115,42 @@ export default function CreateTemplateScreen() {
 
   // Placeholder for save logic
   const handleSaveTemplate = async () => {
-    if (!templateName || selectedExercises.length === 0) return;
+    if (!templateName.trim() || selectedExercises.length === 0) {
+      Alert.alert('Validation Error', 'Please enter a template name and add at least one exercise.');
+      return;
+    }
+
+    setSaving(true);
     try {
+      // Check if template name already exists
+      const nameExists = await checkTemplateNameExists(templateName.trim());
+      if (nameExists) {
+        Alert.alert(
+          'Template Name Exists', 
+          'A template with this name already exists. Please choose a different name.',
+          [{ text: 'OK' }]
+        );
+        setSaving(false);
+        return;
+      }
+
       // Insert new template
-      const [{ id: templateId }] = await db.insert(schema.workout_templates).values({ name: templateName }).returning({ id: schema.workout_templates.id });
+      const [{ id: templateId }] = await db.insert(schema.workout_templates).values({ name: templateName.trim() }).returning({ id: schema.workout_templates.id });
       // Insert template_exercises
       await Promise.all(selectedExercises.map((ex, idx) =>
         db.insert(schema.template_exercises).values({ template_id: templateId, exercise_id: ex.id, exercise_order: idx })
       ));
-      router.push('/templates');
+      
+      Alert.alert(
+        'Success',
+        'Template created successfully!',
+        [{ text: 'OK', onPress: () => router.replace('/templates') }]
+      );
     } catch (err) {
       console.error('Error saving template:', err);
-      // Optionally show error to user
+      Alert.alert('Error', 'Failed to save template. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -117,12 +168,33 @@ export default function CreateTemplateScreen() {
       <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 12 }}>
         <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 18, marginBottom: 6 }}>Template Name</Text>
         <TextInput
-          style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: 'transparent' }}
+          style={{ 
+            borderWidth: 1, 
+            borderColor: !nameValidation.isValid ? '#FF4444' : theme.colors.neon, 
+            borderRadius: 8, 
+            color: theme.colors.neon, 
+            fontFamily: theme.fonts.body, 
+            fontSize: 16, 
+            paddingVertical: 10, 
+            paddingHorizontal: 12, 
+            backgroundColor: 'transparent' 
+          }}
           placeholder="Enter template name"
-          placeholderTextColor={theme.colors.neon}
+          placeholderTextColor={theme.colors.neon + '80'}
           value={templateName}
           onChangeText={setTemplateName}
         />
+        {!nameValidation.isValid && (
+          <Text style={{ 
+            color: '#FF4444', 
+            fontFamily: theme.fonts.body, 
+            fontSize: 12, 
+            marginTop: 4,
+            marginLeft: 4
+          }}>
+            {nameValidation.message}
+          </Text>
+        )}
       </View>
       {/* Exercise Search UI */}
       <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
@@ -190,7 +262,7 @@ export default function CreateTemplateScreen() {
                         {ex.muscle_group} • {ex.category}
                       </Text>
                       {alreadyAdded && (
-                        <Text style={{ color: theme.colors.neon, fontSize: 14 }}>✓</Text>
+                        <Text style={{ color: theme.colors.neon, fontSize: 12 }}>ADDED</Text>
                       )}
                     </TouchableOpacity>
                   );
@@ -236,23 +308,38 @@ export default function CreateTemplateScreen() {
       <View style={{ paddingHorizontal: 16, paddingBottom: 20, paddingTop: 12 }}>
         <TouchableOpacity
           style={{
-            backgroundColor: theme.colors.neon,
+            backgroundColor: (!templateName.trim() || selectedExercises.length === 0 || saving || !nameValidation.isValid) ? theme.colors.textSecondary : theme.colors.neon,
             borderRadius: 12,
             paddingVertical: theme.spacing.lg,
             alignItems: 'center',
             width: '100%',
+            opacity: (!templateName.trim() || selectedExercises.length === 0 || saving || !nameValidation.isValid) ? 0.6 : 1,
           }}
           onPress={handleSaveTemplate}
-          disabled={!templateName || selectedExercises.length === 0}
+          disabled={!templateName.trim() || selectedExercises.length === 0 || saving || !nameValidation.isValid}
         >
-          <Text style={{
-            color: theme.colors.background,
-            fontFamily: theme.fonts.heading,
-            fontWeight: 'bold',
-            fontSize: 18,
-            letterSpacing: 1,
-            textAlign: 'center',
-          }}>SAVE TEMPLATE</Text>
+          {saving ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <ActivityIndicator color={theme.colors.background} size="small" style={{ marginRight: 8 }} />
+              <Text style={{
+                color: theme.colors.background,
+                fontFamily: theme.fonts.heading,
+                fontWeight: 'bold',
+                fontSize: 18,
+                letterSpacing: 1,
+                textAlign: 'center',
+              }}>SAVING...</Text>
+            </View>
+          ) : (
+            <Text style={{
+              color: theme.colors.background,
+              fontFamily: theme.fonts.heading,
+              fontWeight: 'bold',
+              fontSize: 18,
+              letterSpacing: 1,
+              textAlign: 'center',
+            }}>SAVE TEMPLATE</Text>
+          )}
         </TouchableOpacity>
       </View>
       {/* Modal for Adding New Exercise */}

@@ -68,11 +68,10 @@ export default function ProgramScreen() {
     </View>
   );
 
-  const renderConfigSection = (title: string, icon: string, status: string, options: any[], selectedValue: any, onSelect: (value: any) => void) => (
+  const renderConfigSection = (title: string, status: string, options: any[], selectedValue: any, onSelect: (value: any) => void) => (
     <View style={styles.configSection}>
       <View style={styles.configHeader}>
         <View style={styles.configTitleRow}>
-          <Text style={styles.configIcon}>{icon}</Text>
           <Text style={styles.configTitle}>{title}</Text>
         </View>
         <Text style={styles.configStatus}>{status}</Text>
@@ -109,7 +108,6 @@ export default function ProgramScreen() {
     <ScrollView style={styles.content}>
       {renderConfigSection(
         'DURATION',
-        '⚡',
         config.duration ? 'SET' : 'NOT SET',
         [
           { value: '6_weeks', label: '6 WEEKS', subtext: 'QUICK BUILD' },
@@ -121,7 +119,6 @@ export default function ProgramScreen() {
 
       {renderConfigSection(
         'PRIMARY GOAL',
-        '💊',
         config.goal ? 'SET' : 'NOT SET',
         [
           { value: 'strength', label: 'STRENGTH', subtext: 'MAX POWER' },
@@ -135,7 +132,6 @@ export default function ProgramScreen() {
 
       {renderConfigSection(
         'FREQUENCY',
-        '📅',
         config.frequency ? 'SET' : 'NOT SET',
         [
           { value: '3_days', label: '3 DAYS', subtext: 'BEGINNER' },
@@ -158,21 +154,18 @@ export default function ProgramScreen() {
         </View>
         <View style={styles.methodGrid}>
           <TouchableOpacity style={styles.methodCard}>
-            <Text style={styles.methodIcon}>🤖</Text>
             <Text style={styles.methodTitle}>AUTO-GENERATE</Text>
             <Text style={styles.methodDescription}>AI creates optimized program with periodization</Text>
             <Text style={styles.methodBadge}>RECOMMENDED</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.methodCard}>
-            <Text style={styles.methodIcon}>📋</Text>
             <Text style={styles.methodTitle}>TEMPLATE-BASED</Text>
             <Text style={styles.methodDescription}>Start with proven programs (5/3/1, nSuns, etc.)</Text>
             <Text style={styles.methodBadge}>PROVEN</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.methodCard}>
-            <Text style={styles.methodIcon}>⚙️</Text>
             <Text style={styles.methodTitle}>MANUAL BUILD</Text>
             <Text style={styles.methodDescription}>Complete custom control over every aspect</Text>
             <Text style={styles.methodBadge}>ADVANCED</Text>
@@ -271,7 +264,7 @@ export default function ProgramScreen() {
             'Recovery optimization'
           ].map((feature, index) => (
             <View key={index} style={styles.featureRow}>
-              <Text style={styles.featureCheck}>✓</Text>
+              <Text style={styles.featureCheck}>•</Text>
               <Text style={styles.featureText}>{feature}</Text>
             </View>
           ))}
@@ -401,10 +394,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  configIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
   configTitle: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
@@ -464,10 +453,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
-  },
-  methodIcon: {
-    fontSize: 24,
-    marginBottom: 8,
   },
   methodTitle: {
     color: theme.colors.neon,

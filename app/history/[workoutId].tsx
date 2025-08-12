@@ -471,11 +471,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   setRow: {
-    borderWidth: 1,
-    borderColor: theme.colors.neon,
     borderRadius: 6,
     padding: 12,
-    backgroundColor: 'rgba(0,255,0,0.05)',
+    backgroundColor: 'rgba(0,255,0,0.03)',
+    opacity: 0.7,
   },
   setHeader: {
     flexDirection: 'row',

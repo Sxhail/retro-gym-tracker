@@ -12,16 +12,18 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.root}>
       {/* SYSTEM ONLINE and protocol banner at very top */}
-      <View style={{ width: '100%', alignItems: 'flex-start', marginTop: theme.spacing.xs, marginBottom: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4, marginLeft: 16, marginTop: 4 }}>
-          <View style={{ width: 12, height: 12, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 8 }} />
-          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, letterSpacing: 1 }}>
-            SYSTEM ONLINE
+      <View style={{ width: '100%', marginTop: theme.spacing.xs, marginBottom: 0 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginHorizontal: 16, marginTop: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 10, height: 10, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 6 }} />
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, letterSpacing: 1 }}>
+              SYSTEM ONLINE
+            </Text>
+          </View>
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 11, letterSpacing: 1 }}>
+            RETRO FITNESS PROTOCOL
           </Text>
         </View>
-        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 13, marginBottom: 2, letterSpacing: 1, marginLeft: 16 }}>
-          RETRO FITNESS PROTOCOL
-        </Text>
         <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
       </View>
       {/* Header */}

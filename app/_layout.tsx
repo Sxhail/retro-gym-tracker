@@ -12,6 +12,7 @@ import { WorkoutSessionProvider } from '../context/WorkoutSessionContext';
 import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
+import RandomSplashScreen from '../components/RandomSplashScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -29,6 +30,9 @@ export default function Layout() {
 
   // State to track if minimum splash time has elapsed
   const [splashTimeElapsed, setSplashTimeElapsed] = useState(false);
+  
+  // State to control our custom random splash screen
+  const [showRandomSplash, setShowRandomSplash] = useState(true);
 
   // Start 3-second timer when component mounts
   useEffect(() => {
@@ -51,9 +55,19 @@ export default function Layout() {
     }
   }, [fontsLoaded, migrationsSuccess, migrationsError, splashTimeElapsed]);
 
+  // Show random splash screen if everything is ready but we haven't finished the custom splash
+  if (fontsLoaded && migrationsSuccess && splashTimeElapsed && showRandomSplash) {
+    return (
+      <RandomSplashScreen
+        onFinish={() => setShowRandomSplash(false)}
+        duration={2500}
+      />
+    );
+  }
 
 
-  if (!fontsLoaded || !migrationsSuccess || !splashTimeElapsed) {
+
+  if (!fontsLoaded || !migrationsSuccess || !splashTimeElapsed || showRandomSplash) {
     return null;
   }
 

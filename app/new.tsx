@@ -943,7 +943,7 @@ export default function NewWorkoutScreen() {
       >
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
           {/* Header */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.neon }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16 }}>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 24 }}>←</Text>
             </TouchableOpacity>
@@ -962,19 +962,6 @@ export default function NewWorkoutScreen() {
             onChangeText={setSearch}
           />
             </View>
-          </View>
-
-          {/* Filter and Sort Row */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>FILTER</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>{sortBy}</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>{pickerExercises.length} found</Text>
           </View>
 
           {/* Muscle Groups Filter */}

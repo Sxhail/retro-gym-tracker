@@ -43,10 +43,6 @@ export default function HomeScreen() {
             <Text style={styles.startButtonText}>START TRAINING</Text>
           </TouchableOpacity>
         )}
-        
-        <TouchableOpacity style={styles.addTemplateButton} onPress={() => router.push('/templates')}>
-          <Text style={styles.addTemplateButtonText}>TEMPLATES</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Bottom Navigation */}
@@ -205,27 +201,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 2,
-  },
-  addTemplateButton: {
-    borderWidth: 1,
-    borderColor: theme.colors.neon,
-    borderRadius: 12, // match startButton
-    paddingVertical: theme.spacing.lg, // match startButton
-    paddingHorizontal: 0, // match startButton (no extra horizontal padding)
-    backgroundColor: 'rgba(0, 255, 0, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
-    width: '100%',
-  },
-  addTemplateButtonText: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.display,
-    fontWeight: 'bold',
-    fontSize: 18,
-    letterSpacing: 1,
-    textAlign: 'center',
-    width: '100%',
   },
   templatesScroll: {
     marginTop: theme.spacing.sm,

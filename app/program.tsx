@@ -47,7 +47,9 @@ export default function ProgramScreen() {
         <Text style={styles.backButton}>←</Text>
       </TouchableOpacity>
       <Text style={styles.headerTitle}>BUILD PROTOCOL</Text>
-      <View style={{ width: 36 }} />
+      <TouchableOpacity onPress={() => router.push('/templates')}>
+        <Text style={styles.templatesButton}>TEMPLATES</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -159,7 +161,10 @@ export default function ProgramScreen() {
             <Text style={styles.methodBadge}>RECOMMENDED</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.methodCard}>
+          <TouchableOpacity 
+            style={styles.methodCard}
+            onPress={() => router.push('/templates')}
+          >
             <Text style={styles.methodTitle}>TEMPLATE-BASED</Text>
             <Text style={styles.methodDescription}>Start with proven programs (5/3/1, nSuns, etc.)</Text>
             <Text style={styles.methodBadge}>PROVEN</Text>
@@ -308,6 +313,20 @@ export default function ProgramScreen() {
     <SafeAreaView style={styles.container}>
       {renderHeader()}
       {renderProgressIndicator()}
+      
+      {/* Quick Templates Access */}
+      {step === 1 && (
+        <View style={styles.quickAccessContainer}>
+          <TouchableOpacity 
+            style={styles.templatesQuickButton}
+            onPress={() => router.push('/templates')}
+          >
+            <Text style={styles.templatesQuickText}>BROWSE TEMPLATES</Text>
+            <Text style={styles.templatesQuickSubtext}>Skip setup • Use proven programs</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      
       {step === 1 && renderStep1()}
       {step === 2 && renderStep2()}
       {step === 3 && renderStep3()}
@@ -344,6 +363,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1,
   },
+  templatesButton: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
   progressContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -366,6 +392,35 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: theme.colors.neon,
     borderRadius: 2,
+  },
+  quickAccessContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 255, 0, 0.2)',
+  },
+  templatesQuickButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+    alignItems: 'center',
+  },
+  templatesQuickText: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  templatesQuickSubtext: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    opacity: 0.7,
   },
   stepIndicator: {
     color: theme.colors.neon,

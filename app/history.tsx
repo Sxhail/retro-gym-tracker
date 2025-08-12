@@ -69,13 +69,13 @@ export default function HistoryListScreen() {
 
 
   // Calendar view state
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar'); // Start with calendar
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
 
   // Slider state
   const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = calendar, 1 = list
-  const [activeIndex, setActiveIndex] = useState(1); // Start with list (index 1)
+  const [activeIndex, setActiveIndex] = useState(0); // Start with calendar (index 0)
 
   // Total stats state
   const [totalStats, setTotalStats] = useState({
@@ -571,7 +571,7 @@ export default function HistoryListScreen() {
                 transform: [{
                   translateX: sliderPosition.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [2, (width * 0.5 - 36) - 2], // Account for border and padding
+                    outputRange: [0, width * 0.5 - 36], // Perfectly align with text boundaries
                   })
                 }]
               }
@@ -1260,12 +1260,12 @@ const styles = StyleSheet.create({
   },
   sliderIndicator: {
     position: 'absolute',
-    top: 2,
-    left: 2,
-    width: '49%', // Slightly smaller to account for borders
-    height: 32, // Reduced height
+    top: 0,
+    left: 0,
+    width: '50%', // Exactly half the container
+    height: '100%', // Full height of container
     backgroundColor: 'rgba(0, 255, 0, 0.2)',
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.colors.neon,
   },

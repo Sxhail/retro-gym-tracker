@@ -789,9 +789,9 @@ export default function HistoryListScreen() {
             <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 20, marginBottom: 16, textAlign: 'center' }}>Confirm Import</Text>
             {importSummary && (
               <View style={{ marginBottom: 18 }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, marginBottom: 8 }}>Workouts: {importSummary.workoutCount}</Text>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, marginBottom: 8 }}>Unique Exercises: {importSummary.exerciseCount}</Text>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16 }}>Sets: {importSummary.setCount}</Text>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 16, marginBottom: 8 }}>Workouts: {importSummary.workoutCount}</Text>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 16, marginBottom: 8 }}>Unique Exercises: {importSummary.exerciseCount}</Text>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 16 }}>Sets: {importSummary.setCount}</Text>
               </View>
             )}
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 18 }}>
@@ -1068,7 +1068,7 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
+    fontFamily: theme.fonts.heading,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 2,

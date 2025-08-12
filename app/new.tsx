@@ -208,7 +208,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
               <View style={{ alignItems: 'center', marginRight: 16, alignSelf: 'flex-end' }}>
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 13, marginBottom: 2 }}>PREV</Text>
                 <View style={{ borderRadius: 6, paddingHorizontal: 4, paddingVertical: 2, minWidth: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,255,0,0.08)' }}>
-                  <Text style={{ color: theme.colors.neonBright, fontFamily: theme.fonts.code, fontSize: 18 }}>
+                  <Text style={{ color: theme.colors.neonBright, fontFamily: theme.fonts.heading, fontSize: 18 }}>
                   {previousSet ? `${previousSet.weight} kg x ${previousSet.reps} reps` : '--'}
                 </Text>
               </View>
@@ -217,7 +217,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
               <View style={{ alignItems: 'center', marginRight: 6 }}>
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, marginBottom: 2 }}>KG</Text>
                 <TextInput
-                  style={{ borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, width: 80, padding: 2, backgroundColor: 'rgba(0, 255, 0, 0.05)', textAlign: 'center' }}
+                  style={{ borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 18, width: 80, padding: 2, backgroundColor: 'rgba(0, 255, 0, 0.05)', textAlign: 'center' }}
                   value={set.weight && set.weight > 0 ? set.weight.toString() : ''}
                   onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'weight', v)}
                   placeholder=""
@@ -229,7 +229,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
               <View style={{ alignItems: 'center', marginRight: 6 }}>
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, marginBottom: 2 }}>REPS</Text>
                 <TextInput
-                  style={{ borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, width: 80, padding: 2, backgroundColor: 'rgba(0, 255, 0, 0.05)', textAlign: 'center' }}
+                  style={{ borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 18, width: 80, padding: 2, backgroundColor: 'rgba(0, 255, 0, 0.05)', textAlign: 'center' }}
                   value={set.reps && set.reps > 0 ? set.reps.toString() : ''}
                   onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'reps', v)}
                   placeholder=""
@@ -286,7 +286,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
             <View style={{ width: 20, height: 2, backgroundColor: theme.colors.neon, marginRight: 8 }} />
             
             {/* Timer display */}
-            <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>
+            <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>
               {timerPaused ? 'PAUSED ' : ''}{formatRestTimer(restTime)}
             </Text>
             

@@ -106,13 +106,13 @@ const styles = StyleSheet.create({
   },
   maxWeight: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
+    fontFamily: theme.fonts.heading,
     fontSize: 18,
     fontWeight: 'bold',
   },
   maxReps: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
+    fontFamily: theme.fonts.heading,
     fontSize: 14,
     opacity: 0.7,
   },

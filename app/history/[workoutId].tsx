@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
+    fontFamily: theme.fonts.heading,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 2,
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   },
   setDetailValue: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
+    fontFamily: theme.fonts.heading,
     fontSize: 14,
     fontWeight: 'bold',
   },

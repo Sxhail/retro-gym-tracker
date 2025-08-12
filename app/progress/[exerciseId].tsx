@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.display,
+    fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: 22,
     marginBottom: 2,

@@ -22,6 +22,10 @@ export default function ProgramScreen() {
     switch (stepNum) {
       case 1:
         return config.duration && config.goal && config.frequency;
+      case 2:
+      case 3:
+      case 4:
+        return true; // For now, these steps are always "complete"
       default:
         return false;
     }
@@ -30,6 +34,10 @@ export default function ProgramScreen() {
   const handleContinue = () => {
     if (step === 1 && isStepComplete(1)) {
       setStep(2);
+    } else if (step === 2) {
+      setStep(3);
+    } else if (step === 3) {
+      setStep(4);
     }
   };
 
@@ -49,7 +57,14 @@ export default function ProgramScreen() {
       <View style={styles.progressBar}>
         <View style={[styles.progressFill, { width: `${(step / 4) * 100}%` }]} />
       </View>
-      <Text style={styles.stepIndicator}>STEP {step}/4 - PROGRAM CONFIGURATION</Text>
+      <Text style={styles.stepIndicator}>
+        STEP {step}/4 - {
+          step === 1 ? 'PROGRAM CONFIGURATION' :
+          step === 2 ? 'CREATION METHOD' :
+          step === 3 ? 'PROGRAM BUILDING' :
+          'FINAL REVIEW & LAUNCH'
+        }
+      </Text>
     </View>
   );
 
@@ -167,6 +182,139 @@ export default function ProgramScreen() {
     </ScrollView>
   );
 
+  const renderStep3 = () => (
+    <ScrollView style={styles.content}>
+      <View style={styles.configSection}>
+        <View style={styles.configHeader}>
+          <Text style={styles.configTitle}>PROGRAM BUILDING</Text>
+          <Text style={styles.configStatus}>CUSTOMIZATION</Text>
+        </View>
+        
+        <View style={styles.buildingSection}>
+          <Text style={styles.buildingSectionTitle}>WEEK STRUCTURE</Text>
+          <View style={styles.weekGrid}>
+            {[1, 2, 3, 4, 5, 6].map((week) => (
+              <TouchableOpacity key={week} style={styles.weekCard}>
+                <Text style={styles.weekNumber}>WEEK {week}</Text>
+                <Text style={styles.weekType}>
+                  {week % 4 === 0 ? 'DELOAD' : week === 6 ? 'TEST' : 'TRAINING'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.buildingSection}>
+          <Text style={styles.buildingSectionTitle}>DAY STRUCTURE</Text>
+          <View style={styles.dayGrid}>
+            {['PUSH', 'PULL', 'LEGS', 'UPPER'].map((day) => (
+              <TouchableOpacity key={day} style={styles.dayCard}>
+                <Text style={styles.dayLabel}>{day}</Text>
+                <Text style={styles.daySubtext}>4-6 EXERCISES</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.buildingSection}>
+          <Text style={styles.buildingSectionTitle}>PROGRESSION SCHEME</Text>
+          <View style={styles.progressionGrid}>
+            <TouchableOpacity style={styles.progressionCard}>
+              <Text style={styles.progressionTitle}>LINEAR</Text>
+              <Text style={styles.progressionDesc}>+2.5-5kg weekly</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.progressionCard}>
+              <Text style={styles.progressionTitle}>PERIODIZED</Text>
+              <Text style={styles.progressionDesc}>Wave loading</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  const renderStep4 = () => (
+    <ScrollView style={styles.content}>
+      <View style={styles.configSection}>
+        <View style={styles.configHeader}>
+          <Text style={styles.configTitle}>PROGRAM SUMMARY</Text>
+          <Text style={styles.configStatus}>READY TO DEPLOY</Text>
+        </View>
+        
+        <View style={styles.summarySection}>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>DURATION:</Text>
+            <Text style={styles.summaryValue}>
+              {config.duration === '6_weeks' ? '6 WEEKS' : '12 WEEKS'}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>GOAL:</Text>
+            <Text style={styles.summaryValue}>{config.goal?.toUpperCase()}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>FREQUENCY:</Text>
+            <Text style={styles.summaryValue}>
+              {config.frequency?.replace('_', ' ')?.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.featuresSection}>
+          <Text style={styles.featuresTitle}>INCLUDED FEATURES</Text>
+          {[
+            'Progressive overload tracking',
+            'Automatic deload weeks',
+            'Exercise progression schemes',
+            '1RM testing protocols',
+            'Volume periodization',
+            'Recovery optimization'
+          ].map((feature, index) => (
+            <View key={index} style={styles.featureRow}>
+              <Text style={styles.featureCheck}>✓</Text>
+              <Text style={styles.featureText}>{feature}</Text>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity style={styles.deployButton}>
+          <Text style={styles.deployButtonText}>DEPLOY PROGRAM</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+    <ScrollView style={styles.content}>
+      <View style={styles.configSection}>
+        <View style={styles.configHeader}>
+          <Text style={styles.configTitle}>CREATION METHOD</Text>
+          <Text style={styles.configStatus}>SELECT APPROACH</Text>
+        </View>
+        <View style={styles.methodGrid}>
+          <TouchableOpacity style={styles.methodCard}>
+            <Text style={styles.methodIcon}>🤖</Text>
+            <Text style={styles.methodTitle}>AUTO-GENERATE</Text>
+            <Text style={styles.methodDescription}>AI creates optimized program with periodization</Text>
+            <Text style={styles.methodBadge}>RECOMMENDED</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.methodCard}>
+            <Text style={styles.methodIcon}>📋</Text>
+            <Text style={styles.methodTitle}>TEMPLATE-BASED</Text>
+            <Text style={styles.methodDescription}>Start with proven programs (5/3/1, nSuns, etc.)</Text>
+            <Text style={styles.methodBadge}>PROVEN</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.methodCard}>
+            <Text style={styles.methodIcon}>⚙️</Text>
+            <Text style={styles.methodTitle}>MANUAL BUILD</Text>
+            <Text style={styles.methodDescription}>Complete custom control over every aspect</Text>
+            <Text style={styles.methodBadge}>ADVANCED</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
   const renderFooter = () => (
     <View style={styles.footer}>
       <TouchableOpacity 
@@ -181,14 +329,14 @@ export default function ProgramScreen() {
           styles.continueButton,
           !isStepComplete(step) && styles.continueButtonDisabled
         ]}
-        onPress={handleContinue}
+        onPress={step === 4 ? () => router.back() : handleContinue}
         disabled={!isStepComplete(step)}
       >
         <Text style={[
           styles.continueButtonText,
           !isStepComplete(step) && styles.continueButtonTextDisabled
         ]}>
-          CONTINUE →
+          {step === 4 ? 'COMPLETE →' : 'CONTINUE →'}
         </Text>
       </TouchableOpacity>
     </View>
@@ -200,6 +348,8 @@ export default function ProgramScreen() {
       {renderProgressIndicator()}
       {step === 1 && renderStep1()}
       {step === 2 && renderStep2()}
+      {step === 3 && renderStep3()}
+      {step === 4 && renderStep4()}
       {renderFooter()}
     </SafeAreaView>
   );
@@ -412,5 +562,150 @@ const styles = StyleSheet.create({
   },
   continueButtonTextDisabled: {
     opacity: 0.5,
+  },
+  // Step 3 & 4 styles
+  buildingSection: {
+    marginBottom: 16,
+  },
+  buildingSectionTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  weekGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  weekCard: {
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 4,
+    padding: 8,
+    minWidth: '30%',
+    alignItems: 'center',
+  },
+  weekNumber: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  weekType: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 8,
+    opacity: 0.7,
+  },
+  dayGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  dayCard: {
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 4,
+    padding: 12,
+    minWidth: '45%',
+    alignItems: 'center',
+  },
+  dayLabel: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  daySubtext: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 8,
+    opacity: 0.7,
+  },
+  progressionGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  progressionCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 4,
+    padding: 12,
+    alignItems: 'center',
+  },
+  progressionTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  progressionDesc: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 8,
+    opacity: 0.7,
+  },
+  summarySection: {
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  summaryLabel: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+  },
+  summaryValue: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  featuresSection: {
+    marginBottom: 16,
+  },
+  featuresTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  featureCheck: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    marginRight: 8,
+  },
+  featureText: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 10,
+    opacity: 0.8,
+  },
+  deployButton: {
+    backgroundColor: theme.colors.neon,
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+  },
+  deployButtonText: {
+    color: theme.colors.background,
+    fontFamily: theme.fonts.heading,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

@@ -155,9 +155,9 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 20,
+    paddingTop: 0,
   },
   title: {
     color: theme.colors.neon,
@@ -166,12 +166,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 2,
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 20,
+    position: 'absolute',
+    top: 80,
+    width: '100%',
   },
   imageContainer: {
-    width: 300,
-    height: 300,
-    marginBottom: 40,
+    width: 400,
+    height: 400,
+    marginBottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -183,7 +186,9 @@ const styles = StyleSheet.create({
   loadingContainer: {
     alignItems: 'center',
     marginBottom: 60,
-    marginTop: 'auto',
+    position: 'absolute',
+    bottom: 60,
+    width: '100%',
   },
   loadingBar: {
     width: 200,

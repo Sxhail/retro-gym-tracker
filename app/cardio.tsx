@@ -73,9 +73,38 @@ export default function CardioScreen() {
   };
 
   const handleCardioSelection = (option: any) => {
-    // Navigate to cardio workout screen with the selected option
-    console.log('Selected cardio:', option);
-    // You can implement navigation to specific cardio workout screens here
+    // Navigate to specific cardio workout screens
+    switch (option.type) {
+      case 'quick_hiit':
+        router.push('/cardio/quick-hiit');
+        break;
+      case 'custom_hiit':
+        router.push('/cardio/custom-hiit');
+        break;
+      case 'tabata':
+        router.push('/cardio/tabata');
+        break;
+      case 'distance_run':
+        router.push('/cardio/distance-run');
+        break;
+      case 'time_run':
+        router.push('/cardio/time-run');
+        break;
+      case 'cycling':
+        router.push('/cardio/cycling');
+        break;
+      case 'casual_walk':
+        router.push('/cardio/casual-walk');
+        break;
+      case 'power_walk':
+        router.push('/cardio/power-walk');
+        break;
+      case 'incline_walk':
+        router.push('/cardio/incline-walk');
+        break;
+      default:
+        console.log('Unknown cardio type:', option.type);
+    }
   };
 
   return (

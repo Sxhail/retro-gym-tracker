@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
   workoutName: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.heading,
+    fontFamily: theme.fonts.code,
     fontWeight: 'bold',
     fontSize: 24,
     letterSpacing: 1.5,

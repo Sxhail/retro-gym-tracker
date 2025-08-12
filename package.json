@@ -4,6 +4,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "preview": "powershell -Command \"Copy-Item app.preview.json app.json -Force; expo start --clear\"",
+    "restore": "git checkout app.json",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web"

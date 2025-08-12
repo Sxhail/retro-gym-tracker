@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.heading,
     fontWeight: 'bold',
     fontSize: 18,
     marginBottom: 2,
@@ -42,20 +42,20 @@ const styles = StyleSheet.create({
   },
   date: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     marginBottom: 2,
     opacity: 0.85,
   },
   exercises: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.body,
     fontSize: 14,
     opacity: 0.85,
   },
   arrow: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: 24,
     alignSelf: 'center',
     marginLeft: 12,

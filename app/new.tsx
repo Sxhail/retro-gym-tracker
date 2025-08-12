@@ -845,7 +845,7 @@ export default function NewWorkoutScreen() {
               <Text 
                 style={{ 
                   color: isPaused ? '#FFA500' : theme.colors.neon, // orange if paused
-                  fontFamily: 'Orbitron_700Bold', 
+                  fontFamily: theme.fonts.heading, 
                   fontSize: 24, 
                   fontWeight: 'bold', 
                   letterSpacing: 2, 

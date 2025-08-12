@@ -14,7 +14,10 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_APP_VARIANT": "preview"
+      }
     },
     "production": {
       "distribution": "store",

@@ -42,14 +42,14 @@ const styles = StyleSheet.create({
   },
   name: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontWeight: 'bold',
     fontSize: 16,
     letterSpacing: 1.2,
   },
   subtitle: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.body,
     fontSize: 12,
     opacity: 0.8,
     marginTop: 2,
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: 20,
     fontWeight: 'bold',
   },

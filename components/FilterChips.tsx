@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono,
+    fontFamily: theme.fonts.code,
     fontSize: 14,
     letterSpacing: 1,
   },

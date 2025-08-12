@@ -84,10 +84,9 @@ export default function RandomSplashScreen({ onFinish, duration = 2000 }: Random
       {/* System Status Header */}
       <View style={styles.statusHeader}>
         <View style={styles.statusRow}>
-          <View style={styles.statusIndicator} />
-          <Text style={styles.statusText}>SYSTEM ONLINE</Text>
+          <View style={styles.statusIndicatorRed} />
+          <Text style={styles.statusTextRed}>SYSTEM ONLINE</Text>
         </View>
-        <Text style={styles.protocolText}>{currentSplash.subtitle}</Text>
       </View>
 
       {/* Main Content */}
@@ -136,7 +135,6 @@ const styles = StyleSheet.create({
   },
   statusRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
@@ -144,6 +142,12 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     backgroundColor: theme.colors.neon,
+    borderRadius: 2,
+  },
+  statusIndicatorRed: {
+    width: 10,
+    height: 10,
+    backgroundColor: '#FF0000',
     borderRadius: 2,
   },
   statusText: {
@@ -154,12 +158,13 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
-  protocolText: {
-    color: theme.colors.neon,
+  statusTextRed: {
+    color: '#FF0000',
     fontFamily: theme.fonts.code,
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 1,
-    textAlign: 'right',
+    flex: 1,
+    marginLeft: 8,
   },
   mainContent: {
     flex: 1,
@@ -169,9 +174,9 @@ const styles = StyleSheet.create({
   title: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.display,
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: 'bold',
-    letterSpacing: 3,
+    letterSpacing: 2,
     textAlign: 'center',
     marginBottom: 40,
   },

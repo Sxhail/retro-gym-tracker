@@ -571,7 +571,7 @@ export default function HistoryListScreen() {
                 transform: [{
                   translateX: sliderPosition.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0, width * 0.5 - 36], // Perfectly align with text boundaries
+                    outputRange: [0, (width - CARD_MARGIN * 2) * 0.5], // Use container width calculation
                   })
                 }]
               }
@@ -982,9 +982,6 @@ const styles = StyleSheet.create({
   },
   viewToggleTextActive: {
     color: theme.colors.background,
-  },
-  calendarContainer: {
-    marginBottom: 16,
   },
   workoutCountBadge: {
     backgroundColor: LIGHT_GREEN,

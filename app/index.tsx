@@ -12,28 +12,29 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* SYSTEM ONLINE and protocol banner at very top */}
-      <View style={{ width: '100%', marginTop: theme.spacing.xs, marginBottom: 0 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginHorizontal: 16, marginTop: 4 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 10, height: 10, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 6 }} />
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, letterSpacing: 1 }}>
-              SYSTEM ONLINE
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {/* SYSTEM ONLINE and protocol banner at very top */}
+        <View style={{ width: '100%', marginTop: theme.spacing.xs, marginBottom: 0 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginHorizontal: 16, marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: 10, height: 10, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 6 }} />
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, letterSpacing: 1 }}>
+                SYSTEM ONLINE
+              </Text>
+            </View>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 11, letterSpacing: 1 }}>
+              RETRO FITNESS PROTOCOL
             </Text>
           </View>
-          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 11, letterSpacing: 1 }}>
-            RETRO FITNESS PROTOCOL
-          </Text>
+          <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
         </View>
-        <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
-      </View>
-      {/* Header */}
-      <View style={styles.headerSection}>
-        <Text style={styles.title}>GYM.TRACKER</Text>
-      </View>
+        {/* Header */}
+        <View style={styles.headerSection}>
+          <Text style={styles.title}>GYM.TRACKER</Text>
+        </View>
 
-      {/* Strength Protocol Dashboard */}
-      <View style={styles.protocolContainer}>
+        {/* Strength Protocol Dashboard */}
+        <View style={styles.protocolContainer}>
         <View style={styles.protocolHeader}>
           <Text style={styles.protocolTitle}>STRENGTH PROTOCOL v2.1</Text>
           <Text style={styles.protocolStatus}>ACTIVE PROGRAM</Text>
@@ -121,22 +122,21 @@ export default function HomeScreen() {
             <Text style={styles.achievementTime}>TODAY</Text>
           </View>
         </View>
-      </View>
+        </View>
 
-      {/* Action Buttons at Bottom */}
-      <View style={styles.bottomActionSection}>
-        {isWorkoutActive ? (
-          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-            <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
-            <Text style={styles.startButtonText}>START TRAINING</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Bottom Navigation */}
+        {/* Action Buttons */}
+        <View style={styles.bottomActionSection}>
+          {isWorkoutActive ? (
+            <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
+              <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
+              <Text style={styles.startButtonText}>START TRAINING</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>      {/* Bottom Navigation */}
       <BottomNav
         activeTab={activeTab}
         onTabPress={(tab) => {
@@ -218,7 +218,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    padding: 0,
+  },
+  scrollContainer: {
+    flex: 1,
+    paddingBottom: 100, // Space for bottom navigation
   },
   headerSection: {
     alignItems: 'center',
@@ -254,8 +257,8 @@ const styles = StyleSheet.create({
   },
   bottomActionSection: {
     marginHorizontal: theme.spacing.xl,
-    marginBottom: 80,
-    marginTop: 'auto',
+    marginBottom: theme.spacing.xl,
+    marginTop: theme.spacing.lg,
   },
   sectionTitle: {
     color: '#fff',
@@ -488,7 +491,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.neon,
     borderRadius: 8,
     backgroundColor: 'rgba(0, 255, 0, 0.02)',
-    flex: 1,
   },
   protocolHeader: {
     flexDirection: 'row',

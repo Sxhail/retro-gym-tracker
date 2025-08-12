@@ -6,6 +6,7 @@ import theme from '../styles/theme';
 import { dbOperations } from '../services/database';
 import * as schema from '../db/schema';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
+import ExerciseCard from '../components/ExerciseCard';
 
 import { getExerciseMaxWeights, getPreviousSetForExerciseSetNumber } from '../services/workoutHistory';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -1059,54 +1060,15 @@ export default function NewWorkoutScreen() {
               {pickerExercises.map((ex) => {
                 const alreadyAdded = sessionExercises.some(e => e.id === ex.id);
                 return (
-                  <TouchableOpacity 
-                    key={ex.id} 
-                    style={{ 
-                      borderWidth: 1, 
-                      borderColor: theme.colors.neon, 
-                      borderRadius: 8, 
-                      marginBottom: 12, 
-                      padding: 16, 
-                      backgroundColor: 'transparent',
-                      flexDirection: 'row',
-                      alignItems: 'center'
-                    }} 
+                  <ExerciseCard
+                    key={ex.id}
+                    exercise={ex}
+                    maxWeight={maxWeights[ex.id]}
                     onPress={() => !alreadyAdded && handleAddExerciseFromPicker(ex)}
+                    isAlreadyAdded={alreadyAdded}
+                    showAction={true}
                     disabled={alreadyAdded}
-                  >
-                    {/* Exercise Details */}
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold', marginBottom: 4 }}>
-                        {ex.name}
-                      </Text>
-                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, opacity: 0.7, marginBottom: 4 }}>
-                        {ex.muscle_group} • {ex.category}
-                      </Text>
-                    </View>
-
-                    {/* Max Weight and Reps */}
-                    {maxWeights[ex.id] && (
-                      <View style={{ alignItems: 'flex-end', marginRight: 12 }}>
-                        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, fontWeight: 'bold' }}>
-                          {Math.round(maxWeights[ex.id].weight)}kg
-                        </Text>
-                        <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, opacity: 0.7 }}>
-                          {maxWeights[ex.id].reps} reps
-                        </Text>
-                      </View>
-                    )}
-
-                    {/* Action Icons */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      {alreadyAdded ? (
-                        <Text style={{ color: theme.colors.success, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>✔</Text>
-                      ) : (
-                        <TouchableOpacity onPress={() => handleAddExerciseFromPicker(ex)}>
-                          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>+</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                </TouchableOpacity>
+                  />
                 );
               })}
               {pickerExercises.length === 0 && (

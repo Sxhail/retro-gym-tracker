@@ -2,68 +2,131 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import theme from '../styles/theme';
 
-interface ExerciseCardProps {
+export type Exercise = {
+  id: number;
   name: string;
-  subtitle?: string;
-  onAdd?: () => void;
-  onRemove?: () => void;
-  isAdded?: boolean;
+  muscle_group: string | null;
+  category: string | null;
+};
+
+export type MaxWeight = {
+  weight: number;
+  reps: number;
+};
+
+interface ExerciseCardProps {
+  exercise: Exercise;
+  maxWeight?: MaxWeight;
+  onPress?: () => void;
+  isAlreadyAdded?: boolean;
+  showAction?: boolean;
+  disabled?: boolean;
 }
 
-const ExerciseCard: React.FC<ExerciseCardProps> = ({ name, subtitle, onAdd, onRemove, isAdded }) => (
-  <View style={styles.card}>
+const ExerciseCard: React.FC<ExerciseCardProps> = ({ 
+  exercise, 
+  maxWeight, 
+  onPress, 
+  isAlreadyAdded = false, 
+  showAction = false,
+  disabled = false 
+}) => (
+  <TouchableOpacity 
+    style={[
+      styles.card,
+      { opacity: disabled ? 0.5 : 1 }
+    ]} 
+    onPress={onPress}
+    disabled={disabled}
+  >
+    {/* Exercise Details */}
     <View style={{ flex: 1 }}>
-      <Text style={styles.name}>{name}</Text>
-      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      <Text style={styles.name}>
+        {exercise.name}
+      </Text>
+      <Text style={styles.subtitle}>
+        {exercise.muscle_group} • {exercise.category}
+      </Text>
     </View>
-    {onAdd && !isAdded && (
-      <TouchableOpacity style={styles.iconBtn} onPress={onAdd}>
-        <Text style={styles.icon}>+</Text>
-      </TouchableOpacity>
+
+    {/* Max Weight and Reps */}
+    {maxWeight && (
+      <View style={[styles.maxWeightContainer, { marginRight: showAction ? 12 : 0 }]}>
+        <Text style={styles.maxWeight}>
+          {Math.round(maxWeight.weight)}kg
+        </Text>
+        <Text style={styles.maxReps}>
+          {maxWeight.reps} reps
+        </Text>
+      </View>
     )}
-    {onRemove && isAdded && (
-      <TouchableOpacity style={styles.iconBtn} onPress={onRemove}>
-        <Text style={styles.icon}>–</Text>
-      </TouchableOpacity>
+
+    {/* Action Icons */}
+    {showAction && (
+      <View style={styles.actionContainer}>
+        {isAlreadyAdded ? (
+          <Text style={styles.checkIcon}>✔</Text>
+        ) : (
+          <TouchableOpacity onPress={onPress}>
+            <Text style={styles.addIcon}>+</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     )}
-  </View>
+  </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
   card: {
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 8,
+    marginBottom: 12,
+    padding: 16,
+    backgroundColor: 'transparent',
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: theme.borderWidth,
-    borderColor: theme.colors.neon,
-    borderRadius: theme.borderRadius,
-    padding: 14,
-    marginBottom: 10,
-    backgroundColor: theme.colors.backgroundOverlay,
   },
   name: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
+    fontSize: 20,
     fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 1.2,
+    marginBottom: 4,
   },
   subtitle: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.body,
-    fontSize: 12,
-    opacity: 0.8,
-    marginTop: 2,
+    fontFamily: theme.fonts.code,
+    fontSize: 16,
+    opacity: 0.7,
+    marginBottom: 4,
   },
-  iconBtn: {
-    marginLeft: 16,
-    borderWidth: theme.borderWidth,
-    borderColor: theme.colors.neon,
-    borderRadius: theme.borderRadius,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    backgroundColor: theme.colors.backgroundOverlay,
+  maxWeightContainer: {
+    alignItems: 'flex-end',
   },
-  icon: {
+  maxWeight: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  maxReps: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkIcon: {
+    color: theme.colors.success,
+    fontFamily: theme.fonts.code,
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  addIcon: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 20,

@@ -86,8 +86,7 @@ export default function HomeScreen() {
                   router.push('/new');
                 }}
               >
-                <Text style={styles.modalTrainingIcon}>💪</Text>
-                <Text style={styles.modalTrainingTitle}>NEW WORKOUT</Text>
+                <Text style={styles.modalTrainingTitle}>WORKOUT</Text>
                 <Text style={styles.modalTrainingDescription}>Weight training with sets and reps</Text>
               </TouchableOpacity>
               
@@ -98,8 +97,7 @@ export default function HomeScreen() {
                   router.push('/cardio');
                 }}
               >
-                <Text style={styles.modalTrainingIcon}>🏃</Text>
-                <Text style={styles.modalTrainingTitle}>NEW CARDIO</Text>
+                <Text style={styles.modalTrainingTitle}>CARDIO</Text>
                 <Text style={styles.modalTrainingDescription}>Cardio sessions and HIIT workouts</Text>
               </TouchableOpacity>
             </View>
@@ -401,10 +399,6 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     backgroundColor: 'rgba(0, 255, 0, 0.05)',
-  },
-  modalTrainingIcon: {
-    fontSize: 32,
-    marginBottom: 8,
   },
   modalTrainingTitle: {
     color: theme.colors.neon,

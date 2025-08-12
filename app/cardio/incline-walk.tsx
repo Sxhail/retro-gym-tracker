@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   },
   mainTimer: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.display,
+    fontFamily: theme.fonts.heading,
     fontSize: 48,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.display,
+    fontFamily: theme.fonts.heading,
     fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',

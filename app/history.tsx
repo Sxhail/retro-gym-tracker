@@ -561,7 +561,7 @@ export default function HistoryListScreen() {
         </View>
       </View>
 
-      {/* Slider View Toggle */}
+      {/* Refined Slider Toggle */}
       <View style={styles.sliderContainer}>
         <View style={styles.sliderTrack}>
           <Animated.View 
@@ -571,7 +571,7 @@ export default function HistoryListScreen() {
                 transform: [{
                   translateX: sliderPosition.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0, width * 0.5 - 36], // Half width minus padding
+                    outputRange: [2, (width * 0.5 - 36) - 2], // Account for border and padding
                   })
                 }]
               }
@@ -624,86 +624,73 @@ export default function HistoryListScreen() {
         </View>
       )}
 
-      {/* Sliding Content Container */}
-      <View style={styles.contentContainer}>
-        <Animated.View 
-          style={[
-            styles.slidingContainer,
-            {
-              transform: [{
-                translateX: sliderPosition.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, -width], // Slide from calendar to list
-                })
-              }]
-            }
-          ]}
-        >
-          {/* Calendar View */}
-          <View style={[styles.viewContainer, { width }]}>
-            <AttendanceCalendar
-              year={currentYear}
-              month={currentMonth}
-              onDatePress={(date) => {
-                // Filter workouts for the selected date
-                setSearchQuery(date);
-                animateToView(1); // Switch to list view
-              }}
-              onMonthChange={(year, month) => {
-                setCurrentYear(year);
-                setCurrentMonth(month);
-              }}
-            />
+      {/* Content Views - Conditional Rendering */}
+      {activeIndex === 0 && (
+        <View style={styles.calendarContainer}>
+          <AttendanceCalendar
+            year={currentYear}
+            month={currentMonth}
+            onDatePress={(date) => {
+              // Filter workouts for the selected date
+              setSearchQuery(date);
+              animateToView(1); // Switch to list view
+            }}
+            onMonthChange={(year, month) => {
+              setCurrentYear(year);
+              setCurrentMonth(month);
+            }}
+          />
+        </View>
+      )}
+
+      {activeIndex === 1 && (
+        <View style={styles.listContainer}>
+          {/* Enhanced Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {searchQuery ? filteredWorkoutsCount : totalStats.totalWorkouts}
+              </Text>
+              <Text style={styles.statLabel}>
+                {searchQuery ? 'FOUND' : 'WORKOUTS'}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{formatDuration(totalStats.totalDuration)}</Text>
+              <Text style={styles.statLabel}>TOTAL TIME</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{totalStats.totalSets}</Text>
+              <Text style={styles.statLabel}>TOTAL SETS</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{formatDuration(totalStats.averageWorkoutDuration)}</Text>
+              <Text style={styles.statLabel}>AVG TIME</Text>
+            </View>
           </View>
 
-          {/* List View */}
-          <View style={[styles.viewContainer, { width }]}>
-            {/* Enhanced Stats Row */}
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>
-                  {searchQuery ? filteredWorkoutsCount : totalStats.totalWorkouts}
-                </Text>
-                <Text style={styles.statLabel}>
-                  {searchQuery ? 'FOUND' : 'WORKOUTS'}
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{formatDuration(totalStats.totalDuration)}</Text>
-                <Text style={styles.statLabel}>TOTAL TIME</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{totalStats.totalSets}</Text>
-                <Text style={styles.statLabel}>TOTAL SETS</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{formatDuration(totalStats.averageWorkoutDuration)}</Text>
-                <Text style={styles.statLabel}>AVG TIME</Text>
-              </View>
-            </View>
-
-            {/* Workout List */}
-            <ScrollView 
-              style={styles.list} 
-              contentContainerStyle={{ paddingBottom: 12 }}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  tintColor={GREEN}
-                  colors={[GREEN]}
-                />
+          {/* Workout List */}
+          <ScrollView 
+            style={styles.list} 
+            contentContainerStyle={{ paddingBottom: 12 }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={GREEN}
+                colors={[GREEN]}
+              />
+            }
+            onScroll={({ nativeEvent }) => {
+              const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+              const paddingToBottom = 20;
+              if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+                loadMore();
               }
-              onScroll={({ nativeEvent }) => {
-                const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-                const paddingToBottom = 20;
-                if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
-                  loadMore();
-                }
-              }}
-              scrollEventThrottle={400}
-            >
+            }}
+            scrollEventThrottle={400}
+          >
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>ERROR: {error}</Text>
@@ -783,10 +770,9 @@ export default function HistoryListScreen() {
             <Text style={styles.endText}>END OF HISTORY</Text>
           </View>
         )}
-            </ScrollView>
-          </View>
-        </Animated.View>
-      </View>
+          </ScrollView>
+        </View>
+      )}
 
       {/* Footer */}
       <View style={styles.footer}></View>
@@ -1257,40 +1243,43 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 0,
   },
-  // Slider styles
+  // Refined slider styles
   sliderContainer: {
     marginHorizontal: CARD_MARGIN,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   sliderTrack: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(0, 255, 0, 0.1)',
-    borderRadius: 12,
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.neonDim,
+    borderColor: 'rgba(0, 255, 0, 0.2)',
     position: 'relative',
     overflow: 'hidden',
+    height: 36, // Reduced height
   },
   sliderIndicator: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '50%',
-    height: '100%',
-    backgroundColor: 'rgba(0, 255, 0, 0.3)',
-    borderRadius: 10,
-    margin: 2,
+    top: 2,
+    left: 2,
+    width: '49%', // Slightly smaller to account for borders
+    height: 32, // Reduced height
+    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
   },
   sliderOption: {
     flex: 1,
-    paddingVertical: theme.spacing.md,
+    paddingVertical: 8, // Reduced padding
     alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 1,
   },
   sliderText: {
     color: theme.colors.neonDim,
-    fontFamily: theme.fonts.display,
-    fontSize: 16,
+    fontFamily: theme.fonts.code,
+    fontSize: 12, // Reduced font size
     fontWeight: 'bold',
     letterSpacing: 1,
   },
@@ -1298,16 +1287,11 @@ const styles = StyleSheet.create({
     color: theme.colors.neon,
   },
   // Content container styles
-  contentContainer: {
-    flex: 1,
-    overflow: 'hidden',
-  },
-  slidingContainer: {
-    flexDirection: 'row',
-    height: '100%',
-  },
-  viewContainer: {
+  calendarContainer: {
     flex: 1,
     paddingHorizontal: 0,
+  },
+  listContainer: {
+    flex: 1,
   },
 }); 

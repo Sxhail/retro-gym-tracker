@@ -181,10 +181,6 @@ export default function WorkoutDetailScreen() {
           <Text style={styles.statNumber}>{completedSets}</Text>
           <Text style={styles.statLabel}>COMPLETED</Text>
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{Math.round(averageWeight)}</Text>
-          <Text style={styles.statLabel}>AVG KG</Text>
-        </View>
       </View>
 
       {/* Exercises List */}

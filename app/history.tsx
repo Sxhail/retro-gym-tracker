@@ -663,10 +663,6 @@ export default function HistoryListScreen() {
               <Text style={styles.statNumber}>{totalStats.totalSets}</Text>
               <Text style={styles.statLabel}>TOTAL SETS</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{formatDuration(totalStats.averageWorkoutDuration)}</Text>
-              <Text style={styles.statLabel}>AVG TIME</Text>
-            </View>
           </View>
 
           {/* Workout List */}

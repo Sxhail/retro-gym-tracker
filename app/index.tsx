@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
@@ -7,6 +7,7 @@ import theme from '../styles/theme';
 export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('start');
+  const [showTrainingModal, setShowTrainingModal] = useState(false);
   const { isWorkoutActive } = useWorkoutSession();
 
   return (
@@ -33,15 +34,15 @@ export default function HomeScreen() {
 
       {/* Action Buttons at Bottom */}
       <View style={styles.bottomActionSection}>
-        <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-          <Text style={styles.startButtonText}>
-            {isWorkoutActive ? 'CONTINUE WORKOUT' : 'NEW WORKOUT'}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.addTemplateButton} onPress={() => router.push('/cardio')}>
-          <Text style={styles.addTemplateButtonText}>NEW CARDIO</Text>
-        </TouchableOpacity>
+        {isWorkoutActive ? (
+          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
+            <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
+            <Text style={styles.startButtonText}>START TRAINING</Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity style={styles.addTemplateButton} onPress={() => router.push('/templates')}>
           <Text style={styles.addTemplateButtonText}>TEMPLATES</Text>
@@ -59,6 +60,52 @@ export default function HomeScreen() {
           if (tab === 'progress') router.push('/progress');
         }}
       />
+      
+      {/* Training Selection Modal */}
+      <Modal
+        visible={showTrainingModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowTrainingModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowTrainingModal(false)}>
+                <Text style={styles.modalCloseButton}>←</Text>
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>SELECT TRAINING TYPE</Text>
+              <View style={{ width: 36 }} />
+            </View>
+            
+            <View style={styles.modalBody}>
+              <TouchableOpacity 
+                style={styles.modalTrainingButton} 
+                onPress={() => {
+                  setShowTrainingModal(false);
+                  router.push('/new');
+                }}
+              >
+                <Text style={styles.modalTrainingIcon}>💪</Text>
+                <Text style={styles.modalTrainingTitle}>NEW WORKOUT</Text>
+                <Text style={styles.modalTrainingDescription}>Weight training with sets and reps</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.modalTrainingButton} 
+                onPress={() => {
+                  setShowTrainingModal(false);
+                  router.push('/cardio');
+                }}
+              >
+                <Text style={styles.modalTrainingIcon}>🏃</Text>
+                <Text style={styles.modalTrainingTitle}>NEW CARDIO</Text>
+                <Text style={styles.modalTrainingDescription}>Cardio sessions and HIIT workouts</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -305,5 +352,73 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 2,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.background,
+    borderRadius: 16,
+    width: '90%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.neon,
+  },
+  modalCloseButton: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  modalTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  modalBody: {
+    padding: 16,
+    gap: 12,
+  },
+  modalTrainingButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+  },
+  modalTrainingIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  modalTrainingTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.display,
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  modalTrainingDescription: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    textAlign: 'center',
+    opacity: 0.8,
   },
 }); 

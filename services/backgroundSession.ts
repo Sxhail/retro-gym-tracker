@@ -128,12 +128,20 @@ class BackgroundSessionService {
       const sessionData = JSON.parse(session.session_data);
       const startTime = new Date(session.start_time);
       
-      // Calculate current elapsed time based on real time passage
+      // Calculate current elapsed time with proper pause handling
       const currentTime = new Date();
-      const realElapsedTime = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
+      let elapsedTime: number;
       
-      // Use stored elapsed time if paused, otherwise calculate from real time
-      const elapsedTime = session.is_paused ? session.elapsed_time : realElapsedTime;
+      if (session.is_paused) {
+        // If paused, use the stored elapsed time (total accumulated time)
+        elapsedTime = session.elapsed_time;
+      } else {
+        // If active, the stored elapsed_time is accumulated time from previous segments
+        // startTime represents when the current active segment began
+        // Add time elapsed in current segment to accumulated time
+        const currentSegmentTime = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
+        elapsedTime = session.elapsed_time + currentSegmentTime;
+      }
 
       const restoredState: SessionState = {
         sessionId: session.session_id,
@@ -178,17 +186,19 @@ class BackgroundSessionService {
       }
 
       const timer = timers[0];
-      const startTime = new Date(timer.start_time);
+      const segmentStartTime = new Date(timer.start_time);
       const currentTime = new Date();
       
-      // Calculate real elapsed time since timer started
-      const realElapsed = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
-      const totalElapsed = timer.elapsed_when_paused + realElapsed;
+      // elapsed_when_paused contains the total accumulated time
+      // start_time represents when the current active segment began
+      // Calculate total elapsed time correctly
+      const currentSegmentElapsed = Math.floor((currentTime.getTime() - segmentStartTime.getTime()) / 1000);
+      const totalElapsed = timer.elapsed_when_paused + currentSegmentElapsed;
 
       const restoredTimer: TimerState = {
         sessionId: timer.session_id,
         timerType: timer.timer_type as 'workout' | 'rest',
-        startTime,
+        startTime: segmentStartTime,
         duration: timer.duration,
         elapsedWhenPaused: totalElapsed,
         isActive: timer.is_active === 1,

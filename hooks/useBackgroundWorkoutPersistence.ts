@@ -38,11 +38,18 @@ export function useBackgroundWorkoutPersistence() {
     lastSaveTime.current = now;
 
     try {
+      // Calculate the current resume time (when workout was last unpaused)
+      // If currently paused, we use the stored elapsed time as-is
+      // If active, we need to save the time when it was last resumed
+      const resumeTime = session.isPaused 
+        ? session.sessionStartTime // If paused, doesn't matter as we use stored elapsed
+        : new Date(Date.now() - (session.elapsedTime * 1000)); // Backtrack to find resume time
+
       const state: SessionState = {
         sessionId,
         name: session.workoutName,
-        startTime: session.sessionStartTime,
-        elapsedTime: session.elapsedTime,
+        startTime: resumeTime, // This represents when current active segment started
+        elapsedTime: session.elapsedTime, // Total accumulated elapsed time
         isPaused: session.isPaused,
         currentExercises: session.currentExercises,
         sessionMeta: session.sessionMeta,
@@ -54,9 +61,9 @@ export function useBackgroundWorkoutPersistence() {
       await backgroundSessionService.saveTimerState({
         sessionId,
         timerType: 'workout',
-        startTime: session.sessionStartTime,
+        startTime: resumeTime, // Use the calculated resume time
         duration: 0, // Open-ended workout timer
-        elapsedWhenPaused: session.elapsedTime,
+        elapsedWhenPaused: session.elapsedTime, // Total accumulated time
         isActive: !session.isPaused,
       });
     } catch (error) {

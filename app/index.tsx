@@ -57,7 +57,7 @@ export default function HomeScreen() {
           if (tab === 'program') router.push('/program');
           if (tab === 'history') router.push('/history');
           if (tab === 'exercises') router.push('/exercises');
-          if (tab === 'progress') router.push('/progress');
+          if (tab === 'progress') router.push('/stats');
         }}
       />
       
@@ -121,7 +121,7 @@ const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (
         <Text style={[styles.navTabLabel, activeTab === 'exercises' && styles.navTabLabelActive]}>Exercises</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
-        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>Progress</Text>
+        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>STATS</Text>
       </TouchableOpacity>
     </View>
   </SafeAreaView>

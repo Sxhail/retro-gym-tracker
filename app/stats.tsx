@@ -96,7 +96,7 @@ export default function ProgressOverview() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.back}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.pageTitle}>PROGRESS</Text>
+        <Text style={styles.pageTitle}>STATS</Text>
         <View style={{ width: 36 }} />
       </View>
       {/* Exercise Selection Dropdown with Search */}

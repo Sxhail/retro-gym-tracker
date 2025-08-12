@@ -117,7 +117,7 @@ const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (
         <Text style={[styles.navTabLabel, activeTab === 'exercises' && styles.navTabLabelActive]}>Exercises</Text>
       </TouchableOpacity> */}
       <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
-        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>STATS</Text>
+        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>Stats</Text>
       </TouchableOpacity>
     </View>
   </SafeAreaView>

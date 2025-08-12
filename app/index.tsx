@@ -39,6 +39,10 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
         
+        <TouchableOpacity style={styles.addTemplateButton} onPress={() => router.push('/cardio')}>
+          <Text style={styles.addTemplateButtonText}>NEW CARDIO</Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity style={styles.addTemplateButton} onPress={() => router.push('/templates')}>
           <Text style={styles.addTemplateButtonText}>TEMPLATES</Text>
         </TouchableOpacity>

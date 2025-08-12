@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, SafeAreaView, TextInput, Modal, FlatList, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, SafeAreaView, TextInput, Modal, FlatList, Alert, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 import { getWorkoutHistory, getTotalWorkoutStats, formatDuration, formatDate, type WorkoutHistoryItem } from '../services/workoutHistory';
@@ -15,7 +15,7 @@ import AttendanceCalendar from '../components/AttendanceCalendar';
 const GREEN = '#00FF00';
 const LIGHT_GREEN = '#39FF14';
 const FONT = 'monospace';
-const { width } = require('react-native').Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const CARD_MARGIN = 18;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 
@@ -72,6 +72,10 @@ export default function HistoryListScreen() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+
+  // Slider state
+  const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = calendar, 1 = list
+  const [activeIndex, setActiveIndex] = useState(1); // Start with list (index 1)
 
   // Total stats state
   const [totalStats, setTotalStats] = useState({
@@ -443,6 +447,21 @@ export default function HistoryListScreen() {
     }
   };
 
+  // Slider animation functions
+  const animateToView = (index: number) => {
+    setActiveIndex(index);
+    Animated.timing(sliderPosition, {
+      toValue: index,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+    setViewMode(index === 0 ? 'calendar' : 'list');
+  };
+
+  const handleSliderPress = (index: number) => {
+    animateToView(index);
+  };
+
   // Load initial data
   useEffect(() => {
     loadWorkoutHistory(true);
@@ -542,36 +561,45 @@ export default function HistoryListScreen() {
         </View>
       </View>
 
-      {/* View Mode Toggle */}
-      <View style={styles.viewToggleContainer}>
-        <TouchableOpacity
-          style={[
-            styles.viewToggleButton,
-            viewMode === 'calendar' && styles.viewToggleButtonActive
-          ]}
-          onPress={() => setViewMode('calendar')}
-        >
-          <Text style={[
-            styles.viewToggleText,
-            viewMode === 'calendar' && styles.viewToggleTextActive
-          ]}>
-            CALENDAR
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.viewToggleButton,
-            viewMode === 'list' && styles.viewToggleButtonActive
-          ]}
-          onPress={() => setViewMode('list')}
-        >
-          <Text style={[
-            styles.viewToggleText,
-            viewMode === 'list' && styles.viewToggleTextActive
-          ]}>
-            LIST
-          </Text>
-        </TouchableOpacity>
+      {/* Slider View Toggle */}
+      <View style={styles.sliderContainer}>
+        <View style={styles.sliderTrack}>
+          <Animated.View 
+            style={[
+              styles.sliderIndicator,
+              {
+                transform: [{
+                  translateX: sliderPosition.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, width * 0.5 - 36], // Half width minus padding
+                  })
+                }]
+              }
+            ]}
+          />
+          <TouchableOpacity
+            style={styles.sliderOption}
+            onPress={() => handleSliderPress(0)}
+          >
+            <Text style={[
+              styles.sliderText,
+              activeIndex === 0 && styles.sliderTextActive
+            ]}>
+              CALENDAR
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sliderOption}
+            onPress={() => handleSliderPress(1)}
+          >
+            <Text style={[
+              styles.sliderText,
+              activeIndex === 1 && styles.sliderTextActive
+            ]}>
+              LIST
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Bar - left aligned below title */}
@@ -596,74 +624,86 @@ export default function HistoryListScreen() {
         </View>
       )}
 
-      {/* Calendar View */}
-      {viewMode === 'calendar' && (
-        <View style={styles.calendarContainer}>
-          <AttendanceCalendar
-            year={currentYear}
-            month={currentMonth}
-            onDatePress={(date) => {
-              // Filter workouts for the selected date
-              setSearchQuery(date);
-              setViewMode('list');
-            }}
-            onMonthChange={(year, month) => {
-              setCurrentYear(year);
-              setCurrentMonth(month);
-            }}
-          />
-        </View>
-      )}
-
-      {/* Enhanced Stats Row - Only show in list view */}
-      {viewMode === 'list' && (
-        <View style={styles.statsRow}>
-                  <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
-            {searchQuery ? filteredWorkoutsCount : totalStats.totalWorkouts}
-          </Text>
-          <Text style={styles.statLabel}>
-            {searchQuery ? 'FOUND' : 'WORKOUTS'}
-          </Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{formatDuration(totalStats.totalDuration)}</Text>
-          <Text style={styles.statLabel}>TOTAL TIME</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{totalStats.totalSets}</Text>
-          <Text style={styles.statLabel}>TOTAL SETS</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{formatDuration(totalStats.averageWorkoutDuration)}</Text>
-          <Text style={styles.statLabel}>AVG TIME</Text>
-        </View>
-        </View>
-      )}
-
-      {/* Workout List - Only show in list view */}
-      {viewMode === 'list' && (
-        <ScrollView 
-          style={styles.list} 
-          contentContainerStyle={{ paddingBottom: 12 }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={GREEN}
-              colors={[GREEN]}
-            />
-          }
-          onScroll={({ nativeEvent }) => {
-            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-            const paddingToBottom = 20;
-            if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
-              loadMore();
+      {/* Sliding Content Container */}
+      <View style={styles.contentContainer}>
+        <Animated.View 
+          style={[
+            styles.slidingContainer,
+            {
+              transform: [{
+                translateX: sliderPosition.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -width], // Slide from calendar to list
+                })
+              }]
             }
-          }}
-          scrollEventThrottle={400}
+          ]}
         >
+          {/* Calendar View */}
+          <View style={[styles.viewContainer, { width }]}>
+            <AttendanceCalendar
+              year={currentYear}
+              month={currentMonth}
+              onDatePress={(date) => {
+                // Filter workouts for the selected date
+                setSearchQuery(date);
+                animateToView(1); // Switch to list view
+              }}
+              onMonthChange={(year, month) => {
+                setCurrentYear(year);
+                setCurrentMonth(month);
+              }}
+            />
+          </View>
+
+          {/* List View */}
+          <View style={[styles.viewContainer, { width }]}>
+            {/* Enhanced Stats Row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>
+                  {searchQuery ? filteredWorkoutsCount : totalStats.totalWorkouts}
+                </Text>
+                <Text style={styles.statLabel}>
+                  {searchQuery ? 'FOUND' : 'WORKOUTS'}
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{formatDuration(totalStats.totalDuration)}</Text>
+                <Text style={styles.statLabel}>TOTAL TIME</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{totalStats.totalSets}</Text>
+                <Text style={styles.statLabel}>TOTAL SETS</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{formatDuration(totalStats.averageWorkoutDuration)}</Text>
+                <Text style={styles.statLabel}>AVG TIME</Text>
+              </View>
+            </View>
+
+            {/* Workout List */}
+            <ScrollView 
+              style={styles.list} 
+              contentContainerStyle={{ paddingBottom: 12 }}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={GREEN}
+                  colors={[GREEN]}
+                />
+              }
+              onScroll={({ nativeEvent }) => {
+                const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                const paddingToBottom = 20;
+                if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+                  loadMore();
+                }
+              }}
+              scrollEventThrottle={400}
+            >
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>ERROR: {error}</Text>
@@ -743,8 +783,10 @@ export default function HistoryListScreen() {
             <Text style={styles.endText}>END OF HISTORY</Text>
           </View>
         )}
-        </ScrollView>
-      )}
+            </ScrollView>
+          </View>
+        </Animated.View>
+      </View>
 
       {/* Footer */}
       <View style={styles.footer}></View>
@@ -1214,5 +1256,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     marginTop: 0,
+  },
+  // Slider styles
+  sliderContainer: {
+    marginHorizontal: CARD_MARGIN,
+    marginBottom: theme.spacing.md,
+  },
+  sliderTrack: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.neonDim,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  sliderIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '50%',
+    height: '100%',
+    backgroundColor: 'rgba(0, 255, 0, 0.3)',
+    borderRadius: 10,
+    margin: 2,
+  },
+  sliderOption: {
+    flex: 1,
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  sliderText: {
+    color: theme.colors.neonDim,
+    fontFamily: theme.fonts.display,
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  sliderTextActive: {
+    color: theme.colors.neon,
+  },
+  // Content container styles
+  contentContainer: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  slidingContainer: {
+    flexDirection: 'row',
+    height: '100%',
+  },
+  viewContainer: {
+    flex: 1,
+    paddingHorizontal: 0,
   },
 }); 

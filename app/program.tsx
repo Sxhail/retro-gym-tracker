@@ -20,9 +20,8 @@ export default function ProgramScreen() {
 
   const isStepComplete = (stepNum: number) => {
     switch (stepNum) {
-      case 1:
-        return config.duration && config.goal && config.frequency;
       case 2:
+        return config.duration && config.goal && config.frequency;
       case 3:
       case 4:
         return true; // For now, these steps are always "complete"
@@ -32,9 +31,7 @@ export default function ProgramScreen() {
   };
 
   const handleContinue = () => {
-    if (step === 1 && isStepComplete(1)) {
-      setStep(2);
-    } else if (step === 2) {
+    if (step === 2) {
       setStep(3);
     } else if (step === 3) {
       setStep(4);
@@ -46,22 +43,19 @@ export default function ProgramScreen() {
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.backButton}>←</Text>
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>BUILD PROTOCOL</Text>
-      <TouchableOpacity onPress={() => router.push('/templates')}>
-        <Text style={styles.templatesButton}>TEMPLATES</Text>
-      </TouchableOpacity>
+      <Text style={styles.headerTitle}>TRAINING PROGRAMS</Text>
+      <View style={{ width: 36 }} />
     </View>
   );
 
   const renderProgressIndicator = () => (
     <View style={styles.progressContainer}>
-      <Text style={styles.progressLabel}>- MAIN</Text>
+      <Text style={styles.progressLabel}>- BUILDING CUSTOM PROGRAM</Text>
       <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: `${(step / 4) * 100}%` }]} />
+        <View style={[styles.progressFill, { width: `${((step - 1) / 3) * 100}%` }]} />
       </View>
       <Text style={styles.stepIndicator}>
-        STEP {step}/4 - {
-          step === 1 ? 'PROGRAM CONFIGURATION' :
+        STEP {step - 1}/3 - {
           step === 2 ? 'CREATION METHOD' :
           step === 3 ? 'PROGRAM BUILDING' :
           'FINAL REVIEW & LAUNCH'
@@ -149,34 +143,43 @@ export default function ProgramScreen() {
 
   const renderStep2 = () => (
     <ScrollView style={styles.content}>
-      <View style={styles.configSection}>
-        <View style={styles.configHeader}>
-          <Text style={styles.configTitle}>CREATION METHOD</Text>
-          <Text style={styles.configStatus}>SELECT APPROACH</Text>
-        </View>
-        <View style={styles.methodGrid}>
-          <TouchableOpacity style={styles.methodCard}>
-            <Text style={styles.methodTitle}>AUTO-GENERATE</Text>
-            <Text style={styles.methodDescription}>AI creates optimized program with periodization</Text>
-            <Text style={styles.methodBadge}>RECOMMENDED</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.methodCard}
-            onPress={() => router.push('/templates')}
-          >
-            <Text style={styles.methodTitle}>TEMPLATE-BASED</Text>
-            <Text style={styles.methodDescription}>Start with proven programs (5/3/1, nSuns, etc.)</Text>
-            <Text style={styles.methodBadge}>PROVEN</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.methodCard}>
-            <Text style={styles.methodTitle}>MANUAL BUILD</Text>
-            <Text style={styles.methodDescription}>Complete custom control over every aspect</Text>
-            <Text style={styles.methodBadge}>ADVANCED</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Program Configuration */}
+      {renderConfigSection(
+        'DURATION',
+        config.duration ? 'SET' : 'NOT SET',
+        [
+          { value: '6_weeks', label: '6 WEEKS', subtext: 'QUICK GAINS' },
+          { value: '12_weeks', label: '12 WEEKS', subtext: 'FULL CYCLE' },
+        ],
+        config.duration,
+        (value) => setConfig({ ...config, duration: value })
+      )}
+
+      {renderConfigSection(
+        'PRIMARY GOAL',
+        config.goal ? 'SET' : 'NOT SET',
+        [
+          { value: 'strength', label: 'STRENGTH', subtext: 'MAX POWER' },
+          { value: 'hypertrophy', label: 'HYPERTROPHY', subtext: 'MUSCLE MASS' },
+          { value: 'endurance', label: 'ENDURANCE', subtext: 'CONDITIONING' },
+          { value: 'powerlifting', label: 'POWERLIFTING', subtext: 'COMP PREP' },
+        ],
+        config.goal,
+        (value) => setConfig({ ...config, goal: value })
+      )}
+
+      {renderConfigSection(
+        'FREQUENCY',
+        config.frequency ? 'SET' : 'NOT SET',
+        [
+          { value: '3_days', label: '3 DAYS', subtext: 'BEGINNER' },
+          { value: '4_days', label: '4 DAYS', subtext: 'INTERMEDIATE' },
+          { value: '5_days', label: '5 DAYS', subtext: 'ADVANCED' },
+          { value: '6_days', label: '6 DAYS', subtext: 'ELITE' },
+        ],
+        config.frequency,
+        (value) => setConfig({ ...config, frequency: value })
+      )}
     </ScrollView>
   );
 
@@ -312,26 +315,58 @@ export default function ProgramScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {renderHeader()}
-      {renderProgressIndicator()}
       
-      {/* Quick Templates Access */}
-      {step === 1 && (
-        <View style={styles.quickAccessContainer}>
+      {/* Show pathway selection only on step 1, otherwise show progress */}
+      {step === 1 ? (
+        <View style={styles.pathwayContainer}>
+          <Text style={styles.pathwayTitle}>CHOOSE YOUR PATH</Text>
+          
+          {/* Template Path */}
           <TouchableOpacity 
-            style={styles.templatesQuickButton}
+            style={styles.pathwayCard}
             onPress={() => router.push('/templates')}
           >
-            <Text style={styles.templatesQuickText}>BROWSE TEMPLATES</Text>
-            <Text style={styles.templatesQuickSubtext}>Skip setup • Use proven programs</Text>
+            <View style={styles.pathwayHeader}>
+              <Text style={styles.pathwayCardTitle}>USE TEMPLATES</Text>
+              <Text style={styles.pathwayBadge}>QUICK START</Text>
+            </View>
+            <Text style={styles.pathwayDescription}>
+              Browse proven workout programs from top trainers and athletes
+            </Text>
+            <Text style={styles.pathwayFeatures}>
+              • 5/3/1, nSuns, PPL programs{'\n'}
+              • Beginner to advanced levels{'\n'}
+              • Ready to use immediately
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Custom Program Path */}
+          <TouchableOpacity 
+            style={styles.pathwayCard}
+            onPress={() => setStep(2)}
+          >
+            <View style={styles.pathwayHeader}>
+              <Text style={styles.pathwayCardTitle}>BUILD CUSTOM</Text>
+              <Text style={styles.pathwayBadge}>ADVANCED</Text>
+            </View>
+            <Text style={styles.pathwayDescription}>
+              Create a personalized program tailored to your goals
+            </Text>
+            <Text style={styles.pathwayFeatures}>
+              • AI-powered optimization{'\n'}
+              • Custom periodization{'\n'}
+              • Full configuration control
+            </Text>
           </TouchableOpacity>
         </View>
+      ) : (
+        renderProgressIndicator()
       )}
       
-      {step === 1 && renderStep1()}
       {step === 2 && renderStep2()}
       {step === 3 && renderStep3()}
       {step === 4 && renderStep4()}
-      {renderFooter()}
+      {step > 1 && renderFooter()}
     </SafeAreaView>
   );
 }
@@ -363,13 +398,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1,
   },
-  templatesButton: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
   progressContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -393,33 +421,64 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.neon,
     borderRadius: 2,
   },
-  quickAccessContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 255, 0, 0.2)',
+  pathwayContainer: {
+    padding: 20,
+    backgroundColor: theme.colors.background,
   },
-  templatesQuickButton: {
-    borderWidth: 1,
-    borderColor: theme.colors.neon,
-    borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(0, 255, 0, 0.1)',
-    alignItems: 'center',
-  },
-  templatesQuickText: {
+  pathwayTitle: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 24,
+    letterSpacing: 2,
+  },
+  pathwayCard: {
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+  },
+  pathwayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pathwayCardTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.display,
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,
-    marginBottom: 4,
   },
-  templatesQuickSubtext: {
+  pathwayBadge: {
+    color: theme.colors.background,
+    backgroundColor: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 10,
+    fontWeight: 'bold',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    letterSpacing: 1,
+  },
+  pathwayDescription: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+    opacity: 0.9,
+  },
+  pathwayFeatures: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 12,
+    lineHeight: 18,
     opacity: 0.7,
   },
   stepIndicator: {

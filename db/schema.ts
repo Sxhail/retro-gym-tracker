@@ -131,6 +131,31 @@ export type WorkoutTemplate = typeof workout_templates.$inferSelect;
 export type TemplateExercise = typeof template_exercises.$inferSelect;
 export type TemplateSet = typeof template_sets.$inferSelect;
 
+// Background Session Persistence Tables
+export const active_workout_sessions = sqliteTable('active_workout_sessions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  session_id: text('session_id').notNull().unique(), // UUID for session tracking
+  name: text('name').notNull(),
+  start_time: text('start_time').notNull(), // ISO timestamp
+  elapsed_time: integer('elapsed_time').notNull().default(0), // seconds
+  is_paused: integer('is_paused').notNull().default(0), // boolean 0/1
+  current_exercise_index: integer('current_exercise_index').default(0),
+  session_data: text('session_data').notNull(), // JSON string of full session state
+  last_updated: text('last_updated').notNull(), // ISO timestamp for sync
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
+});
+
+export const active_session_timers = sqliteTable('active_session_timers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  session_id: text('session_id').notNull().references(() => active_workout_sessions.session_id, { onDelete: 'cascade' }),
+  timer_type: text('timer_type').notNull(), // 'workout' | 'rest'
+  start_time: text('start_time').notNull(), // ISO timestamp
+  duration: integer('duration').notNull().default(0), // expected duration in seconds
+  elapsed_when_paused: integer('elapsed_when_paused').default(0), // seconds elapsed when paused
+  is_active: integer('is_active').notNull().default(1), // boolean 0/1
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
+});
+
 // Insert types
 export type NewExercise = typeof exercises.$inferInsert;
 export type NewWorkout = typeof workouts.$inferInsert;
@@ -138,4 +163,10 @@ export type NewWorkoutExercise = typeof workout_exercises.$inferInsert;
 export type NewSet = typeof sets.$inferInsert;
 export type NewWorkoutTemplate = typeof workout_templates.$inferInsert;
 export type NewTemplateExercise = typeof template_exercises.$inferInsert;
-export type NewTemplateSet = typeof template_sets.$inferInsert; 
+export type NewTemplateSet = typeof template_sets.$inferInsert;
+
+// Background persistence types
+export type ActiveWorkoutSession = typeof active_workout_sessions.$inferSelect;
+export type NewActiveWorkoutSession = typeof active_workout_sessions.$inferInsert;
+export type ActiveSessionTimer = typeof active_session_timers.$inferSelect;
+export type NewActiveSessionTimer = typeof active_session_timers.$inferInsert; 

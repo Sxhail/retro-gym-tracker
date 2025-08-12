@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('start');
+  const { isWorkoutActive } = useWorkoutSession();
 
   return (
     <SafeAreaView style={styles.root}>
@@ -39,7 +41,9 @@ export default function HomeScreen() {
       {/* Action Buttons at Bottom */}
       <View style={styles.bottomActionSection}>
         <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-          <Text style={styles.startButtonText}>NEW WORKOUT</Text>
+          <Text style={styles.startButtonText}>
+            {isWorkoutActive ? 'CONTINUE WORKOUT' : 'NEW WORKOUT'}
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.addTemplateButton} onPress={() => router.push('/templates')}>

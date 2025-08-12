@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "Retro Gym Tracker - Preview",
-    "slug": "retro-gym-tracker-preview",
+    "name": "Retro Gym Tracker",
+    "slug": "retro-gym-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./app/assets/icon.png",
     "userInterfaceStyle": "dark",
-    "scheme": "retro-gym-tracker-preview",
-    "runtimeVersion": "1.0.0-preview",
+    "scheme": "retro-gym-tracker",
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/2955f480-ac00-4dd4-be3e-35c023cc436b"
     },
@@ -21,7 +21,7 @@
       "backgroundColor": "#000000"
     },
     "ios": {
-      "bundleIdentifier": "com.sxhail.retrogymtracker.preview",
+      "bundleIdentifier": "com.sxhail.retrogymtracker",
       "supportsTablet": true,
       "requireFullScreen": false,
       "icon": "./app/assets/icon.png",
@@ -30,7 +30,7 @@
       }
     },
     "android": {
-      "package": "com.sxhail.retrogymtracker.preview",
+      "package": "com.sxhail.retrogymtracker",
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#000000"

@@ -11,6 +11,7 @@ import { DatabaseProvider } from '../context/DatabaseContext';
 import { WorkoutSessionProvider } from '../context/WorkoutSessionContext';
 import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
+import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -60,14 +61,16 @@ export default function Layout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DatabaseProvider>
         <WorkoutSessionProvider>
-          <AppLayout>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'none',
-              }}
-            />
-          </AppLayout>
+          <BackgroundWorkoutPersistence>
+            <AppLayout>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'none',
+                }}
+              />
+            </AppLayout>
+          </BackgroundWorkoutPersistence>
         </WorkoutSessionProvider>
       </DatabaseProvider>
     </GestureHandlerRootView>

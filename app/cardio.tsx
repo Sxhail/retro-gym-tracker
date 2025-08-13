@@ -22,12 +22,6 @@ export default function CardioScreen() {
         subtitle: 'CUSTOMIZE YOUR INTERVALS',
         duration: null,
         type: 'custom_hiit'
-      },
-      {
-        title: 'TABATA PROTOCOL',
-        subtitle: '4 MIN • 20s ON / 10s OFF',
-        duration: 4,
-        type: 'tabata'
       }
     ],
     STEADY: [
@@ -80,9 +74,6 @@ export default function CardioScreen() {
         break;
       case 'custom_hiit':
         router.push('/cardio/custom-hiit');
-        break;
-      case 'tabata':
-        router.push('/cardio/tabata');
         break;
       case 'distance_run':
         router.push('/cardio/distance-run');
@@ -179,13 +170,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: theme.colors.neon,
-    fontSize: 24,
+    fontSize: 36,
     fontFamily: theme.fonts.code,
   },
   headerTitle: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 1,
   },

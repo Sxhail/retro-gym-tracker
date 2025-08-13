@@ -1,23 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Image, StyleSheet, Animated } from 'react-native';
 
-const SPLASH_IMAGES = [
-  require('../app/assets/splash.png'),
-  require('../app/assets/splash2.png'),
-];
-
-interface NativeSplashRandomizerProps {
+interface CustomSplashScreenProps {
   onFinish: () => void;
   duration?: number;
 }
 
-export default function NativeSplashRandomizer({ onFinish, duration = 2000 }: NativeSplashRandomizerProps) {
-  const [currentSplash] = useState(() => {
-    // Randomly select a splash image
-    const randomIndex = Math.floor(Math.random() * SPLASH_IMAGES.length);
-    return SPLASH_IMAGES[randomIndex];
-  });
-
+export default function CustomSplashScreen({ onFinish, duration = 2000 }: CustomSplashScreenProps) {
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
@@ -46,7 +35,7 @@ export default function NativeSplashRandomizer({ onFinish, duration = 2000 }: Na
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <Image
-        source={currentSplash}
+        source={require('../app/assets/splash.png')}
         style={styles.splashImage}
         resizeMode="cover"
       />

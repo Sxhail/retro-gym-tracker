@@ -12,8 +12,7 @@ import { WorkoutSessionProvider } from '../context/WorkoutSessionContext';
 import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
-import RandomSplashScreen from '../components/RandomSplashScreen';
-import NativeSplashRandomizer from '../components/NativeSplashRandomizer';
+import CustomSplashScreen from '../components/CustomSplashScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -29,27 +28,12 @@ export default function Layout() {
   // Apply database migrations
   const { success: migrationsSuccess, error: migrationsError } = useDatabaseMigrations();
 
-  // State to track if minimum splash time has elapsed
-  const [splashTimeElapsed, setSplashTimeElapsed] = useState(false);
-  
-  // State to control our custom random splash screen
-  const [showRandomSplash, setShowRandomSplash] = useState(true);
-  
-  // State to control native splash randomizer
+  // State to control native splash
   const [showNativeSplash, setShowNativeSplash] = useState(true);
 
-  // Start 3-second timer when component mounts
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSplashTimeElapsed(true);
-    }, 3000); // 3 seconds
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (fontsLoaded && migrationsSuccess && splashTimeElapsed) {
-      // Initialize database when fonts are loaded, migrations are complete, and 3 seconds have passed
+    if (fontsLoaded && migrationsSuccess && !showNativeSplash) {
+      // Initialize database when fonts are loaded, migrations are complete, and splash is done
       initializeDatabase().catch(console.error);
       SplashScreen.hideAsync();
     }
@@ -57,31 +41,19 @@ export default function Layout() {
     if (migrationsError) {
       console.error('Database migration failed:', migrationsError);
     }
-  }, [fontsLoaded, migrationsSuccess, migrationsError, splashTimeElapsed]);
+  }, [fontsLoaded, migrationsSuccess, migrationsError, showNativeSplash]);
 
-  // Show native splash randomizer first
+  // Show native splash screen first
   if (showNativeSplash) {
     return (
-      <NativeSplashRandomizer
+      <CustomSplashScreen
         onFinish={() => setShowNativeSplash(false)}
         duration={1500}
       />
     );
   }
 
-  // Show random splash screen if everything is ready but we haven't finished the custom splash
-  if (fontsLoaded && migrationsSuccess && splashTimeElapsed && showRandomSplash) {
-    return (
-      <RandomSplashScreen
-        onFinish={() => setShowRandomSplash(false)}
-        duration={2500}
-      />
-    );
-  }
-
-
-
-  if (!fontsLoaded || !migrationsSuccess || !splashTimeElapsed || showRandomSplash) {
+  if (!fontsLoaded || !migrationsSuccess) {
     return null;
   }
 

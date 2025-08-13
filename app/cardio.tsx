@@ -7,7 +7,7 @@ export default function CardioScreen() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState('HIIT');
 
-  const cardioTypes = ['HIIT', 'STEADY', 'WALK'];
+  const cardioTypes = ['HIIT', 'RUN', 'WALK'];
 
   const cardioOptions = {
     HIIT: [
@@ -24,7 +24,7 @@ export default function CardioScreen() {
         type: 'custom_hiit'
       }
     ],
-    STEADY: [
+    RUN: [
       {
         title: 'DISTANCE RUN',
         subtitle: 'TRACK PACE & DISTANCE',
@@ -32,16 +32,10 @@ export default function CardioScreen() {
         type: 'distance_run'
       },
       {
-        title: 'TIME RUN',
-        subtitle: 'SET DURATION GOAL',
+        title: 'CUSTOM RUN',
+        subtitle: 'SET YOUR OWN GOALS',
         duration: null,
         type: 'time_run'
-      },
-      {
-        title: 'CYCLING',
-        subtitle: 'INDOOR/OUTDOOR CYCLING',
-        duration: null,
-        type: 'cycling'
       }
     ],
     WALK: [
@@ -52,16 +46,10 @@ export default function CardioScreen() {
         type: 'casual_walk'
       },
       {
-        title: 'POWER WALK',
-        subtitle: 'MODERATE INTENSITY',
+        title: 'CUSTOM WALK',
+        subtitle: 'SET YOUR OWN PACE',
         duration: null,
         type: 'power_walk'
-      },
-      {
-        title: 'INCLINE WALK',
-        subtitle: 'TREADMILL • HIGH INCLINE',
-        duration: null,
-        type: 'incline_walk'
       }
     ]
   };
@@ -81,17 +69,11 @@ export default function CardioScreen() {
       case 'time_run':
         router.push('/cardio/time-run');
         break;
-      case 'cycling':
-        router.push('/cardio/cycling');
-        break;
       case 'casual_walk':
         router.push('/cardio/casual-walk');
         break;
       case 'power_walk':
         router.push('/cardio/power-walk');
-        break;
-      case 'incline_walk':
-        router.push('/cardio/incline-walk');
         break;
       default:
         console.log('Unknown cardio type:', option.type);

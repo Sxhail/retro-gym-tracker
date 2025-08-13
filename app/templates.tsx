@@ -5,6 +5,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import theme from '../styles/theme';
 import { getTemplates, getTemplatesByCategory, searchTemplates, loadTemplateIntoSession, deleteTemplate, type WorkoutTemplate } from '../services/workoutTemplates';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
+import { BottomNav } from '../components/BottomNav';
 
 const { width } = require('react-native').Dimensions.get('window');
 const CARD_MARGIN = 18;
@@ -336,6 +337,8 @@ export default function TemplatesScreen() {
           }}>+ CREATE TEMPLATE</Text>
         </TouchableOpacity>
       </View>
+      
+      <BottomNav />
     </SafeAreaView>
   );
 }

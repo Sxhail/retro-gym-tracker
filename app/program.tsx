@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { BottomNav } from '../components/BottomNav';
 import theme from '../styles/theme';
 
 interface ProgramConfig {
@@ -357,6 +358,8 @@ export default function ProgramScreen() {
       {step === 3 && renderStep3()}
       {step === 4 && renderStep4()}
       {step > 1 && renderFooter()}
+      
+      <BottomNav currentScreen="/program" />
     </SafeAreaView>
   );
 }

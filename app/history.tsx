@@ -11,6 +11,7 @@ import * as schema from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { Picker } from '@react-native-picker/picker';
 import AttendanceCalendar from '../components/AttendanceCalendar';
+import { BottomNav } from '../components/BottomNav';
 
 const GREEN = '#00FF00';
 const LIGHT_GREEN = '#39FF14';
@@ -874,7 +875,7 @@ export default function HistoryListScreen() {
         </View>
       </Modal>
 
-
+      <BottomNav currentScreen="/history" />
     </SafeAreaView>
   );
 }

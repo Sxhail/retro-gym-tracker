@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { BottomNav } from '../components/BottomNav';
 import theme from '../styles/theme';
 
 export default function CardioScreen() {
@@ -127,6 +128,8 @@ export default function CardioScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+      
+      <BottomNav />
     </SafeAreaView>
   );
 }

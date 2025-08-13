@@ -30,7 +30,6 @@ export default function HomeScreen() {
         </View>
         {/* Header */}
         <View style={styles.headerSection}>
-          <Text style={styles.title}>GYM.TRACKER</Text>
         </View>
 
         {/* Action Buttons */}

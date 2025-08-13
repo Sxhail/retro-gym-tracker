@@ -331,12 +331,7 @@ export default function ProgramScreen() {
               <Text style={styles.pathwayBadge}>QUICK START</Text>
             </View>
             <Text style={styles.pathwayDescription}>
-              Browse proven workout programs from top trainers and athletes
-            </Text>
-            <Text style={styles.pathwayFeatures}>
-              • 5/3/1, nSuns, PPL programs{'\n'}
-              • Beginner to advanced levels{'\n'}
-              • Ready to use immediately
+              Browse proven workout templates or create your own
             </Text>
           </TouchableOpacity>
           
@@ -351,11 +346,6 @@ export default function ProgramScreen() {
             </View>
             <Text style={styles.pathwayDescription}>
               Create a personalized program tailored to your goals
-            </Text>
-            <Text style={styles.pathwayFeatures}>
-              • AI-powered optimization{'\n'}
-              • Custom periodization{'\n'}
-              • Full configuration control
             </Text>
           </TouchableOpacity>
         </View>

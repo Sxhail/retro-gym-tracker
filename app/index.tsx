@@ -167,8 +167,9 @@ const styles = StyleSheet.create({
   },
   bottomActionSection: {
     marginHorizontal: theme.spacing.xl,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.xl + 80, // Add extra margin to prevent overlap with nav bar
     marginTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.md, // Additional padding for spacing
   },
   sectionTitle: {
     color: '#fff',

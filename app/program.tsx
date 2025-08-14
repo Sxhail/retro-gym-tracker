@@ -517,14 +517,15 @@ const styles = StyleSheet.create({
   optionButton: {
     flex: 1,
     minWidth: '45%',
-    borderWidth: 1,
-    borderColor: theme.colors.neon,
     borderRadius: 4,
     padding: 12,
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 255, 0, 0.08)',
+    opacity: 0.7,
   },
   optionButtonSelected: {
     backgroundColor: theme.colors.neon,
+    opacity: 1,
   },
   optionLabel: {
     color: theme.colors.neon,

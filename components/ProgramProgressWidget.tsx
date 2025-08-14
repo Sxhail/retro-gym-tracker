@@ -147,15 +147,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextWorkoutLabel: {
-    color: theme.colors.neonBright,
-    fontFamily: theme.fonts.body, // Consistent button/label font
-    fontSize: 16,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.display, // Match START TRAINING button font
+    fontSize: 18, // Match START TRAINING button size
     fontWeight: 'bold',
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   daysSinceText: {
-    color: 'rgba(0, 255, 0, 0.8)',
-    fontFamily: theme.fonts.code, // VT323 for data display (consistent with app)
+    color: theme.colors.neon, // Match rest of app text color
+    fontFamily: theme.fonts.code,
     fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 1,

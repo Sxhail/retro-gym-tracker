@@ -50,20 +50,20 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.headerSection}>
         </View>
-
-        {/* Action Buttons */}
-        <View style={styles.bottomActionSection}>
-          {isWorkoutActive ? (
-            <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-              <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
-              <Text style={styles.startButtonText}>START TRAINING</Text>
-            </TouchableOpacity>
-          )}
-        </View>
       </ScrollView>
+
+      {/* Action Buttons - moved to bottom */}
+      <View style={styles.bottomActionSection}>
+        {isWorkoutActive ? (
+          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
+            <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
+            <Text style={styles.startButtonText}>START TRAINING</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Bottom Navigation */}
       <BottomNav
@@ -102,7 +102,7 @@ export default function HomeScreen() {
                   router.push('/new');
                 }}
               >
-                <Text style={styles.modalTrainingTitle}>WORKOUT</Text>
+                <Text style={styles.modalTrainingTitle}>LIFT</Text>
                 <Text style={styles.modalTrainingDescription}>Weight training with sets and reps</Text>
               </TouchableOpacity>
               
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
-    paddingBottom: 100, // Space for bottom navigation
+    paddingBottom: 20, // Reduced padding since button is outside
   },
   headerSection: {
     alignItems: 'center',

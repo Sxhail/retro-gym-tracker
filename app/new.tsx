@@ -208,7 +208,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
               <View style={{ alignItems: 'center', marginRight: 16, alignSelf: 'flex-end' }}>
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 13, marginBottom: 2 }}>PREV</Text>
                 <View style={{ borderRadius: 6, paddingHorizontal: 4, paddingVertical: 2, minWidth: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,255,0,0.08)' }}>
-                  <Text style={{ color: theme.colors.neonBright, fontFamily: theme.fonts.heading, fontSize: 18 }}>
+                  <Text style={{ color: theme.colors.neonBright, fontFamily: theme.fonts.heading, fontSize: 12 }}>
                   {previousSet ? `${previousSet.weight} kg x ${previousSet.reps} reps` : '--'}
                 </Text>
               </View>

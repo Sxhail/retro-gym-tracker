@@ -61,12 +61,13 @@ const ProgramProgressWidget: React.FC<ProgramProgressWidgetProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'rgba(0, 255, 0, 0.05)',
-    // Removed border
+    borderWidth: 1, // Restored thin outline
+    borderColor: 'rgba(22, 145, 58, 0.3)', // Subtle border color
     borderRadius: 12,
-    padding: 24, // Increased padding
+    padding: 24,
     marginHorizontal: 16,
-    marginVertical: 16, // Increased margin
-    minHeight: 200, // Increased minimum height
+    marginVertical: 16,
+    minHeight: 200,
   },
   header: {
     flexDirection: 'row',
@@ -76,52 +77,52 @@ const styles = StyleSheet.create({
   },
   currentProgramLabel: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.body, // ShareTechMono for labels
-    fontSize: 16, // Increased from 12
+    fontFamily: theme.fonts.body, // Consistent with app (ShareTechMono for labels)
+    fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 1.2,
   },
   weekIndicator: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.display, // PressStart2P for retro feel
-    fontSize: 14, // Increased from 12
+    fontFamily: theme.fonts.heading, // Orbitron for numbers/important data
+    fontSize: 16,
     fontWeight: 'bold',
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   programName: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.heading, // Orbitron for main title
-    fontSize: 28, // Increased from 20
+    fontFamily: theme.fonts.heading, // Orbitron for main titles (consistent with app)
+    fontSize: 28,
     fontWeight: 'bold',
     letterSpacing: 2,
     textAlign: 'center',
-    marginBottom: 20, // Increased margin
+    marginBottom: 20,
   },
   progressSection: {
-    marginBottom: 20, // Increased margin
+    marginBottom: 20,
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12, // Increased margin
+    marginBottom: 12,
   },
   progressLabel: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.mono, // JetBrains Mono for progress text
-    fontSize: 16, // Increased from 12
+    fontFamily: theme.fonts.body, // Consistent body text font
+    fontSize: 14,
     fontWeight: 'bold',
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   progressPercentage: {
     color: theme.colors.neonBright,
-    fontFamily: theme.fonts.display, // PressStart2P for percentage
-    fontSize: 18, // Increased from 12
+    fontFamily: theme.fonts.heading, // Orbitron for numbers
+    fontSize: 20,
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
   progressBarContainer: {
-    height: 12, // Increased from 6
+    height: 12,
     backgroundColor: 'rgba(0, 255, 0, 0.2)',
     borderRadius: 6,
     overflow: 'hidden',
@@ -138,25 +139,26 @@ const styles = StyleSheet.create({
   },
   nextWorkoutContainer: {
     backgroundColor: 'rgba(0, 255, 0, 0.1)',
-    // Removed border
+    borderWidth: 1, // Restored thin border
+    borderColor: 'rgba(22, 145, 58, 0.4)',
     borderRadius: 8,
-    padding: 16, // Increased padding
-    marginBottom: 16, // Increased margin
+    padding: 16,
+    marginBottom: 16,
     alignItems: 'center',
   },
   nextWorkoutLabel: {
     color: theme.colors.neonBright,
-    fontFamily: theme.fonts.heading, // Orbitron for next workout
-    fontSize: 18, // Increased from 14
+    fontFamily: theme.fonts.body, // Consistent button/label font
+    fontSize: 16,
     fontWeight: 'bold',
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
   daysSinceText: {
     color: 'rgba(0, 255, 0, 0.8)',
-    fontFamily: theme.fonts.code, // VT323 for retro stats
-    fontSize: 16, // Increased from 12
+    fontFamily: theme.fonts.code, // VT323 for data display (consistent with app)
+    fontSize: 14,
     fontWeight: 'bold',
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     textAlign: 'center',
   },
 });

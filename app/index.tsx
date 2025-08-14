@@ -2,8 +2,26 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
-import { BottomNav } from '../components/BottomNav';
 import theme from '../styles/theme';
+
+const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (tab: string) => void }) => (
+  <SafeAreaView style={styles.bottomNavContainer}>
+    <View style={styles.bottomNav}>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('program')}>
+        <Text style={[styles.navTabLabel, activeTab === 'program' && styles.navTabLabelActive]}>Program</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('history')}>
+        <Text style={[styles.navTabLabel, activeTab === 'history' && styles.navTabLabelActive]}>History</Text>
+      </TouchableOpacity>
+      {/* <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('exercises')}>
+        <Text style={[styles.navTabLabel, activeTab === 'exercises' && styles.navTabLabelActive]}>Exercises</Text>
+      </TouchableOpacity> */}
+      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
+        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>Stats</Text>
+      </TouchableOpacity>
+    </View>
+  </SafeAreaView>
+);
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -32,23 +50,32 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.headerSection}>
         </View>
+
+        {/* Action Buttons */}
+        <View style={styles.bottomActionSection}>
+          {isWorkoutActive ? (
+            <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
+              <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
+              <Text style={styles.startButtonText}>START TRAINING</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
 
-      {/* Action Buttons - moved to bottom */}
-      <View style={styles.bottomActionSection}>
-        {isWorkoutActive ? (
-          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-            <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
-            <Text style={styles.startButtonText}>START TRAINING</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       {/* Bottom Navigation */}
-      <BottomNav currentScreen="/" />
+      <BottomNav
+        activeTab={activeTab}
+        onTabPress={(tab) => {
+          setActiveTab(tab);
+          if (tab === 'program') router.push('/program');
+          if (tab === 'history') router.push('/history');
+          // if (tab === 'exercises') router.push('/exercises');
+          if (tab === 'progress') router.push('/stats');
+        }}
+      />
       
       {/* Training Selection Modal */}
       <Modal
@@ -75,7 +102,7 @@ export default function HomeScreen() {
                   router.push('/new');
                 }}
               >
-                <Text style={styles.modalTrainingTitle}>LIFT</Text>
+                <Text style={styles.modalTrainingTitle}>WORKOUT</Text>
                 <Text style={styles.modalTrainingDescription}>Weight training with sets and reps</Text>
               </TouchableOpacity>
               
@@ -296,5 +323,75 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     opacity: 0.8,
+  },
+  bottomNavContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 100,
+    // For iOS shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    // For Android elevation
+    elevation: 16,
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.neonDim,
+    paddingVertical: 8,
+    paddingBottom: 8,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    marginHorizontal: 0,
+  },
+  navTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    marginHorizontal: 4,
+    paddingVertical: 8,
+    // Add a subtle border and background for clickable look
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,0,0.15)',
+    backgroundColor: 'rgba(0,255,0,0.04)',
+    shadowColor: '#00FF00',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  navTabIcon: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.code,
+    fontSize: 22,
+    marginBottom: 2,
+  },
+  navTabIconActive: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+  },
+  navTabLabel: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  navTabLabelActive: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
+    backgroundColor: 'rgba(0,255,0,0.10)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
 }); 

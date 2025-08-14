@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import theme from '../../styles/theme';
 import { getWorkoutDetail, formatDuration, formatDate, deleteWorkout, type WorkoutDetail } from '../../services/workoutHistory';
-import { BottomNav } from '../../components/BottomNav';
 
 const GREEN = '#00FF00';
 const LIGHT_GREEN = '#39FF14';
@@ -233,8 +232,6 @@ export default function WorkoutDetailScreen() {
           </View>
         ))}
       </ScrollView>
-
-      <BottomNav currentScreen="/history" />
     </SafeAreaView>
   );
 }

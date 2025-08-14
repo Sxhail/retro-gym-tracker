@@ -5,7 +5,6 @@ import theme from '../../styles/theme';
 import { db } from '../../db/client';
 import * as schema from '../../db/schema';
 import { checkTemplateNameExists } from '../../services/workoutTemplates';
-import { BottomNav } from '../../components/BottomNav';
 
 export type Exercise = typeof schema.exercises.$inferSelect;
 
@@ -444,8 +443,6 @@ export default function CreateTemplateScreen() {
           </View>
         </View>
       </Modal>
-      
-      <BottomNav />
     </SafeAreaView>
   );
 }

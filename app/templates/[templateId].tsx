@@ -4,7 +4,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import theme from '../../styles/theme';
 import { getTemplateDetail, deleteTemplate, toggleFavorite, loadTemplateIntoSession, type TemplateDetail } from '../../services/workoutTemplates';
 import { useWorkoutSession } from '../../context/WorkoutSessionContext';
-import { BottomNav } from '../../components/BottomNav';
 
 const { width } = require('react-native').Dimensions.get('window');
 const CARD_MARGIN = 18;
@@ -312,8 +311,6 @@ export default function TemplateDetailScreen() {
 
         </View>
       </SafeAreaView>
-      
-      <BottomNav />
     </View>
   );
 }

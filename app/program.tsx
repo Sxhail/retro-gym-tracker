@@ -1,33 +1,62 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 
 interface ProgramConfig {
-  duration: '6_weeks' | '12_weeks' | null;
+  programName: string;
+  duration: string;
   goal: 'strength' | 'hypertrophy' | 'endurance' | 'powerlifting' | null;
-  frequency: '3_days' | '4_days' | '5_days' | '6_days' | null;
+  frequency: string;
+}
+
+interface DayWorkout {
+  day: string;
+  workoutType: string;
+  exercises: Array<{
+    name: string;
+    sets: string;
+    reps: string;
+  }>;
 }
 
 export default function ProgramScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [config, setConfig] = useState<ProgramConfig>({
-    duration: null,
+    programName: '',
+    duration: '',
     goal: null,
-    frequency: null,
+    frequency: '',
   });
+  const [workouts, setWorkouts] = useState<DayWorkout[]>([]);
+  const [assignedDays, setAssignedDays] = useState<Set<string>>(new Set());
 
   const isStepComplete = (stepNum: number) => {
     switch (stepNum) {
       case 2:
-        return config.duration && config.goal && config.frequency;
+        return config.programName.trim() && config.duration && config.goal && config.frequency;
       case 3:
+        // All 7 days must be assigned
+        return assignedDays.size === 7;
       case 4:
-        return true; // For now, these steps are always "complete"
+        return true; // For now, this step is always "complete"
       default:
         return false;
     }
+  };
+
+  const handleDayAssignment = (day: string) => {
+    // Mark the day as assigned immediately for demo purposes
+    // In a real app, this would be done when user saves the workout
+    markDayAsAssigned(day);
+    
+    // Navigate to workout editor for this day
+    router.push(`/program/editor/${day.toLowerCase()}`);
+  };
+
+  const markDayAsAssigned = (day: string) => {
+    setAssignedDays(prev => new Set([...prev, day.toUpperCase()]));
   };
 
   const handleContinue = () => {
@@ -100,60 +129,43 @@ export default function ProgramScreen() {
     </View>
   );
 
-  const renderStep1 = () => (
-    <ScrollView style={styles.content}>
-      {renderConfigSection(
-        'DURATION',
-        config.duration ? 'SET' : 'NOT SET',
-        [
-          { value: '6_weeks', label: '6 WEEKS', subtext: 'QUICK BUILD' },
-          { value: '12_weeks', label: '12 WEEKS', subtext: 'FULL PROTOCOL' },
-        ],
-        config.duration,
-        (value) => setConfig({ ...config, duration: value })
-      )}
-
-      {renderConfigSection(
-        'PRIMARY GOAL',
-        config.goal ? 'SET' : 'NOT SET',
-        [
-          { value: 'strength', label: 'STRENGTH', subtext: 'MAX POWER' },
-          { value: 'hypertrophy', label: 'HYPERTROPHY', subtext: 'MUSCLE MASS' },
-          { value: 'endurance', label: 'ENDURANCE', subtext: 'CONDITIONING' },
-          { value: 'powerlifting', label: 'POWERLIFTING', subtext: 'COMP PREP' },
-        ],
-        config.goal,
-        (value) => setConfig({ ...config, goal: value })
-      )}
-
-      {renderConfigSection(
-        'FREQUENCY',
-        config.frequency ? 'SET' : 'NOT SET',
-        [
-          { value: '3_days', label: '3 DAYS', subtext: 'BEGINNER' },
-          { value: '4_days', label: '4 DAYS', subtext: 'INTERMEDIATE' },
-          { value: '5_days', label: '5 DAYS', subtext: 'ADVANCED' },
-          { value: '6_days', label: '6 DAYS', subtext: 'ELITE' },
-        ],
-        config.frequency,
-        (value) => setConfig({ ...config, frequency: value })
-      )}
-    </ScrollView>
-  );
-
   const renderStep2 = () => (
     <ScrollView style={styles.content}>
-      {/* Program Configuration */}
-      {renderConfigSection(
-        'DURATION',
-        config.duration ? 'SET' : 'NOT SET',
-        [
-          { value: '6_weeks', label: '6 WEEKS', subtext: 'QUICK GAINS' },
-          { value: '12_weeks', label: '12 WEEKS', subtext: 'FULL CYCLE' },
-        ],
-        config.duration,
-        (value) => setConfig({ ...config, duration: value })
-      )}
+      {/* Program Name */}
+      <View style={styles.configSection}>
+        <View style={styles.configHeader}>
+          <Text style={styles.configTitle}>PROGRAM NAME</Text>
+          <Text style={styles.configStatus}>{config.programName ? 'SET' : 'NOT SET'}</Text>
+        </View>
+        <TextInput
+          style={styles.standaloneTextInput}
+          placeholderTextColor={theme.colors.neon + '60'}
+          value={config.programName}
+          onChangeText={(text) => setConfig({ ...config, programName: text })}
+        />
+      </View>
+
+      {/* Duration */}
+      <View style={styles.configSection}>
+        <View style={styles.configHeader}>
+          <Text style={styles.configTitle}>DURATION</Text>
+          <Text style={styles.configStatus}>{config.duration ? 'SET' : 'NOT SET'}</Text>
+        </View>
+        <View style={styles.inputWithLabel}>
+          <TextInput
+            style={styles.textInput}
+            placeholderTextColor={theme.colors.neon + '60'}
+            value={config.duration}
+            onChangeText={(text) => {
+              // Only allow numbers
+              const numericText = text.replace(/[^0-9]/g, '');
+              setConfig({ ...config, duration: numericText });
+            }}
+            keyboardType="numeric"
+          />
+          <Text style={styles.inputSuffix}>weeks</Text>
+        </View>
+      </View>
 
       {renderConfigSection(
         'PRIMARY GOAL',
@@ -168,18 +180,27 @@ export default function ProgramScreen() {
         (value) => setConfig({ ...config, goal: value })
       )}
 
-      {renderConfigSection(
-        'FREQUENCY',
-        config.frequency ? 'SET' : 'NOT SET',
-        [
-          { value: '3_days', label: '3 DAYS', subtext: 'BEGINNER' },
-          { value: '4_days', label: '4 DAYS', subtext: 'INTERMEDIATE' },
-          { value: '5_days', label: '5 DAYS', subtext: 'ADVANCED' },
-          { value: '6_days', label: '6 DAYS', subtext: 'ELITE' },
-        ],
-        config.frequency,
-        (value) => setConfig({ ...config, frequency: value })
-      )}
+      {/* Frequency */}
+      <View style={styles.configSection}>
+        <View style={styles.configHeader}>
+          <Text style={styles.configTitle}>FREQUENCY</Text>
+          <Text style={styles.configStatus}>{config.frequency ? 'SET' : 'NOT SET'}</Text>
+        </View>
+        <View style={styles.inputWithLabel}>
+          <TextInput
+            style={styles.textInput}
+            placeholderTextColor={theme.colors.neon + '60'}
+            value={config.frequency}
+            onChangeText={(text) => {
+              // Only allow numbers
+              const numericText = text.replace(/[^0-9]/g, '');
+              setConfig({ ...config, frequency: numericText });
+            }}
+            keyboardType="numeric"
+          />
+          <Text style={styles.inputSuffix}>days/week</Text>
+        </View>
+      </View>
     </ScrollView>
   );
 
@@ -187,100 +208,115 @@ export default function ProgramScreen() {
     <ScrollView style={styles.content}>
       <View style={styles.configSection}>
         <View style={styles.configHeader}>
-          <Text style={styles.configTitle}>PROGRAM BUILDING</Text>
-          <Text style={styles.configStatus}>CUSTOMIZATION</Text>
+          <Text style={styles.configTitle}>ASSIGN WORKOUTS TO DAYS</Text>
         </View>
         
-        <View style={styles.buildingSection}>
-          <Text style={styles.buildingSectionTitle}>WEEK STRUCTURE</Text>
-          <View style={styles.weekGrid}>
-            {[1, 2, 3, 4, 5, 6].map((week) => (
-              <TouchableOpacity key={week} style={styles.weekCard}>
-                <Text style={styles.weekNumber}>WEEK {week}</Text>
-                <Text style={styles.weekType}>
-                  {week % 4 === 0 ? 'DELOAD' : week === 6 ? 'TEST' : 'TRAINING'}
+        <View style={styles.weekdaysGrid}>
+          {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map((day) => {
+            const isAssigned = assignedDays.has(day);
+            return (
+              <TouchableOpacity 
+                key={day} 
+                style={[
+                  styles.weekdayCard,
+                  isAssigned && styles.weekdayCardAssigned
+                ]}
+                onPress={() => handleDayAssignment(day)}
+              >
+                <Text style={[
+                  styles.weekdayTitle,
+                  isAssigned && styles.weekdayTitleAssigned
+                ]}>
+                  {day}
+                </Text>
+                <Text style={[
+                  styles.weekdaySubtext,
+                  isAssigned && styles.weekdaySubtextAssigned
+                ]}>
+                  {isAssigned ? 'ASSIGNED' : 'CLICK TO ASSIGN'}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.buildingSection}>
-          <Text style={styles.buildingSectionTitle}>DAY STRUCTURE</Text>
-          <View style={styles.dayGrid}>
-            {['PUSH', 'PULL', 'LEGS', 'UPPER'].map((day) => (
-              <TouchableOpacity key={day} style={styles.dayCard}>
-                <Text style={styles.dayLabel}>{day}</Text>
-                <Text style={styles.daySubtext}>4-6 EXERCISES</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.buildingSection}>
-          <Text style={styles.buildingSectionTitle}>PROGRESSION SCHEME</Text>
-          <View style={styles.progressionGrid}>
-            <TouchableOpacity style={styles.progressionCard}>
-              <Text style={styles.progressionTitle}>LINEAR</Text>
-              <Text style={styles.progressionDesc}>+2.5-5kg weekly</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.progressionCard}>
-              <Text style={styles.progressionTitle}>PERIODIZED</Text>
-              <Text style={styles.progressionDesc}>Wave loading</Text>
-            </TouchableOpacity>
-          </View>
+            );
+          })}
         </View>
       </View>
     </ScrollView>
   );
 
   const renderStep4 = () => (
-    <ScrollView style={styles.content}>
-      <View style={styles.configSection}>
-        <View style={styles.configHeader}>
-          <Text style={styles.configTitle}>PROGRAM SUMMARY</Text>
-          <Text style={styles.configStatus}>READY TO DEPLOY</Text>
-        </View>
+    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.reviewContainer}>
+        <Text style={styles.reviewTitle}>PROGRAM REVIEW</Text>
         
         <View style={styles.summarySection}>
           <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>PROGRAM NAME:</Text>
+            <Text style={styles.summaryValue}>{config.programName || 'UNNAMED PROGRAM'}</Text>
+          </View>
+          <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>DURATION:</Text>
-            <Text style={styles.summaryValue}>
-              {config.duration === '6_weeks' ? '6 WEEKS' : '12 WEEKS'}
-            </Text>
+            <Text style={styles.summaryValue}>{config.duration ? `${config.duration} weeks` : 'NOT SET'}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>GOAL:</Text>
-            <Text style={styles.summaryValue}>{config.goal?.toUpperCase()}</Text>
+            <Text style={styles.summaryValue}>{config.goal?.toUpperCase() || 'NOT SET'}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>FREQUENCY:</Text>
-            <Text style={styles.summaryValue}>
-              {config.frequency?.replace('_', ' ')?.toUpperCase()}
-            </Text>
+            <Text style={styles.summaryValue}>{config.frequency ? `${config.frequency} days/week` : 'NOT SET'}</Text>
           </View>
         </View>
 
-        <View style={styles.featuresSection}>
-          <Text style={styles.featuresTitle}>INCLUDED FEATURES</Text>
-          {[
-            'Progressive overload tracking',
-            'Automatic deload weeks',
-            'Exercise progression schemes',
-            '1RM testing protocols',
-            'Volume periodization',
-            'Recovery optimization'
-          ].map((feature, index) => (
-            <View key={index} style={styles.featureRow}>
-              <Text style={styles.featureCheck}>•</Text>
-              <Text style={styles.featureText}>{feature}</Text>
-            </View>
-          ))}
+        <View style={styles.weeklyScheduleSection}>
+          <Text style={styles.weeklyScheduleTitle}>WEEKLY SCHEDULE:</Text>
+          <View style={styles.scheduleContent}>
+            {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map((dayName) => {
+              const dayWorkout = workouts.find(w => w.day.toUpperCase() === dayName);
+              
+              return (
+                <View key={dayName} style={styles.scheduleDay}>
+                  <Text style={styles.scheduleDayName}>{dayName.substring(0, 3).toUpperCase()}:</Text>
+                  
+                  {dayWorkout ? (
+                    <>
+                      <Text style={styles.scheduleWorkoutType}>{dayWorkout.workoutType}</Text>
+                      {dayWorkout.exercises.length > 0 ? (
+                        <>
+                          <Text style={styles.scheduleExercises}>
+                            {dayWorkout.exercises.map(ex => ex.name).join(', ')}
+                          </Text>
+                          <Text style={styles.scheduleWeightsSets}>
+                            {dayWorkout.exercises.map(ex => `${ex.sets}x${ex.reps}`).join(', ')}
+                          </Text>
+                        </>
+                      ) : (
+                        <Text style={styles.scheduleExercises}>No exercises assigned</Text>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.scheduleWorkoutType}>REST</Text>
+                      <Text style={styles.scheduleExercises}>Not assigned</Text>
+                    </>
+                  )}
+                </View>
+              );
+            })}
+          </View>
         </View>
 
-        <TouchableOpacity style={styles.deployButton}>
-          <Text style={styles.deployButtonText}>DEPLOY PROGRAM</Text>
-        </TouchableOpacity>
+        <View style={styles.metricsSection}>
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>TOTAL WEEKLY SESSIONS:</Text>
+            <Text style={styles.metricValue}>{workouts.length}</Text>
+          </View>
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>EXERCISES PER WEEK:</Text>
+            <Text style={styles.metricValue}>
+              {workouts.reduce((total, workout) => total + workout.exercises.length, 0)}
+            </Text>
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -306,7 +342,7 @@ export default function ProgramScreen() {
           styles.continueButtonText,
           !isStepComplete(step) && styles.continueButtonTextDisabled
         ]}>
-          {step === 4 ? 'COMPLETE →' : 'CONTINUE →'}
+          {step === 4 ? 'COMMIT' : 'CONTINUE →'}
         </Text>
       </TouchableOpacity>
     </View>
@@ -327,11 +363,26 @@ export default function ProgramScreen() {
             onPress={() => router.push('/templates')}
           >
             <View style={styles.pathwayHeader}>
-              <Text style={styles.pathwayCardTitle}>USE TEMPLATES</Text>
-              <Text style={styles.pathwayBadge}>QUICK START</Text>
+              <Text style={styles.pathwayCardTitle}>TEMPLATES</Text>
             </View>
             <Text style={styles.pathwayDescription}>
-              Browse proven workout templates or create your own
+              One off workout routines, shock the muscle challenges
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Programs Path */}
+          <TouchableOpacity 
+            style={styles.pathwayCard}
+            onPress={() => {
+              // TODO: Navigate to programs screen when implemented
+              console.log('Programs navigation not yet implemented');
+            }}
+          >
+            <View style={styles.pathwayHeader}>
+              <Text style={styles.pathwayCardTitle}>PROGRAMS</Text>
+            </View>
+            <Text style={styles.pathwayDescription}>
+              Find, commit and track a pre built program
             </Text>
           </TouchableOpacity>
           
@@ -341,11 +392,10 @@ export default function ProgramScreen() {
             onPress={() => setStep(2)}
           >
             <View style={styles.pathwayHeader}>
-              <Text style={styles.pathwayCardTitle}>BUILD CUSTOM</Text>
-              <Text style={styles.pathwayBadge}>ADVANCED</Text>
+              <Text style={styles.pathwayCardTitle}>BUILD CUSTOM PROGRAM</Text>
             </View>
             <Text style={styles.pathwayDescription}>
-              Create a personalized program tailored to your goals
+              Build and track a longterm program
             </Text>
           </TouchableOpacity>
         </View>
@@ -482,11 +532,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   configSection: {
-    borderWidth: 1,
-    borderColor: theme.colors.neon,
     borderRadius: 8,
     padding: 16,
     marginVertical: 8,
+    backgroundColor: 'rgba(0, 255, 0, 0.06)',
   },
   configHeader: {
     flexDirection: 'row',
@@ -709,8 +758,24 @@ const styles = StyleSheet.create({
     fontSize: 8,
     opacity: 0.7,
   },
+  reviewContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+  },
+  reviewTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 24,
+    letterSpacing: 1,
+  },
   summarySection: {
-    marginBottom: 16,
+    marginBottom: 20,
+    backgroundColor: 'rgba(0, 255, 0, 0.08)',
+    borderRadius: 8,
+    padding: 16,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -720,12 +785,13 @@ const styles = StyleSheet.create({
   summaryLabel: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 12,
+    fontSize: 14,
+    opacity: 0.8,
   },
   summaryValue: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.heading,
-    fontSize: 12,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   featuresSection: {
@@ -766,5 +832,157 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.heading,
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  textInput: {
+    flex: 1,
+    borderWidth: 0,
+    padding: 12,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    backgroundColor: 'transparent',
+  },
+  standaloneTextInput: {
+    borderRadius: 8,
+    padding: 12,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    backgroundColor: 'rgba(0, 255, 0, 0.08)',
+  },
+  weekdaysGrid: {
+    gap: 16,
+  },
+  weekdayCard: {
+    borderRadius: 8,
+    padding: 16,
+    backgroundColor: 'rgba(0, 255, 0, 0.08)',
+    alignItems: 'center',
+  },
+  weekdayCardAssigned: {
+    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+  },
+  weekdayTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  weekdayTitleAssigned: {
+    color: theme.colors.neon,
+  },
+  weekdaySubtext: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  weekdaySubtextAssigned: {
+    opacity: 1,
+    fontWeight: 'bold',
+  },
+  weeklyScheduleSection: {
+    marginBottom: 20,
+  },
+  weeklyScheduleTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    opacity: 0.9,
+  },
+  scheduleContent: {
+    backgroundColor: 'rgba(0, 255, 0, 0.08)',
+    borderRadius: 8,
+    padding: 16,
+  },
+  scheduleDay: {
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 255, 0, 0.2)',
+  },
+  scheduleDayName: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  scheduleWorkoutType: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    fontWeight: 'bold',
+    opacity: 0.9,
+    marginBottom: 6,
+    letterSpacing: 1,
+  },
+  scheduleExercises: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 13,
+    opacity: 0.8,
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  scheduleWeightsSets: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading, // Orbitron font
+    fontSize: 12,
+    fontWeight: 'bold',
+    opacity: 0.9,
+    letterSpacing: 0.5,
+  },
+  metricsSection: {
+    marginBottom: 24,
+    backgroundColor: 'rgba(0, 255, 0, 0.06)',
+    borderRadius: 8,
+    padding: 16,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  metricLabel: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    opacity: 0.8,
+  },
+  metricValue: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  commitButton: {
+    backgroundColor: theme.colors.neon,
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  commitButtonText: {
+    color: theme.colors.background,
+    fontFamily: theme.fonts.code,
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  inputWithLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 255, 0, 0.08)',
+  },
+  inputSuffix: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    marginRight: 12,
   },
 });

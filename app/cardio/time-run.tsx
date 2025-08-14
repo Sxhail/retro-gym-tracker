@@ -12,6 +12,8 @@ export default function TimeRunScreen() {
   const [pace, setPace] = useState('--:--');
   const [speed, setSpeed] = useState(0.0);
   const [calories, setCalories] = useState(0);
+  const [runTime, setRunTime] = useState(30);
+  const [walkTime, setWalkTime] = useState(30);
 
   useEffect(() => {
     let interval: any;
@@ -51,6 +53,18 @@ export default function TimeRunScreen() {
     router.back();
   };
 
+  const adjustRunTime = (increment: boolean) => {
+    if (!isRunning) {
+      setRunTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    }
+  };
+
+  const adjustWalkTime = (increment: boolean) => {
+    if (!isRunning) {
+      setWalkTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -74,6 +88,53 @@ export default function TimeRunScreen() {
 
       {/* Main Timer */}
       <Text style={styles.mainTimer}>{formatTime(timeElapsed)}</Text>
+
+      {/* RUN/WALK Settings */}
+      <View style={styles.settingsGrid}>
+        {/* Run Time */}
+        <View style={styles.settingCard}>
+          <Text style={styles.settingLabel}>RUN</Text>
+          <Text style={styles.settingValue}>{runTime}s</Text>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustRunTime(false)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>-</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustRunTime(true)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Walk Time */}
+        <View style={styles.settingCard}>
+          <Text style={styles.settingLabel}>WALK</Text>
+          <Text style={styles.settingValue}>{walkTime}s</Text>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustWalkTime(false)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>-</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustWalkTime(true)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
       {/* Stats Grid */}
       <View style={styles.statsGrid}>
@@ -232,5 +293,59 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 1,
+  },
+  settingsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.xl,
+  },
+  settingCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 8,
+    padding: theme.spacing.md,
+    marginHorizontal: 8,
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+    alignItems: 'center',
+  },
+  settingLabel: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    marginBottom: theme.spacing.sm,
+    textTransform: 'uppercase',
+  },
+  settingValue: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  adjustButton: {
+    width: 36,
+    height: 36,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+  },
+  adjustButtonText: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 18,
+    fontWeight: 'bold',
+    lineHeight: 20,
   },
 });

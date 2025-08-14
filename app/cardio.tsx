@@ -6,24 +6,6 @@ import theme from '../styles/theme';
 export default function CardioScreen() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState('HIIT');
-  const [runPercentage, setRunPercentage] = useState(70);
-  const [walkPercentage, setWalkPercentage] = useState(30);
-
-  const adjustRunPercentage = (increment: boolean) => {
-    setRunPercentage(prev => {
-      const newValue = increment ? Math.min(100, prev + 5) : Math.max(0, prev - 5);
-      setWalkPercentage(100 - newValue);
-      return newValue;
-    });
-  };
-
-  const adjustWalkPercentage = (increment: boolean) => {
-    setWalkPercentage(prev => {
-      const newValue = increment ? Math.min(100, prev + 5) : Math.max(0, prev - 5);
-      setRunPercentage(100 - newValue);
-      return newValue;
-    });
-  };
 
   const cardioTypes = ['HIIT', 'RUN', 'STEADY'];
 
@@ -129,49 +111,6 @@ export default function CardioScreen() {
           </TouchableOpacity>
         ))}
       </View>
-
-      {/* RUN/WALK Controls - Only show for RUN type */}
-      {selectedType === 'RUN' && (
-        <View style={styles.settingsContainer}>
-          <View style={styles.settingCard}>
-            <Text style={styles.settingLabel}>RUN</Text>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.adjustButton}
-                onPress={() => adjustRunPercentage(false)}
-              >
-                <Text style={styles.adjustButtonText}>-</Text>
-              </TouchableOpacity>
-              <Text style={styles.settingValue}>{runPercentage}%</Text>
-              <TouchableOpacity
-                style={styles.adjustButton}
-                onPress={() => adjustRunPercentage(true)}
-              >
-                <Text style={styles.adjustButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.settingCard}>
-            <Text style={styles.settingLabel}>WALK</Text>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.adjustButton}
-                onPress={() => adjustWalkPercentage(false)}
-              >
-                <Text style={styles.adjustButtonText}>-</Text>
-              </TouchableOpacity>
-              <Text style={styles.settingValue}>{walkPercentage}%</Text>
-              <TouchableOpacity
-                style={styles.adjustButton}
-                onPress={() => adjustWalkPercentage(true)}
-              >
-                <Text style={styles.adjustButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
 
       {/* Cardio Options */}
       <ScrollView style={styles.optionsContainer} showsVerticalScrollIndicator={false}>
@@ -287,60 +226,5 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textAlign: 'center',
     textTransform: 'uppercase',
-  },
-  settingsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
-    gap: theme.spacing.md,
-  },
-  settingCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: theme.colors.neon,
-    borderRadius: 8,
-    padding: theme.spacing.md,
-    backgroundColor: 'rgba(0, 255, 0, 0.05)',
-    alignItems: 'center',
-  },
-  settingLabel: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    marginBottom: theme.spacing.sm,
-    textTransform: 'uppercase',
-  },
-  settingValue: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    minWidth: 60,
-    textAlign: 'center',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  adjustButton: {
-    width: 36,
-    height: 36,
-    borderWidth: 1,
-    borderColor: theme.colors.neon,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 255, 0, 0.05)',
-  },
-  adjustButtonText: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 18,
-    fontWeight: 'bold',
-    lineHeight: 20,
   },
 });

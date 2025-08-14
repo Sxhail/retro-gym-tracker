@@ -11,6 +11,20 @@ const { width } = require('react-native').Dimensions.get('window');
 const CARD_MARGIN = 18;
 const CARD_WIDTH = width - CARD_MARGIN * 2;
 
+// Helper to format duration as HR MIN format (e.g., "1HR 30MIN")
+function formatDurationAsHrMin(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  
+  if (hours === 0) {
+    return `${minutes}MIN`;
+  } else if (minutes === 0) {
+    return `${hours}HR`;
+  } else {
+    return `${hours}HR ${minutes}MIN`;
+  }
+}
+
 export default function WorkoutDetailScreen() {
   const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -162,7 +176,7 @@ export default function WorkoutDetailScreen() {
       <View style={styles.workoutHeader}>
         <Text style={styles.workoutName}>{workout.name}</Text>
         <Text style={styles.workoutDate}>{formatDate(workout.date)}</Text>
-        <Text style={styles.workoutDuration}>Duration: {formatDuration(workout.duration)}</Text>
+        <Text style={styles.workoutDuration}>Duration: {formatDurationAsHrMin(workout.duration)}</Text>
       </View>
 
 

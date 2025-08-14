@@ -461,7 +461,14 @@ export default function NewWorkoutScreen() {
       if (!sessionExercises.some(e => e.id === ex.id)) {
         setCurrentExercises([
           ...sessionExercises,
-          { ...ex, sets: [{ reps: 0, weight: 0, completed: false, restDuration: 120 }] }
+          { 
+            ...ex, 
+            sets: [
+              { reps: 0, weight: 0, completed: false, restDuration: 120 },
+              { reps: 0, weight: 0, completed: false, restDuration: 120 },
+              { reps: 0, weight: 0, completed: false, restDuration: 120 }
+            ] 
+          }
         ]);
       }
       setModalVisible(false);
@@ -492,9 +499,25 @@ export default function NewWorkoutScreen() {
   const handleAddSet = (exerciseId: number) => {
     setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
-        const lastRest = ex.sets && ex.sets.length > 0 ? ex.sets[ex.sets.length - 1].restDuration ?? 120 : 120;
-        const newSet = { reps: 0, weight: 0, completed: false, restDuration: lastRest };
-        return { ...ex, sets: ex.sets ? [...ex.sets, newSet] : [newSet] };
+        const currentSets = ex.sets || [];
+        const deletedSets = (ex as any).deletedSets || [];
+        
+        if (deletedSets.length > 0) {
+          // Restore the first deleted set
+          const setToRestore = deletedSets[0];
+          const remainingDeletedSets = deletedSets.slice(1);
+          
+          return {
+            ...ex,
+            sets: [...currentSets, setToRestore],
+            deletedSets: remainingDeletedSets.length > 0 ? remainingDeletedSets : undefined
+          };
+        } else {
+          // No deleted sets to restore, create a new one
+          const lastRest = currentSets.length > 0 ? currentSets[currentSets.length - 1].restDuration ?? 120 : 120;
+          const newSet = { reps: 0, weight: 0, completed: false, restDuration: lastRest };
+          return { ...ex, sets: [...currentSets, newSet] };
+        }
       }
       return ex;
     }));
@@ -504,10 +527,13 @@ export default function NewWorkoutScreen() {
   const handleToggleSetComplete = (exerciseId: number, setIdx: number) => {
     setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
-        const updatedSets = (ex.sets || []).map((set: any, idx: number) =>
-          idx === setIdx ? { ...set, completed: !set.completed } : set
-        );
-        return { ...ex, sets: updatedSets };
+        const currentSets = ex.sets || [];
+        if (setIdx >= 0 && setIdx < currentSets.length) {
+          const updatedSets = currentSets.map((set: any, idx: number) =>
+            idx === setIdx ? { ...set, completed: !set.completed } : set
+          );
+          return { ...ex, sets: updatedSets };
+        }
       }
       return ex;
     }));
@@ -517,28 +543,31 @@ export default function NewWorkoutScreen() {
   const handleSetFieldChange = (exerciseId: number, setIdx: number, field: 'weight' | 'reps' | 'notes', value: string) => {
     setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
-        const updatedSets = (ex.sets || []).map((set: any, idx: number) => {
-          if (idx === setIdx) {
-            let processedValue = value;
-            if (field === 'notes') {
-              processedValue = value;
-            } else if (field === 'weight') {
-              // Allow decimals for weight (numbers and one decimal point)
-              processedValue = value.replace(/[^0-9.]/g, '');
-              // Ensure only one decimal point
-              const parts = processedValue.split('.');
-              if (parts.length > 2) {
-                processedValue = parts[0] + '.' + parts.slice(1).join('');
+        const currentSets = ex.sets || [];
+        if (setIdx >= 0 && setIdx < currentSets.length) {
+          const updatedSets = currentSets.map((set: any, idx: number) => {
+            if (idx === setIdx) {
+              let processedValue = value;
+              if (field === 'notes') {
+                processedValue = value;
+              } else if (field === 'weight') {
+                // Allow decimals for weight (numbers and one decimal point)
+                processedValue = value.replace(/[^0-9.]/g, '');
+                // Ensure only one decimal point
+                const parts = processedValue.split('.');
+                if (parts.length > 2) {
+                  processedValue = parts[0] + '.' + parts.slice(1).join('');
+                }
+              } else {
+                // For reps, only allow integers
+                processedValue = value.replace(/[^0-9]/g, '');
               }
-            } else {
-              // For reps, only allow integers
-              processedValue = value.replace(/[^0-9]/g, '');
+              return { ...set, [field]: processedValue };
             }
-            return { ...set, [field]: processedValue };
-          }
-          return set;
-        });
-        return { ...ex, sets: updatedSets };
+            return set;
+          });
+          return { ...ex, sets: updatedSets };
+        }
       }
       return ex;
     }));
@@ -548,10 +577,13 @@ export default function NewWorkoutScreen() {
   const handleSetRestChange = (exerciseId: number, setIdx: number, delta: number) => {
     setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
-        const updatedSets = (ex.sets || []).map((set: any, idx: number) =>
-          idx === setIdx ? { ...set, restDuration: Math.max(0, (set.restDuration ?? 120) + delta) } : set
-        );
-        return { ...ex, sets: updatedSets };
+        const currentSets = ex.sets || [];
+        if (setIdx >= 0 && setIdx < currentSets.length) {
+          const updatedSets = currentSets.map((set: any, idx: number) =>
+            idx === setIdx ? { ...set, restDuration: Math.max(0, (set.restDuration ?? 120) + delta) } : set
+          );
+          return { ...ex, sets: updatedSets };
+        }
       }
       return ex;
     }));
@@ -561,8 +593,24 @@ export default function NewWorkoutScreen() {
   const handleRemoveSet = (exerciseId: number, setIdx: number) => {
     setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
-        const updatedSets = (ex.sets || []).filter((_, idx) => idx !== setIdx);
-        return { ...ex, sets: updatedSets };
+        const currentSets = ex.sets || [];
+        // Don't allow removing if only 1 set remains
+        if (currentSets.length <= 1) {
+          Alert.alert('Cannot Remove', 'Each exercise must have at least one set.');
+          return ex;
+        }
+        
+        // Store deleted sets for potential restoration
+        const deletedSets = currentSets.slice(setIdx);
+        
+        // Store deleted sets in exercise metadata for restoration
+        const exerciseWithDeletedSets = {
+          ...ex,
+          sets: currentSets.slice(0, setIdx), // Keep only sets before the deleted one
+          deletedSets: deletedSets // Store deleted sets for restoration
+        };
+        
+        return exerciseWithDeletedSets;
       }
       return ex;
     }));

@@ -26,6 +26,26 @@ const CATEGORY_OPTIONS = [
   'Barbell', 'Dumbbell', 'Machine', 'Smith Machine', 'Bodyweight', 'Cable', 'Trap Bar', 'Kettlebell', 'Band', 'Other', 'Unknown'
 ];
 
+// Helper to format duration as hours only (e.g., "5 HRS")
+function formatDurationAsHours(seconds: number): string {
+  const hours = Math.round(seconds / 3600);
+  return `${hours.toString().padStart(3, '0')} HRS`;
+}
+
+// Helper to format duration as HR MIN format (e.g., "1HR 30MIN")
+function formatDurationAsHrMin(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  
+  if (hours === 0) {
+    return `${minutes}MIN`;
+  } else if (minutes === 0) {
+    return `${hours}HR`;
+  } else {
+    return `${hours}HR ${minutes}MIN`;
+  }
+}
+
 // Helper to parse duration like '1h 20m', '1hr 20min', '2 hours 5 minutes', etc. to seconds
 function parseDurationToSeconds(durationStr: string): number {
   if (!durationStr) return 0;
@@ -656,7 +676,7 @@ export default function HistoryListScreen() {
               </Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{formatDuration(totalStats.totalDuration)}</Text>
+              <Text style={styles.statNumber}>{formatDurationAsHours(totalStats.totalDuration)}</Text>
               <Text style={styles.statLabel}>TOTAL TIME</Text>
             </View>
             <View style={styles.statItem}>
@@ -739,7 +759,7 @@ export default function HistoryListScreen() {
               <View style={styles.workoutDetails}>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>DURATION</Text>
-                  <Text style={styles.detailValue}>{formatDuration(workout.duration)}</Text>
+                  <Text style={styles.detailValue}>{formatDurationAsHrMin(workout.duration)}</Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>EXERCISES</Text>

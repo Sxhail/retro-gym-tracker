@@ -15,6 +15,8 @@ export const workouts = sqliteTable('workouts', {
   name: text('name').notNull(),
   date: text('date').notNull(), // ISO timestamp
   duration: integer('duration').notNull(), // seconds
+  program_id: integer('program_id').references(() => user_programs.id, { onDelete: 'set null' }),
+  program_day_id: integer('program_day_id').references(() => program_days.id, { onDelete: 'set null' }),
   created_at: text('created_at').default('CURRENT_TIMESTAMP'),
 });
 
@@ -156,6 +158,40 @@ export const active_session_timers = sqliteTable('active_session_timers', {
   created_at: text('created_at').default('CURRENT_TIMESTAMP'),
 });
 
+// User Programs (simplified approach - reuses existing template system)
+export const user_programs = sqliteTable('user_programs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  description: text('description'),
+  duration_weeks: integer('duration_weeks').default(4),
+  current_week: integer('current_week').default(1),
+  current_day: integer('current_day').default(1),
+  is_active: integer('is_active').default(0),
+  start_date: text('start_date'),
+  last_workout_date: text('last_workout_date'),
+  completion_percentage: real('completion_percentage').default(0),
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
+});
+
+export const program_days = sqliteTable('program_days', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  program_id: integer('program_id').notNull().references(() => user_programs.id, { onDelete: 'cascade' }),
+  day_name: text('day_name').notNull(), // 'Monday', 'Tuesday', etc.
+  template_id: integer('template_id').references(() => workout_templates.id, { onDelete: 'set null' }),
+  day_order: integer('day_order').notNull(),
+  is_rest_day: integer('is_rest_day').default(0),
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
+});
+
+// Temporary table for storing workout data during program creation
+export const temp_program_workouts = sqliteTable('temp_program_workouts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  day_name: text('day_name').notNull(),
+  workout_type: text('workout_type').notNull(),
+  exercises_json: text('exercises_json').notNull(), // JSON string of exercises array
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
+});
+
 // Insert types
 export type NewExercise = typeof exercises.$inferInsert;
 export type NewWorkout = typeof workouts.$inferInsert;
@@ -164,6 +200,14 @@ export type NewSet = typeof sets.$inferInsert;
 export type NewWorkoutTemplate = typeof workout_templates.$inferInsert;
 export type NewTemplateExercise = typeof template_exercises.$inferInsert;
 export type NewTemplateSet = typeof template_sets.$inferInsert;
+
+// Program types
+export type UserProgram = typeof user_programs.$inferSelect;
+export type NewUserProgram = typeof user_programs.$inferInsert;
+export type ProgramDay = typeof program_days.$inferSelect;
+export type NewProgramDay = typeof program_days.$inferInsert;
+export type TempProgramWorkout = typeof temp_program_workouts.$inferSelect;
+export type NewTempProgramWorkout = typeof temp_program_workouts.$inferInsert;
 
 // Background persistence types
 export type ActiveWorkoutSession = typeof active_workout_sessions.$inferSelect;

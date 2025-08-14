@@ -97,6 +97,52 @@ db.serialize(() => {
     FOREIGN KEY (template_exercise_id) REFERENCES template_exercises(id) ON DELETE CASCADE
   )`);
 
+  // Create user_programs table
+  db.run(`CREATE TABLE IF NOT EXISTS user_programs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    duration_weeks INTEGER DEFAULT 4,
+    current_week INTEGER DEFAULT 1,
+    current_day INTEGER DEFAULT 1,
+    is_active INTEGER DEFAULT 0,
+    start_date TEXT,
+    last_workout_date TEXT,
+    completion_percentage REAL DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Create program_days table
+  db.run(`CREATE TABLE IF NOT EXISTS program_days (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    program_id INTEGER NOT NULL,
+    day_name TEXT NOT NULL,
+    template_id INTEGER,
+    day_order INTEGER NOT NULL,
+    is_rest_day INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (program_id) REFERENCES user_programs(id) ON DELETE CASCADE,
+    FOREIGN KEY (template_id) REFERENCES workout_templates(id) ON DELETE SET NULL
+  )`);
+
+  // Create temp_program_workouts table
+  db.run(`CREATE TABLE IF NOT EXISTS temp_program_workouts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    day_name TEXT NOT NULL,
+    workout_type TEXT NOT NULL,
+    exercises_json TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Add program context to workouts table if columns don't exist
+  try {
+    db.run(`ALTER TABLE workouts ADD COLUMN program_id INTEGER REFERENCES user_programs(id)`);
+  } catch (err) {}
+  
+  try {
+    db.run(`ALTER TABLE workouts ADD COLUMN program_day_id INTEGER REFERENCES program_days(id)`);
+  } catch (err) {}
+
   // Prepare insert statement
   const stmt = db.prepare(
     'INSERT INTO exercises (name, category, muscle_group, is_custom) VALUES (?, ?, ?, 0)'

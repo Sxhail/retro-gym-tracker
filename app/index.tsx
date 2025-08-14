@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
+import ProgramProgressWidget from '../components/ProgramProgressWidget';
+import { ProgramManager } from '../services/programManager';
 
 const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (tab: string) => void }) => (
   <SafeAreaView style={styles.bottomNavContainer}>
@@ -27,7 +29,52 @@ export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
-  const { isWorkoutActive } = useWorkoutSession();
+  const [programData, setProgramData] = useState<any>(null);
+  const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
+
+  // Load active program on component mount
+  useEffect(() => {
+    loadActiveProgram();
+  }, []);
+
+  const loadActiveProgram = async () => {
+    try {
+      const activeProgram = await ProgramManager.getActiveProgram();
+      setProgramData(activeProgram);
+    } catch (error) {
+      console.error('Error loading active program:', error);
+    }
+  };
+
+  const handleStartProgramWorkout = async () => {
+    if (programData) {
+      try {
+        // Calculate the actual next workout day based on completed workouts
+        const completedCount = programData.actualProgress.completedWorkouts;
+        const dayNames = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+        
+        // Get program schedule to determine next day
+        const programDays = await ProgramManager.getProgramDays(programData.program.id);
+        const workoutDays = programDays.filter(day => !day.is_rest_day);
+        
+        if (workoutDays.length > 0) {
+          const nextDayIndex = completedCount % workoutDays.length;
+          const nextDayName = workoutDays[nextDayIndex].day_name;
+          
+          // Start program workout with correct day
+          await startProgramWorkout(programData.program.id, nextDayName);
+          router.push('/new');
+        } else {
+          // Fallback to regular workout if no workout days
+          router.push('/new');
+        }
+      } catch (error) {
+        console.error('Error starting program workout:', error);
+        // Fallback to regular workout flow
+        router.push('/new');
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -47,6 +94,20 @@ export default function HomeScreen() {
           </View>
           <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
         </View>
+        
+        {/* Program Progress Widget */}
+        {programData && (
+          <ProgramProgressWidget
+            programName={programData.program.name}
+            currentWeek={programData.actualProgress.currentWeek}
+            totalWeeks={programData.actualProgress.totalWeeks}
+            progressPercentage={programData.actualProgress.realPercentage}
+            nextWorkout={programData.nextWorkout}
+            daysSinceLastWorkout={programData.daysSinceLastWorkout}
+            onStartWorkout={handleStartProgramWorkout}
+          />
+        )}
+        
         {/* Header */}
         <View style={styles.headerSection}>
         </View>

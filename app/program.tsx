@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { eq } from 'drizzle-orm';
 import theme from '../styles/theme';
+import { db } from '../db/client';
+import * as schema from '../db/schema';
+import { ProgramManager, ProgramData } from '../services/programManager';
 
 interface ProgramConfig {
   programName: string;
@@ -14,8 +18,9 @@ interface DayWorkout {
   day: string;
   workoutType: string;
   exercises: Array<{
+    id: number;
     name: string;
-    sets: string;
+    sets: number;
     reps: string;
   }>;
 }
@@ -32,13 +37,38 @@ export default function ProgramScreen() {
   const [workouts, setWorkouts] = useState<DayWorkout[]>([]);
   const [assignedDays, setAssignedDays] = useState<Set<string>>(new Set());
 
+  // Load temp workout data when reaching step 4
+  useEffect(() => {
+    const loadTempWorkoutData = async () => {
+      if (step === 4) {
+        try {
+          const tempWorkouts = await db.select().from(schema.temp_program_workouts);
+          const formattedWorkouts: DayWorkout[] = tempWorkouts.map(tw => ({
+            day: tw.day_name,
+            workoutType: tw.workout_type,
+            exercises: JSON.parse(tw.exercises_json)
+          }));
+          setWorkouts(formattedWorkouts);
+          
+          // Update assigned days based on saved workouts
+          const savedDays = new Set(tempWorkouts.map(tw => tw.day_name));
+          setAssignedDays(savedDays);
+        } catch (error) {
+          console.error('Error loading temp workout data:', error);
+        }
+      }
+    };
+
+    loadTempWorkoutData();
+  }, [step]);
+
   const isStepComplete = (stepNum: number) => {
     switch (stepNum) {
       case 2:
         return config.programName.trim() && config.duration && config.goal && config.frequency;
       case 3:
-        // All 7 days must be assigned
-        return assignedDays.size === 7;
+        // At least one day must be assigned (can't have a program with all rest days)
+        return assignedDays.size >= 1;
       case 4:
         return true; // For now, this step is always "complete"
       default:
@@ -47,16 +77,85 @@ export default function ProgramScreen() {
   };
 
   const handleDayAssignment = (day: string) => {
-    // Mark the day as assigned immediately for demo purposes
-    // In a real app, this would be done when user saves the workout
-    markDayAsAssigned(day);
-    
     // Navigate to workout editor for this day
     router.push(`/program/editor/${day.toLowerCase()}`);
   };
 
+  // Load assigned days when component mounts or step changes
+  useEffect(() => {
+    const loadAssignedDays = async () => {
+      if (step === 3) {
+        try {
+          const tempWorkouts = await db.select().from(schema.temp_program_workouts);
+          const savedDays = new Set(tempWorkouts.map(tw => tw.day_name));
+          setAssignedDays(savedDays);
+        } catch (error) {
+          console.error('Error loading assigned days:', error);
+        }
+      }
+    };
+
+    loadAssignedDays();
+  }, [step]);
+
   const markDayAsAssigned = (day: string) => {
     setAssignedDays(prev => new Set([...prev, day.toUpperCase()]));
+  };
+
+  const handleCommitProgram = async () => {
+    try {
+      // Create array of all 7 days with workout or rest day data
+      const allDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+      
+      const programDays = allDays.map((dayName, index) => {
+        const workoutForDay = workouts.find(w => w.day.toUpperCase() === dayName);
+        
+        if (workoutForDay) {
+          // This is an assigned workout day with actual data
+          return {
+            dayName,
+            dayOrder: index + 1,
+            workoutType: workoutForDay.workoutType,
+            exercises: workoutForDay.exercises,
+            isRestDay: false,
+          };
+        } else {
+          // This is a rest day
+          return {
+            dayName,
+            dayOrder: index + 1,
+            workoutType: 'Rest Day',
+            exercises: [],
+            isRestDay: true,
+          };
+        }
+      });
+
+      const programData: ProgramData = {
+        name: config.programName,
+        description: `${config.goal} program with ${config.frequency} frequency`,
+        durationWeeks: parseInt(config.duration),
+        days: programDays,
+      };
+
+      // Create the program in the database
+      const programId = await ProgramManager.createProgram(programData);
+      
+      // Activate the program
+      await ProgramManager.activateProgram(programId);
+      
+      // Clean up temp workout data
+      await db.delete(schema.temp_program_workouts);
+      
+      Alert.alert(
+        'Program Created!',
+        `${config.programName} has been created and activated. You can now track your progress on the home screen.`,
+        [{ text: 'OK', onPress: () => router.push('/') }]
+      );
+    } catch (error) {
+      console.error('Error committing program:', error);
+      Alert.alert('Error', 'Failed to create program. Please try again.');
+    }
   };
 
   const handleContinue = () => {
@@ -335,14 +434,14 @@ export default function ProgramScreen() {
           styles.continueButton,
           !isStepComplete(step) && styles.continueButtonDisabled
         ]}
-        onPress={step === 4 ? () => router.back() : handleContinue}
+        onPress={step === 4 ? handleCommitProgram : handleContinue}
         disabled={!isStepComplete(step)}
       >
         <Text style={[
           styles.continueButtonText,
           !isStepComplete(step) && styles.continueButtonTextDisabled
         ]}>
-          {step === 4 ? 'COMMIT' : 'CONTINUE →'}
+          {step === 4 ? 'COMMIT TO PROGRAM' : 'CONTINUE →'}
         </Text>
       </TouchableOpacity>
     </View>

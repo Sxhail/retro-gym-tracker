@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import theme from '../../../styles/theme';
 import { db } from '../../../db/client';
 import * as schema from '../../../db/schema';
-import { like, or, asc } from 'drizzle-orm';
+import { like, or, asc, eq } from 'drizzle-orm';
 import ExerciseCard from '../../../components/ExerciseCard';
 import { getExerciseMaxWeights } from '../../../services/workoutHistory';
 
@@ -35,6 +35,31 @@ export default function WorkoutEditorScreen() {
   useEffect(() => {
     getExerciseMaxWeights().then(setMaxWeights);
   }, []);
+
+  // Load existing workout data for this day
+  useEffect(() => {
+    const loadWorkoutData = async () => {
+      try {
+        const existingWorkout = await db.select()
+          .from(schema.temp_program_workouts)
+          .where(eq(schema.temp_program_workouts.day_name, (day as string).toUpperCase()))
+          .limit(1);
+
+        if (existingWorkout.length > 0) {
+          const workout = existingWorkout[0];
+          setWorkoutType(workout.workout_type);
+          const exercisesData = JSON.parse(workout.exercises_json);
+          setExercises(exercisesData);
+        }
+      } catch (error) {
+        console.error('Error loading workout data:', error);
+      }
+    };
+
+    if (day) {
+      loadWorkoutData();
+    }
+  }, [day]);
 
   // Exercise picker logic (same as new.tsx)
   useEffect(() => {
@@ -101,7 +126,7 @@ export default function WorkoutEditorScreen() {
     setExercises(exercises.filter(ex => ex.id !== exerciseId));
   };
 
-  const handleSaveWorkout = () => {
+  const handleSaveWorkout = async () => {
     // Validation: Check if workout type is entered and at least one exercise is added
     if (!workoutType.trim()) {
       alert('Please enter a workout type before saving.');
@@ -113,17 +138,27 @@ export default function WorkoutEditorScreen() {
       return;
     }
     
-    // Create workout data
-    const workoutData = {
-      day: day as string,
-      workoutType,
-      exercises
-    };
-    
-    // In a real app, you would save this to a global state or database
-    // For now, we'll just go back
-    console.log('Saving workout:', workoutData);
-    router.back();
+    try {
+      // Save workout data to temp table
+      const workoutData = {
+        day_name: (day as string).toUpperCase(),
+        workout_type: workoutType,
+        exercises_json: JSON.stringify(exercises)
+      };
+
+      // First, delete any existing temp data for this day
+      await db.delete(schema.temp_program_workouts)
+        .where(eq(schema.temp_program_workouts.day_name, workoutData.day_name));
+
+      // Insert new temp data
+      await db.insert(schema.temp_program_workouts).values(workoutData);
+      
+      console.log('Workout saved to temp storage:', workoutData);
+      router.back();
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      alert('Failed to save workout. Please try again.');
+    }
   };
 
   // Check if save button should be enabled
@@ -148,22 +183,27 @@ export default function WorkoutEditorScreen() {
       <View style={styles.workoutTypeSection}>
         <Text style={styles.workoutTypeLabel}>WORKOUT TYPE:</Text>
         <TextInput
-          style={styles.workoutTypeInput}
+          style={[
+            styles.workoutTypeInput,
+            !workoutType.trim() && exercises.length === 0 && styles.inputWarning
+          ]}
           value={workoutType}
           onChangeText={setWorkoutType}
-          placeholder="Enter"
-          placeholderTextColor={theme.colors.neon}
+          placeholder="e.g., Push Day, Legs, Full Body"
+          placeholderTextColor="rgba(0, 255, 0, 0.5)"
         />
       </View>
 
       {/* Exercise List */}
       <View style={styles.exerciseListSection}>
-        <Text style={styles.exerciseListTitle}>EXERCISE LIST:</Text>
+        <Text style={styles.exerciseListTitle}>
+          EXERCISE LIST:
+          {exercises.length > 0 && <Text style={styles.countIndicator}>({exercises.length})</Text>}
+        </Text>
         
         {exercises.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>NO EXERCISES YET</Text>
-            <Text style={styles.emptyStateSubtext}>Tap "ADD EXERCISE" below to get started</Text>
           </View>
         ) : (
           <ScrollView style={styles.exerciseList} showsVerticalScrollIndicator={false}>
@@ -232,7 +272,9 @@ export default function WorkoutEditorScreen() {
           onPress={handleSaveWorkout}
           disabled={!canSave}
         >
-          <Text style={[styles.saveButtonText, !canSave && styles.saveButtonTextDisabled]}>SAVE WORKOUT</Text>
+          <Text style={[styles.saveButtonText, !canSave && styles.saveButtonTextDisabled]}>
+            {canSave ? 'SAVE WORKOUT' : 'COMPLETE FORM TO SAVE'}
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
@@ -251,17 +293,17 @@ export default function WorkoutEditorScreen() {
           {/* Header */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16 }}>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 24 }}>←</Text>
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 28 }}>←</Text>
             </TouchableOpacity>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>EXERCISES</Text>
-            <View style={{ width: 24 }} />
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 24, fontWeight: 'bold' }}>EXERCISES</Text>
+            <View style={{ width: 28 }} />
           </View>
 
           {/* Search Bar */}
           <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, backgroundColor: 'transparent', paddingHorizontal: 12 }}>
               <TextInput
-                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 12 }}
+                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, paddingVertical: 14 }}
                 placeholder="SEARCH"
                 placeholderTextColor={theme.colors.neon}
                 value={search}
@@ -290,7 +332,8 @@ export default function WorkoutEditorScreen() {
                   <Text style={{
                     color: selectedMuscleGroup === group ? theme.colors.background : theme.colors.neon,
                     fontFamily: theme.fonts.code,
-                    fontSize: 12,
+                    fontSize: 14,
+                    fontWeight: 'bold',
                   }}>
                     {group}
                   </Text>
@@ -350,7 +393,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
@@ -360,17 +403,23 @@ const styles = StyleSheet.create({
   workoutTypeLabel: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   workoutTypeInput: {
     borderRadius: 8,
-    padding: 12,
+    padding: 16,
     backgroundColor: 'rgba(0, 255, 0, 0.08)',
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 14,
+    fontSize: 18,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+  },
+  inputWarning: {
+    borderColor: theme.colors.neon,
+    borderWidth: 2,
   },
   exerciseListSection: {
     flex: 1,
@@ -378,9 +427,13 @@ const styles = StyleSheet.create({
   exerciseListTitle: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12,
+  },
+  countIndicator: {
+    color: 'rgba(0, 255, 0, 0.7)',
+    fontSize: 14,
   },
   emptyState: {
     flex: 1,
@@ -391,7 +444,7 @@ const styles = StyleSheet.create({
   emptyStateText: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
@@ -400,7 +453,7 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     color: 'rgba(0, 255, 0, 0.6)',
     fontFamily: theme.fonts.code,
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
   },
   exerciseList: {
@@ -428,7 +481,7 @@ const styles = StyleSheet.create({
   exerciseNameDisplay: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },
@@ -465,19 +518,19 @@ const styles = StyleSheet.create({
   inputLabel: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 12,
+    fontSize: 14,
     marginRight: 8,
     fontWeight: 'bold',
   },
   inputBox: {
     borderRadius: 6,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    minWidth: 50,
+    paddingVertical: 10,
+    minWidth: 60,
     backgroundColor: 'rgba(0, 255, 0, 0.12)',
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center',
     borderWidth: 1,
     borderColor: 'rgba(0, 255, 0, 0.3)',
@@ -495,13 +548,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 0, 0.08)',
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: 'rgba(0, 255, 0, 0.3)',
-    borderStyle: 'dashed',
+    borderColor: theme.colors.neon,
+    borderStyle: 'solid',
   },
   addExerciseText: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
@@ -514,43 +567,52 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.neon,
     borderRadius: 8,
-    padding: 16,
+    padding: 18,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.neon,
   },
   saveButtonText: {
     color: theme.colors.background,
     fontFamily: theme.fonts.code,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: 'rgba(0, 255, 0, 0.3)',
+    borderColor: 'rgba(0, 255, 0, 0.3)',
+  },
+  saveButtonTextDisabled: {
+    color: 'rgba(0, 0, 0, 0.5)',
   },
   cancelButton: {
     flex: 1,
     borderRadius: 8,
-    padding: 16,
+    padding: 18,
     alignItems: 'center',
     backgroundColor: 'rgba(0, 255, 0, 0.08)',
+    borderWidth: 2,
+    borderColor: theme.colors.neon,
   },
   cancelButtonText: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   deleteButton: {
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 0, 51, 0.15)',
+    width: 24,
+    height: 24,
+    backgroundColor: 'rgba(0, 255, 0, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 0, 51, 0.3)',
   },
   deleteButtonText: {
-    color: '#FF0033',
+    color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 16,
     fontWeight: 'bold',

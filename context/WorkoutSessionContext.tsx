@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
-import { saveWorkout, getNextWorkoutNumber, type WorkoutSessionData } from '../services/workoutHistory';
+import { saveWorkout, saveProgramWorkout, getNextWorkoutNumber, type WorkoutSessionData } from '../services/workoutHistory';
+import { ProgramManager } from '../services/programManager';
 
 export interface Exercise {
   id: number;
@@ -37,6 +38,11 @@ interface WorkoutSessionContextType {
   endWorkout: () => void;
   saveWorkout: () => Promise<number | null>;
   resetSession: () => void;
+  // Program context
+  currentProgramId: number | null;
+  currentProgramDayId: number | null;
+  isProgramWorkout: boolean;
+  startProgramWorkout: (programId: number, dayName: string) => Promise<void>;
 }
 
 const WorkoutSessionContext = createContext<WorkoutSessionContextType | undefined>(undefined);
@@ -65,6 +71,11 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const timerRef = useRef<any>(null);
+
+  // Program context state
+  const [currentProgramId, setCurrentProgramId] = useState<number | null>(null);
+  const [currentProgramDayId, setCurrentProgramDayId] = useState<number | null>(null);
+  const [isProgramWorkout, setIsProgramWorkout] = useState<boolean>(false);
 
   // Timer effect - runs when workout is active and not paused
   useEffect(() => {
@@ -133,13 +144,63 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
         })),
       };
 
-      // Save to database
-      const workoutId = await saveWorkout(sessionData);
-      console.log(`Workout saved successfully with ID: ${workoutId}`);
+      let workoutId: number;
+
+      // Save as program workout or regular workout
+      if (isProgramWorkout && currentProgramId && currentProgramDayId) {
+        workoutId = await saveProgramWorkout(sessionData, currentProgramId, currentProgramDayId);
+        
+        // Update program progress
+        await ProgramManager.completeProgramWorkout(currentProgramId, workoutId);
+        
+        console.log(`Program workout saved successfully with ID: ${workoutId}`);
+      } else {
+        workoutId = await saveWorkout(sessionData);
+        console.log(`Workout saved successfully with ID: ${workoutId}`);
+      }
       
       return workoutId;
     } catch (error) {
       console.error('Error saving workout:', error);
+      throw error;
+    }
+  };
+
+  const startProgramWorkout = async (programId: number, dayName: string): Promise<void> => {
+    try {
+      // Get the workout template for this program day
+      const template = await ProgramManager.getProgramWorkoutTemplate(programId, dayName);
+      
+      if (!template) {
+        throw new Error('No workout template found for this day');
+      }
+
+      // Set program context
+      setCurrentProgramId(programId);
+      setCurrentProgramDayId(template.programDay.id);
+      setIsProgramWorkout(true);
+
+      // Set workout name and exercises from template
+      setWorkoutName(template.template.name || `${dayName} Workout`);
+      
+      // Convert template exercises to session exercises format
+      const sessionExercises: Exercise[] = template.exercises.map(ex => ({
+        id: ex.exerciseId,
+        name: ex.name,
+        sets: Array.from({ length: ex.sets }, () => ({
+          reps: 0,
+          weight: 0,
+          notes: '',
+          completed: false,
+          restDuration: 60,
+        })),
+      }));
+
+      setCurrentExercises(sessionExercises);
+      
+      console.log(`Starting program workout: ${template.template.name}`);
+    } catch (error) {
+      console.error('Error starting program workout:', error);
       throw error;
     }
   };
@@ -157,6 +218,12 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     setWorkoutName(nextWorkoutName);
     setElapsedTime(0);
     setIsPaused(false);
+    
+    // Reset program context
+    setCurrentProgramId(null);
+    setCurrentProgramDayId(null);
+    setIsProgramWorkout(false);
+    
     console.log('Workout session reset');
   };
 
@@ -178,7 +245,12 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       startWorkout,
       endWorkout,
       saveWorkout: saveWorkoutToDatabase,
-      resetSession 
+      resetSession,
+      // Program context
+      currentProgramId,
+      currentProgramDayId,
+      isProgramWorkout,
+      startProgramWorkout,
     }}>
       {children}
     </WorkoutSessionContext.Provider>

@@ -16,7 +16,7 @@ export interface WorkoutSessionData {
       reps: number;
       notes?: string;
       restDuration: number;
-      completed: boolean;
+      completed?: boolean;
     }>;
   }>;
 }
@@ -569,5 +569,147 @@ export async function getPreviousSetForExerciseSetNumber(exerciseId: number, set
   } catch (error) {
     console.error('Error fetching previous set for exercise/set number:', error);
     return null;
+  }
+}
+
+/**
+ * Save a program workout session with program context
+ */
+export async function saveProgramWorkout(
+  sessionData: WorkoutSessionData,
+  programId: number,
+  programDayId: number
+): Promise<number> {
+  let retryCount = 0;
+  const maxRetries = 3;
+
+  while (retryCount < maxRetries) {
+    try {
+      // Calculate total duration in seconds
+      const duration = Math.floor((sessionData.endTime.getTime() - sessionData.startTime.getTime()) / 1000);
+      
+      // Validate session data (same as regular workout)
+      if (!sessionData.name || sessionData.name.trim().length === 0) {
+        throw new Error('Workout name cannot be empty');
+      }
+      
+      if (sessionData.name.length > 100) {
+        throw new Error('Workout name is too long (max 100 characters)');
+      }
+      
+      if (sessionData.exercises.length === 0) {
+        throw new Error('Cannot save workout with no exercises');
+      }
+
+      // Validate exercises and sets
+      for (const exercise of sessionData.exercises) {
+        if (exercise.sets.length === 0) {
+          throw new Error('All exercises must have at least one set');
+        }
+        
+        for (const set of exercise.sets) {
+          if (set.weight < 0) {
+            throw new Error('Weight cannot be negative');
+          }
+          if (set.reps <= 0) {
+            throw new Error('Reps must be greater than 0');
+          }
+          if (set.restDuration < 0) {
+            throw new Error('Rest duration cannot be negative');
+          }
+          if (set.notes && set.notes.length > 200) {
+            throw new Error('Set notes are too long (max 200 characters)');
+          }
+        }
+      }
+
+      // Use a transaction to ensure data integrity
+      return await db.transaction(async (tx) => {
+        // 1. Insert workout record with program context
+        const [workoutResult] = await tx.insert(workouts).values({
+          name: sessionData.name.trim(),
+          date: sessionData.startTime.toISOString(),
+          duration: duration,
+          program_id: programId,
+          program_day_id: programDayId,
+        }).returning({ id: workouts.id });
+
+        const workoutId = workoutResult.id;
+
+        // 2. Insert workout exercises and their sets (same as regular workout)
+        for (const exerciseData of sessionData.exercises) {
+          // Insert workout exercise
+          const [workoutExerciseResult] = await tx.insert(workout_exercises).values({
+            workout_id: workoutId,
+            exercise_id: exerciseData.exerciseId,
+            distance: exerciseData.distance,
+          }).returning({ id: workout_exercises.id });
+
+          const workoutExerciseId = workoutExerciseResult.id;
+
+          // Insert sets for this exercise
+          for (const setData of exerciseData.sets) {
+            await tx.insert(sets).values({
+              workout_exercise_id: workoutExerciseId,
+              set_index: setData.setIndex,
+              weight: setData.weight,
+              reps: setData.reps,
+              notes: setData.notes,
+              rest_duration: setData.restDuration,
+              completed: setData.completed ? 1 : 0,
+            });
+          }
+        }
+
+        return workoutId;
+      });
+
+    } catch (error) {
+      retryCount++;
+      console.error(`Error saving program workout (attempt ${retryCount}/${maxRetries}):`, error);
+      
+      if (retryCount >= maxRetries) {
+        if (error instanceof Error && error.message.includes('database is locked')) {
+          throw new Error('Database is busy. Please try again in a moment.');
+        } else if (error instanceof Error && error.message.includes('no such table')) {
+          throw new Error('Database schema is missing. Please restart the app.');
+        } else {
+          throw new Error(`Failed to save program workout: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+      
+      // Wait before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+    }
+  }
+
+  throw new Error('Failed to save program workout after maximum retries');
+}
+
+/**
+ * Get workout history for a specific program
+ */
+export async function getProgramWorkoutHistory(programId: number): Promise<WorkoutHistoryItem[]> {
+  try {
+    const results = await db
+      .select({
+        id: workouts.id,
+        name: workouts.name,
+        date: workouts.date,
+        duration: workouts.duration,
+        exerciseCount: sql<number>`COUNT(DISTINCT ${workout_exercises.exercise_id})`,
+        totalSets: sql<number>`COUNT(${sets.id})`,
+      })
+      .from(workouts)
+      .leftJoin(workout_exercises, eq(workouts.id, workout_exercises.workout_id))
+      .leftJoin(sets, eq(workout_exercises.id, sets.workout_exercise_id))
+      .where(eq(workouts.program_id, programId))
+      .groupBy(workouts.id)
+      .orderBy(desc(workouts.date));
+
+    return results;
+  } catch (error) {
+    console.error('Error fetching program workout history:', error);
+    throw new Error('Failed to load program workout history');
   }
 } 

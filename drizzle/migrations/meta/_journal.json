@@ -29,6 +29,20 @@
       "when": 1754981030825,
       "tag": "0003_solid_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1755175409153,
+      "tag": "0004_quiet_ultimo",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1755175831322,
+      "tag": "0005_low_guardian",
+      "breakpoints": true
     }
   ]
 }

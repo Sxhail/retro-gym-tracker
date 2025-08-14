@@ -706,8 +706,69 @@ export default function NewWorkoutScreen() {
     );
   };
 
-  // Handle finish workout
+  // Handle back button with save prompt
+  const handleBackButton = () => {
+    // If there are exercises and workout is active, prompt to save
+    if (sessionExercises.length > 0 && isWorkoutActive) {
+      Alert.alert(
+        'Save Workout?',
+        'You have exercises in your workout. Do you want to save it before leaving?',
+        [
+          {
+            text: 'Discard',
+            style: 'destructive',
+            onPress: async () => {
+              await resetSession();
+              router.back();
+            }
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          },
+          {
+            text: 'Save & Exit',
+            onPress: async () => {
+              try {
+                setIsSaving(true);
+                
+                // Validate workout name
+                if (!workoutName || workoutName.trim().length === 0) {
+                  Alert.alert('Invalid Workout Name', 'Please enter a workout name before saving.');
+                  setIsSaving(false);
+                  return;
+                }
+
+                endWorkout();
+                const workoutId = await saveWorkout();
+                
+                if (workoutId) {
+                  await resetSession();
+                  router.back();
+                }
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                Alert.alert('Save Failed', `Failed to save workout: ${errorMessage}`);
+              } finally {
+                setIsSaving(false);
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      // No exercises, just go back
+      router.back();
+    }
+  };
+
+  // Handle finish workout with improved duplicate prevention
   const handleFinishWorkout = async () => {
+    // Prevent multiple saves with early return
+    if (isSaving) {
+      return;
+    }
+
     // Validate workout name
     if (!workoutName || workoutName.trim().length === 0) {
       Alert.alert('Invalid Workout Name', 'Please enter a workout name before finishing.');
@@ -756,7 +817,9 @@ export default function NewWorkoutScreen() {
     }
 
     try {
+      // Set saving state immediately to prevent double-clicks
       setIsSaving(true);
+      
       endWorkout(); // End the workout session
       const workoutId = await saveWorkout(); // Save to database
       
@@ -781,6 +844,8 @@ export default function NewWorkoutScreen() {
             }
           ]
         );
+      } else {
+        throw new Error('Failed to save workout - no ID returned');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -800,6 +865,7 @@ export default function NewWorkoutScreen() {
         Alert.alert('Save Failed', `Failed to save workout: ${errorMessage}`);
       }
     } finally {
+      // Only reset saving state if still saving (avoid race conditions)
       setIsSaving(false);
     }
   };
@@ -809,7 +875,7 @@ export default function NewWorkoutScreen() {
 
       {/* Header with back button, workout name, and cancel cross */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButtonArea}>
+        <TouchableOpacity onPress={handleBackButton} style={styles.backButtonArea}>
           <Text style={{ 
             color: theme.colors.neon, 
             fontFamily: theme.fonts.body, 
@@ -968,10 +1034,12 @@ export default function NewWorkoutScreen() {
                     borderWidth: 2, 
                     borderColor: 'black', 
                     marginBottom: 0, 
-                    marginTop: 0 
+                    marginTop: 0,
+                    opacity: isSaving ? 0.6 : 1.0 // Visual feedback for disabled state
                   }}
                   onPress={handleFinishWorkout}
                   disabled={isSaving}
+                  activeOpacity={isSaving ? 1.0 : 0.7} // Prevent tap feedback when disabled
                 >
                   <Text style={{ color: 'black', fontFamily: theme.fonts.code, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2 }}>
                     {isSaving ? 'SAVING...' : 'FINISH'}

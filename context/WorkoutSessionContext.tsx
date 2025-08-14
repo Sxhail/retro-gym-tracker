@@ -126,18 +126,30 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
         throw new Error('Cannot save workout with no exercises');
       }
 
+      // Validate workout name
+      if (!workoutName || workoutName.trim().length === 0) {
+        throw new Error('Workout name cannot be empty');
+      }
+
+      console.log('Starting workout save process...', {
+        isProgramWorkout,
+        currentProgramId,
+        currentProgramDayId,
+        exerciseCount: currentExercises.length
+      });
+
       // Prepare session data for saving
       const sessionData: WorkoutSessionData = {
-        name: workoutName,
+        name: workoutName.trim(),
         startTime: sessionStartTime,
         endTime: sessionEndTime || new Date(), // Use current time if not ended
         exercises: currentExercises.map(exercise => ({
           exerciseId: exercise.id,
           sets: exercise.sets?.map((set, index) => ({
             setIndex: index + 1,
-            weight: set.weight,
-            reps: set.reps,
-            notes: set.notes,
+            weight: Number(set.weight) || 0,
+            reps: Number(set.reps) || 0,
+            notes: set.notes || '',
             restDuration: set.restDuration || 0,
             completed: set.completed || false,
           })) || [],
@@ -148,15 +160,27 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
 
       // Save as program workout or regular workout
       if (isProgramWorkout && currentProgramId && currentProgramDayId) {
+        console.log('Saving as program workout...', { programId: currentProgramId, dayId: currentProgramDayId });
         workoutId = await saveProgramWorkout(sessionData, currentProgramId, currentProgramDayId);
         
         // Update program progress
-        await ProgramManager.completeProgramWorkout(currentProgramId, workoutId);
+        try {
+          await ProgramManager.completeProgramWorkout(currentProgramId, workoutId);
+          console.log('Program progress updated successfully');
+        } catch (progressError) {
+          console.warn('Failed to update program progress:', progressError);
+          // Don't fail the save if progress update fails
+        }
         
         console.log(`Program workout saved successfully with ID: ${workoutId}`);
       } else {
+        console.log('Saving as regular workout...');
         workoutId = await saveWorkout(sessionData);
         console.log(`Workout saved successfully with ID: ${workoutId}`);
+      }
+      
+      if (!workoutId || workoutId <= 0) {
+        throw new Error('Invalid workout ID returned from save operation');
       }
       
       return workoutId;

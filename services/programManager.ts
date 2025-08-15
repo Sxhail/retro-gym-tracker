@@ -124,7 +124,7 @@ export class ProgramManager {
   /**
    * Get the currently active program with 100% accurate progress data
    */
-  static async getActiveProgram(): Promise<{
+  static async getActiveProgram(programId?: number): Promise<{
     program: schema.UserProgram;
     nextWorkout: string;
     daysSinceLastWorkout: number;
@@ -137,12 +137,25 @@ export class ProgramManager {
     };
   } | null> {
     try {
-      const [activeProgram] = await db.select()
-        .from(schema.user_programs)
-        .where(eq(schema.user_programs.is_active, 1))
-        .limit(1);
+      let targetProgram;
+      
+      if (programId) {
+        // Get specific program by ID
+        const [program] = await db.select()
+          .from(schema.user_programs)
+          .where(eq(schema.user_programs.id, programId))
+          .limit(1);
+        targetProgram = program;
+      } else {
+        // Get active program (original behavior)
+        const [activeProgram] = await db.select()
+          .from(schema.user_programs)
+          .where(eq(schema.user_programs.is_active, 1))
+          .limit(1);
+        targetProgram = activeProgram;
+      }
 
-      if (!activeProgram) {
+      if (!targetProgram) {
         return null;
       }
 
@@ -150,25 +163,25 @@ export class ProgramManager {
       const programDays = await db.select()
         .from(schema.program_days)
         .leftJoin(schema.workout_templates, eq(schema.program_days.template_id, schema.workout_templates.id))
-        .where(eq(schema.program_days.program_id, activeProgram.id))
+        .where(eq(schema.program_days.program_id, targetProgram.id))
         .orderBy(schema.program_days.day_order);
 
       // Get all completed program workouts
       const completedWorkouts = await db.select()
         .from(schema.workouts)
-        .where(eq(schema.workouts.program_id, activeProgram.id))
+        .where(eq(schema.workouts.program_id, targetProgram.id))
         .orderBy(desc(schema.workouts.date));
 
       // Calculate accurate progress
       const workoutDays = programDays.filter(day => !day.program_days.is_rest_day);
-      const totalWorkouts = workoutDays.length * activeProgram.duration_weeks;
+      const totalWorkouts = workoutDays.length * targetProgram.duration_weeks;
       const completedCount = completedWorkouts.length;
       const realPercentage = totalWorkouts > 0 ? Math.round((completedCount / totalWorkouts) * 100) : 0;
 
       // Calculate current week based on completed workouts
       const workoutsPerWeek = workoutDays.length;
       const currentWeek = Math.floor(completedCount / workoutsPerWeek) + 1;
-      const currentWeekCapped = Math.min(currentWeek, activeProgram.duration_weeks);
+      const currentWeekCapped = Math.min(currentWeek, targetProgram.duration_weeks);
 
       // Find next workout day
       const currentDayInWeek = (completedCount % workoutsPerWeek);
@@ -199,13 +212,13 @@ export class ProgramManager {
       if (completedWorkouts.length > 0) {
         const lastWorkoutDate = new Date(completedWorkouts[0].date);
         daysSince = Math.floor((Date.now() - lastWorkoutDate.getTime()) / (1000 * 60 * 60 * 24));
-      } else if (activeProgram.start_date) {
-        const startDate = new Date(activeProgram.start_date);
+      } else if (targetProgram.start_date) {
+        const startDate = new Date(targetProgram.start_date);
         daysSince = Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       }
 
       return {
-        program: activeProgram,
+        program: targetProgram,
         nextWorkout,
         daysSinceLastWorkout: daysSince,
         actualProgress: {
@@ -213,7 +226,7 @@ export class ProgramManager {
           totalWorkouts,
           realPercentage,
           currentWeek: currentWeekCapped,
-          totalWeeks: activeProgram.duration_weeks,
+          totalWeeks: targetProgram.duration_weeks,
         },
       };
     } catch (error) {
@@ -389,6 +402,87 @@ export class ProgramManager {
         .orderBy(schema.program_days.day_order);
     } catch (error) {
       console.error('Error getting program days:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Delete all user programs and their related data
+   */
+  static async deleteAllPrograms(): Promise<void> {
+    try {
+      console.log('Starting to delete all programs...');
+      
+      // Get all programs first
+      const programs = await db.select().from(schema.user_programs);
+      console.log(`Found ${programs.length} programs to delete`);
+      
+      // Collect template IDs that were used by programs
+      const templateIds = new Set<number>();
+      
+      // For each program, collect template IDs and clean up related data
+      for (const program of programs) {
+        // Get program days to find associated templates
+        const programDays = await db.select()
+          .from(schema.program_days)
+          .where(eq(schema.program_days.program_id, program.id));
+        
+        // Collect template IDs
+        for (const day of programDays) {
+          if (day.template_id) {
+            templateIds.add(day.template_id);
+          }
+        }
+        
+        // Delete program days
+        await db.delete(schema.program_days)
+          .where(eq(schema.program_days.program_id, program.id));
+        
+        console.log(`Deleted data for program: ${program.name}`);
+      }
+      
+      // Delete workout templates that were created for programs
+      for (const templateId of templateIds) {
+        await db.delete(schema.workout_templates)
+          .where(eq(schema.workout_templates.id, templateId));
+        
+        // Also delete template exercises
+        await db.delete(schema.template_exercises)
+          .where(eq(schema.template_exercises.template_id, templateId));
+      }
+      
+      // Finally delete all programs
+      await db.delete(schema.user_programs);
+      
+      // Also clean up any temp program workouts
+      await db.delete(schema.temp_program_workouts);
+      
+      console.log('Successfully deleted all programs and associated templates');
+    } catch (error) {
+      console.error('Error deleting all programs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all user programs with their progress data
+   */
+  static async getAllProgramsWithProgress(): Promise<any[]> {
+    try {
+      const programs = await db.select().from(schema.user_programs);
+      const programsWithProgress = [];
+      
+      for (const program of programs) {
+        // Get program progress using existing logic
+        const activeProgram = await this.getActiveProgram(program.id);
+        if (activeProgram) {
+          programsWithProgress.push(activeProgram);
+        }
+      }
+      
+      return programsWithProgress;
+    } catch (error) {
+      console.error('Error getting all programs with progress:', error);
       return [];
     }
   }

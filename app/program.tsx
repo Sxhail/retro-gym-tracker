@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { eq } from 'drizzle-orm';
 import theme from '../styles/theme';
 import { db } from '../db/client';
@@ -12,6 +12,7 @@ interface ProgramConfig {
   duration: string;
   goal: 'strength' | 'hypertrophy' | 'endurance' | 'powerlifting' | null;
   frequency: string;
+  notes: string;
 }
 
 interface DayWorkout {
@@ -33,6 +34,7 @@ export default function ProgramScreen() {
     duration: '',
     goal: null,
     frequency: '',
+    notes: '',
   });
   const [workouts, setWorkouts] = useState<DayWorkout[]>([]);
   const [assignedDays, setAssignedDays] = useState<Set<string>>(new Set());
@@ -98,6 +100,26 @@ export default function ProgramScreen() {
     loadAssignedDays();
   }, [step]);
 
+  // Refresh assigned days when screen regains focus (after returning from workout editor)
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshAssignedDays = async () => {
+        if (step === 3) { // Only refresh on step 3 (day assignment step)
+          try {
+            const tempWorkouts = await db.select().from(schema.temp_program_workouts);
+            const savedDays = new Set(tempWorkouts.map(tw => tw.day_name));
+            setAssignedDays(savedDays);
+            console.log('Refreshed assigned days:', Array.from(savedDays));
+          } catch (error) {
+            console.error('Error refreshing assigned days:', error);
+          }
+        }
+      };
+
+      refreshAssignedDays();
+    }, [step])
+  );
+
   const markDayAsAssigned = (day: string) => {
     setAssignedDays(prev => new Set([...prev, day.toUpperCase()]));
   };
@@ -133,7 +155,9 @@ export default function ProgramScreen() {
 
       const programData: ProgramData = {
         name: config.programName,
-        description: `${config.goal} program with ${config.frequency} frequency`,
+        description: config.notes.trim() 
+          ? config.notes.trim() 
+          : `${config.goal} program with ${config.frequency} frequency`,
         durationWeeks: parseInt(config.duration),
         days: programDays,
       };
@@ -164,6 +188,58 @@ export default function ProgramScreen() {
     } else if (step === 3) {
       setStep(4);
     }
+  };
+
+  const handleDeleteAllPrograms = () => {
+    Alert.alert(
+      'Delete All Programs',
+      'Are you sure you want to delete all training programs? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete All',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await ProgramManager.deleteAllPrograms();
+              Alert.alert('Success', 'All programs have been deleted.');
+              
+              // Force immediate reload of the program screen
+              router.replace('/program');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete programs.');
+              console.error('Error deleting programs:', error);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const resetProgramBuilder = async () => {
+    try {
+      // Clear any temp workout data from previous sessions
+      await db.delete(schema.temp_program_workouts);
+      console.log('Cleared temp program workouts');
+    } catch (error) {
+      console.error('Error clearing temp data:', error);
+    }
+    
+    setConfig({
+      programName: '',
+      duration: '',
+      goal: null,
+      frequency: '',
+      notes: '',
+    });
+    setWorkouts([]);
+    setAssignedDays(new Set());
+    console.log('Program builder state reset');
+  };
+
+  const handleStartNewProgram = async () => {
+    await resetProgramBuilder();
+    setStep(2);
   };
 
   const renderHeader = () => (
@@ -299,6 +375,23 @@ export default function ProgramScreen() {
           />
           <Text style={styles.inputSuffix}>days/week</Text>
         </View>
+      </View>
+
+      {/* Notes */}
+      <View style={styles.configSection}>
+        <View style={styles.configHeader}>
+          <Text style={styles.configTitle}>NOTES (OPTIONAL)</Text>
+          <Text style={styles.configStatus}>{config.notes.trim() ? 'SET' : 'NOT SET'}</Text>
+        </View>
+        <TextInput
+          style={[styles.standaloneTextInput, { height: 80, textAlignVertical: 'top' }]}
+          placeholderTextColor={theme.colors.neon + '60'}
+          placeholder="Program description, goals, or any additional notes..."
+          value={config.notes}
+          onChangeText={(text) => setConfig({ ...config, notes: text })}
+          multiline={true}
+          numberOfLines={3}
+        />
       </View>
     </ScrollView>
   );
@@ -454,7 +547,6 @@ export default function ProgramScreen() {
       {/* Show pathway selection only on step 1, otherwise show progress */}
       {step === 1 ? (
         <View style={styles.pathwayContainer}>
-          <Text style={styles.pathwayTitle}>CHOOSE YOUR PATH</Text>
           
           {/* Template Path */}
           <TouchableOpacity 
@@ -488,7 +580,7 @@ export default function ProgramScreen() {
           {/* Custom Program Path */}
           <TouchableOpacity 
             style={styles.pathwayCard}
-            onPress={() => setStep(2)}
+            onPress={handleStartNewProgram}
           >
             <View style={styles.pathwayHeader}>
               <Text style={styles.pathwayCardTitle}>BUILD CUSTOM PROGRAM</Text>
@@ -563,6 +655,7 @@ const styles = StyleSheet.create({
   pathwayContainer: {
     padding: 20,
     backgroundColor: theme.colors.background,
+    margin: 16,
   },
   pathwayTitle: {
     color: theme.colors.neon,
@@ -1083,5 +1176,21 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.code,
     fontSize: 12,
     marginRight: 12,
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: '#ff4444',
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: 'black',
+    fontWeight: 'bold',
   },
 });

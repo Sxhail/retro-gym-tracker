@@ -7,6 +7,7 @@ import * as schema from '../../../db/schema';
 import { like, or, asc, eq } from 'drizzle-orm';
 import ExerciseCard from '../../../components/ExerciseCard';
 import { getExerciseMaxWeights } from '../../../services/workoutHistory';
+import { dbOperations } from '../../../services/database';
 
 interface Exercise {
   id: number;
@@ -28,8 +29,21 @@ export default function WorkoutEditorScreen() {
   const [pickerLoading, setPickerLoading] = useState(false);
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('All');
   const [selectedEquipment, setSelectedEquipment] = useState<string>('All');
-  const [sortBy, setSortBy] = useState<string>('A-Z');
   const [maxWeights, setMaxWeights] = useState<Record<number, { weight: number; reps: number }>>({});
+
+  // Custom exercise modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [newMuscleGroups, setNewMuscleGroups] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const MUSCLE_GROUP_OPTIONS = [
+    'Chest', 'Back', 'Legs', 'Glutes', 'Shoulders', 'Triceps', 'Biceps', 'Core', 'Arms'
+  ];
+  const CATEGORY_OPTIONS = [
+    'Barbell', 'Dumbbell', 'Machine', 'Smith Machine', 'Bodyweight', 'Cable', 'Trap Bar', 'Kettlebell', 'Band', 'Other'
+  ];
 
   // Fetch max weights for exercises (same as new.tsx)
   useEffect(() => {
@@ -76,17 +90,24 @@ export default function WorkoutEditorScreen() {
     fetch.then(results => {
       if (isActive) {
         let filtered = results;
+        
+        // Apply muscle group filter
         if (selectedMuscleGroup !== 'All') {
-          filtered = filtered.filter(ex => ex.muscle_group === selectedMuscleGroup);
+          filtered = filtered.filter(ex => 
+            ex.muscle_group && ex.muscle_group.includes(selectedMuscleGroup)
+          );
         }
+        
+        // Apply equipment filter
         if (selectedEquipment !== 'All') {
-          filtered = filtered.filter(ex => ex.category === selectedEquipment);
+          filtered = filtered.filter(ex => 
+            ex.category && ex.category.toLowerCase().includes(selectedEquipment.toLowerCase())
+          );
         }
-        if (sortBy === 'A-Z') {
-          filtered.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (sortBy === 'Z-A') {
-          filtered.sort((a, b) => b.name.localeCompare(a.name));
-        }
+        
+        // Sort alphabetically by default
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        
         setPickerExercises(filtered);
       }
     })
@@ -97,7 +118,7 @@ export default function WorkoutEditorScreen() {
       if (isActive) setPickerLoading(false);
     });
     return () => { isActive = false; };
-  }, [search, modalVisible, selectedMuscleGroup, selectedEquipment, sortBy]);
+  }, [search, modalVisible, selectedMuscleGroup, selectedEquipment]);
 
   const handleAddExercise = () => {
     // Open modal instead of navigating to exercises page
@@ -189,7 +210,7 @@ export default function WorkoutEditorScreen() {
           ]}
           value={workoutType}
           onChangeText={setWorkoutType}
-          placeholder="e.g., Push Day, Legs, Full Body"
+          placeholder=""
           placeholderTextColor="rgba(0, 255, 0, 0.5)"
         />
       </View>
@@ -342,6 +363,36 @@ export default function WorkoutEditorScreen() {
             </ScrollView>
           </View>
 
+          {/* Equipment Filter */}
+          <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+              {['All', 'Bodyweight', 'Dumbbell', 'Barbell', 'Machine', 'Cable'].map((equipment) => (
+                <TouchableOpacity
+                  key={equipment}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    marginRight: 8,
+                    backgroundColor: selectedEquipment === equipment ? theme.colors.neon : 'transparent',
+                    borderWidth: 1,
+                    borderColor: theme.colors.neon,
+                  }}
+                  onPress={() => setSelectedEquipment(equipment)}
+                >
+                  <Text style={{
+                    color: selectedEquipment === equipment ? theme.colors.background : theme.colors.neon,
+                    fontFamily: theme.fonts.code,
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                  }}>
+                    {equipment}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
           {/* Exercise List */}
           {pickerLoading ? (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -361,8 +412,191 @@ export default function WorkoutEditorScreen() {
                   />
                 );
               })}
+              
+              {/* Add Custom Exercise Button - show when search has text but no results */}
+              {search.trim().length > 0 && pickerExercises.length === 0 && (
+                <TouchableOpacity 
+                  style={{
+                    padding: 16,
+                    marginVertical: 8,
+                    borderWidth: 2,
+                    borderColor: theme.colors.neon,
+                    borderStyle: 'solid',
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                  }}
+                  onPress={() => {
+                    console.log('Custom exercise button pressed, search:', search.trim());
+                    setNewExerciseName(search.trim());
+                    setModalVisible(false); // Close the main modal first
+                    setTimeout(() => {
+                      console.log('Opening add modal');
+                      setShowAddModal(true); // Then show the add modal
+                    }, 150);
+                  }}
+                >
+                  <Text style={{
+                    color: theme.colors.neon,
+                    fontFamily: theme.fonts.code,
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                  }}>
+                    + ADD "{search.trim().toUpperCase()}" AS CUSTOM EXERCISE
+                  </Text>
+                </TouchableOpacity>
+              )}
             </ScrollView>
           )}
+        </View>
+      </Modal>
+
+      {/* Custom Exercise Modal */}
+      <Modal
+        visible={showAddModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: theme.colors.background, borderRadius: 8, padding: 20, margin: 20, width: '90%', maxHeight: '80%' }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 20, marginBottom: 16, textAlign: 'center' }}>Add New Exercise</Text>
+            
+            <TextInput
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, padding: 12, color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16, marginBottom: 16 }}
+              value={newExerciseName}
+              onChangeText={setNewExerciseName}
+              placeholder="Exercise name"
+              placeholderTextColor="rgba(0, 255, 0, 0.5)"
+            />
+            
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14, marginBottom: 8 }}>Muscle Groups:</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+              {MUSCLE_GROUP_OPTIONS.map((group) => (
+                <TouchableOpacity
+                  key={group}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 16,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    backgroundColor: newMuscleGroups.includes(group) ? theme.colors.neon : 'transparent',
+                    borderWidth: 1,
+                    borderColor: theme.colors.neon,
+                  }}
+                  onPress={() => {
+                    if (newMuscleGroups.includes(group)) {
+                      setNewMuscleGroups(newMuscleGroups.filter(g => g !== group));
+                    } else {
+                      setNewMuscleGroups([...newMuscleGroups, group]);
+                    }
+                  }}
+                >
+                  <Text style={{ color: newMuscleGroups.includes(group) ? theme.colors.background : theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 12 }}>{group}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14, marginBottom: 8 }}>Category:</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+              {CATEGORY_OPTIONS.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 16,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    backgroundColor: newCategory === category ? theme.colors.neon : 'transparent',
+                    borderWidth: 1,
+                    borderColor: theme.colors.neon,
+                  }}
+                  onPress={() => setNewCategory(category)}
+                >
+                  <Text style={{ color: newCategory === category ? theme.colors.background : theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 12 }}>{category}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+              <TouchableOpacity 
+                onPress={() => {
+                  setShowAddModal(false);
+                  setTimeout(() => {
+                    setModalVisible(true); // Reopen the exercise picker
+                  }, 150);
+                }} 
+                style={{ paddingVertical: 10, paddingHorizontal: 18 }}
+              >
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16 }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ backgroundColor: theme.colors.neon, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 18 }}
+                disabled={adding || !newExerciseName.trim() || newMuscleGroups.length === 0 || !newCategory}
+                onPress={async () => {
+                  setAdding(true);
+                  try {
+                    await dbOperations.addExercise({
+                      name: newExerciseName.trim(),
+                      muscle_group: newMuscleGroups.join(', '),
+                      category: newCategory,
+                      is_custom: 1,
+                    });
+                    
+                    // Refresh pickerExercises after adding
+                    const results = await dbOperations.getExercises();
+                    let filtered = results;
+                    
+                    // Apply current filters
+                    if (search.trim()) {
+                      filtered = filtered.filter(ex =>
+                        ex.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+                        ex.muscle_group?.toLowerCase().includes(search.trim().toLowerCase()) ||
+                        ex.category?.toLowerCase().includes(search.trim().toLowerCase())
+                      );
+                    }
+                    
+                    if (selectedMuscleGroup !== 'All') {
+                      filtered = filtered.filter(ex => 
+                        ex.muscle_group && ex.muscle_group.includes(selectedMuscleGroup)
+                      );
+                    }
+                    
+                    if (selectedEquipment !== 'All') {
+                      filtered = filtered.filter(ex => 
+                        ex.category && ex.category.toLowerCase().includes(selectedEquipment.toLowerCase())
+                      );
+                    }
+                    
+                    filtered.sort((a, b) => a.name.localeCompare(b.name));
+                    setPickerExercises(filtered);
+                    
+                    // Reset modal state
+                    setShowAddModal(false);
+                    setNewExerciseName('');
+                    setNewMuscleGroups([]);
+                    setNewCategory('');
+                    
+                    // Reopen the exercise picker to show the new exercise
+                    setTimeout(() => {
+                      setModalVisible(true);
+                    }, 150);
+                  } catch (err) {
+                    console.error('Error adding exercise:', err);
+                  } finally {
+                    setAdding(false);
+                  }
+                }}
+              >
+                <Text style={{ color: theme.colors.background, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 16 }}>
+                  {adding ? 'ADDING...' : 'Add Exercise'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>

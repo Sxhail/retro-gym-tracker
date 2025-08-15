@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   weekIndicator: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.heading, // Orbitron for numbers/important data
-    fontSize: 16,
+    fontSize: 14, // Reduced from 16
     fontWeight: 'bold',
     letterSpacing: 1,
   },
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   progressPercentage: {
     color: theme.colors.neonBright,
     fontFamily: theme.fonts.heading, // Orbitron for numbers
-    fontSize: 20,
+    fontSize: 16, // Reduced from 20
     fontWeight: 'bold',
     letterSpacing: 1,
   },

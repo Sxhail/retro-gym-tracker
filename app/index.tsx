@@ -29,49 +29,48 @@ export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
-  const [programData, setProgramData] = useState<any>(null);
+  const [allPrograms, setAllPrograms] = useState<any[]>([]);
   const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
 
-  // Load active program on component mount
+  // Load all programs on component mount
   useEffect(() => {
-    loadActiveProgram();
+    loadAllPrograms();
   }, []);
 
-  const loadActiveProgram = async () => {
+  const loadAllPrograms = async () => {
     try {
-      const activeProgram = await ProgramManager.getActiveProgram();
-      setProgramData(activeProgram);
+      const programs = await ProgramManager.getAllProgramsWithProgress();
+      setAllPrograms(programs);
+      console.log('Loaded programs:', programs.length);
     } catch (error) {
-      console.error('Error loading active program:', error);
+      console.error('Error loading programs:', error);
     }
   };
 
-  const handleStartProgramWorkout = async () => {
+    const handleStartProgramWorkout = async (programData: any) => {
     if (programData) {
       try {
-        // Calculate the actual next workout day based on completed workouts
+        setShowTrainingModal(false);
+        // Find next workout day based on completed count
         const completedCount = programData.actualProgress.completedWorkouts;
-        const dayNames = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
         
-        // Get program schedule to determine next day
+        // Get program structure to find next day
         const programDays = await ProgramManager.getProgramDays(programData.program.id);
-        const workoutDays = programDays.filter(day => !day.is_rest_day);
+        const workoutDays = programDays.filter((day: any) => !day.is_rest_day);
         
-        if (workoutDays.length > 0) {
-          const nextDayIndex = completedCount % workoutDays.length;
-          const nextDayName = workoutDays[nextDayIndex].day_name;
-          
-          // Start program workout with correct day
-          await startProgramWorkout(programData.program.id, nextDayName);
-          router.push('/new');
-        } else {
-          // Fallback to regular workout if no workout days
-          router.push('/new');
-        }
+        // Calculate which day we should do next (cycling through the week)
+        const nextDayIndex = completedCount % workoutDays.length;
+        const nextDayName = workoutDays[nextDayIndex]?.day_name || 'MONDAY';
+        
+        console.log(`Starting program workout: Day ${nextDayName}, Program: ${programData.program.name}`);
+        
+        // Start the program workout
+        await startProgramWorkout(programData.program.id, nextDayName);
+        
+        // Navigate to workout screen
+        router.push('/new');
       } catch (error) {
         console.error('Error starting program workout:', error);
-        // Fallback to regular workout flow
-        router.push('/new');
       }
     }
   };
@@ -95,36 +94,36 @@ export default function HomeScreen() {
           <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
         </View>
         
-        {/* Program Progress Widget */}
-        {programData && (
-          <ProgramProgressWidget
-            programName={programData.program.name}
-            currentWeek={programData.actualProgress.currentWeek}
-            totalWeeks={programData.actualProgress.totalWeeks}
-            progressPercentage={programData.actualProgress.realPercentage}
-            nextWorkout={programData.nextWorkout}
-            daysSinceLastWorkout={programData.daysSinceLastWorkout}
-            onStartWorkout={handleStartProgramWorkout}
-          />
+        {/* Program Progress Widgets */}
+        {allPrograms.length > 0 ? (
+          allPrograms.map((programData, index) => (
+            <ProgramProgressWidget
+              key={programData.program.id}
+              programName={programData.program.name}
+              currentWeek={programData.actualProgress.currentWeek}
+              totalWeeks={programData.actualProgress.totalWeeks}
+              progressPercentage={programData.actualProgress.realPercentage}
+              nextWorkout={programData.nextWorkout}
+              daysSinceLastWorkout={programData.daysSinceLastWorkout}
+              onStartWorkout={() => handleStartProgramWorkout(programData)}
+            />
+          ))
+        ) : (
+          <View style={styles.noProgramsContainer}>
+            <Text style={styles.noProgramsText}>No active programs</Text>
+            <TouchableOpacity 
+              style={styles.createProgramButton}
+              onPress={() => router.push('/program')}
+            >
+              <Text style={styles.createProgramButtonText}>CREATE PROGRAM</Text>
+            </TouchableOpacity>
+          </View>
         )}
         
         {/* Header */}
         <View style={styles.headerSection}>
         </View>
       </ScrollView>
-
-      {/* Action Buttons - moved to bottom */}
-      <View style={styles.bottomActionSection}>
-        {isWorkoutActive ? (
-          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-            <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
-            <Text style={styles.startButtonText}>START TRAINING</Text>
-          </TouchableOpacity>
-        )}
-      </View>
 
       {/* Bottom Navigation */}
       <BottomNav
@@ -137,6 +136,19 @@ export default function HomeScreen() {
           if (tab === 'progress') router.push('/stats');
         }}
       />
+
+      {/* Action Buttons - moved below navigation */}
+      <View style={styles.bottomActionSection}>
+        {isWorkoutActive ? (
+          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
+            <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
+            <Text style={styles.startButtonText}>START TRAINING</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       
       {/* Training Selection Modal */}
       <Modal
@@ -455,5 +467,37 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 2,
+  },
+  noProgramsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.neon + '30',
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+  },
+  noProgramsText: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  createProgramButton: {
+    backgroundColor: theme.colors.neon,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  createProgramButtonText: {
+    color: theme.colors.background,
+    fontFamily: theme.fonts.code,
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 }); 

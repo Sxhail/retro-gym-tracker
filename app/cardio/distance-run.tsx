@@ -11,7 +11,6 @@ export default function DistanceRunScreen() {
   const [distance, setDistance] = useState(0.00);
   const [pace, setPace] = useState('--:--');
   const [speed, setSpeed] = useState(0.0);
-  const [calories, setCalories] = useState(0);
   const [runTime, setRunTime] = useState(30);
   const [walkTime, setWalkTime] = useState(30);
 
@@ -29,8 +28,6 @@ export default function DistanceRunScreen() {
           setPace(`${mins}:${secs.toString().padStart(2, '0')}`);
           setSpeed(Number((distance / (timeElapsed / 3600)).toFixed(1)));
         }
-        // Rough calorie calculation (placeholder)
-        setCalories(Math.floor(timeElapsed * 0.2));
       }, 1000);
     }
 
@@ -154,12 +151,6 @@ export default function DistanceRunScreen() {
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>SPEED</Text>
           <Text style={styles.statValue}>{speed.toFixed(1)} KM/H</Text>
-        </View>
-
-        {/* Calories */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>CALORIES</Text>
-          <Text style={styles.statValue}>{calories}</Text>
         </View>
       </View>
 

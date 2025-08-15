@@ -197,7 +197,7 @@ export default function HomeScreen() {
                 style={styles.modalTrainingButton} 
                 onPress={() => {
                   setShowTrainingModal(false);
-                  router.push('/new');
+                  router.push('/new?type=LIFT');
                 }}
               >
                 <Text style={styles.modalTrainingTitle}>LIFT</Text>
@@ -264,10 +264,12 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.sm,
   },
   bottomActionSection: {
-    marginHorizontal: theme.spacing.xl,
-    marginBottom: theme.spacing.xl + 80, // Add extra margin to prevent overlap with nav bar
-    marginTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md, // Additional padding for spacing
+  marginHorizontal: theme.spacing.xl,
+  // Ensure there's enough space above the bottom nav so the button never overlaps it.
+  // Use a larger bottom margin (xxl + small buffer) to cover safe area / nav height.
+  marginBottom: theme.spacing.xxl + 8,
+  marginTop: theme.spacing.lg,
+  paddingBottom: theme.spacing.sm,
   },
   sectionTitle: {
     color: '#fff',

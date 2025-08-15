@@ -35,6 +35,7 @@ interface WorkoutSessionContextType {
   isPaused: boolean;
   setIsPaused: (paused: boolean) => void;
   startWorkout: () => void;
+  startWorkoutWithType: (workoutType?: string) => Promise<void>;
   endWorkout: () => void;
   saveWorkout: () => Promise<number | null>;
   resetSession: () => void;
@@ -49,13 +50,13 @@ const WorkoutSessionContext = createContext<WorkoutSessionContextType | undefine
 
 export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) => {
   // Function to get next workout number and set default name
-  const getNextWorkoutName = async () => {
+  const getNextWorkoutName = async (workoutType: string = 'WORKOUT') => {
     try {
       const nextNumber = await getNextWorkoutNumber();
-      return `WORKOUT ${nextNumber}`;
+      return `${workoutType} ${nextNumber}`;
     } catch (error) {
       console.error('Error getting next workout number:', error);
-      return 'WORKOUT 1';
+      return `${workoutType} 1`;
     }
   };
 
@@ -105,6 +106,21 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       setElapsedTime(0); // Reset timer when starting new workout
       setIsPaused(false);
       console.log('Workout session started');
+    }
+  };
+
+  const startWorkoutWithType = async (workoutType: string = 'WORKOUT') => {
+    if (!isWorkoutActive) {
+      // Set workout name based on type
+      const newWorkoutName = await getNextWorkoutName(workoutType);
+      setWorkoutName(newWorkoutName);
+      setSessionMeta(prev => ({ ...prev, name: newWorkoutName }));
+      
+      setSessionStartTime(new Date());
+      setIsWorkoutActive(true);
+      setElapsedTime(0); // Reset timer when starting new workout
+      setIsPaused(false);
+      console.log(`${workoutType} session started with name: ${newWorkoutName}`);
     }
   };
 
@@ -267,6 +283,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       isPaused,
       setIsPaused,
       startWorkout,
+      startWorkoutWithType,
       endWorkout,
       saveWorkout: saveWorkoutToDatabase,
       resetSession,

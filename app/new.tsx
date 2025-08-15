@@ -358,7 +358,7 @@ export default function NewWorkoutScreen() {
   const [selectedEquipment, setSelectedEquipment] = useState<string>('All');
   const [sortBy, setSortBy] = useState<string>('A-Z');
   const router = useRouter();
-  const { templateId } = useLocalSearchParams<{ templateId?: string }>();
+  const { templateId, type: workoutType } = useLocalSearchParams<{ templateId?: string; type?: string }>();
   const [workoutDate, setWorkoutDate] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -389,6 +389,7 @@ export default function NewWorkoutScreen() {
     isPaused,
     setIsPaused,
     startWorkout,
+    startWorkoutWithType,
     endWorkout,
     saveWorkout,
     resetSession
@@ -474,7 +475,7 @@ export default function NewWorkoutScreen() {
       setModalVisible(false);
       // Start workout timer when first exercise is added
       if (!isWorkoutActive) {
-        startWorkout();
+        startWorkoutWithType(workoutType || 'WORKOUT');
       }
     } catch (err) {
       console.error('Error adding exercise:', err);
@@ -619,7 +620,7 @@ export default function NewWorkoutScreen() {
   // Start workout and set date when first exercise is added
   useEffect(() => {
     if (sessionExercises.length > 0 && !isWorkoutActive) {
-      startWorkout();
+      startWorkoutWithType(workoutType || 'WORKOUT');
       // Set the workout date to today
       const now = new Date();
       const formatted = `${now.getFullYear()}.${(now.getMonth()+1).toString().padStart(2, '0')}.${now.getDate().toString().padStart(2, '0')}`;
@@ -658,7 +659,8 @@ export default function NewWorkoutScreen() {
           
           const { getNextWorkoutNumber } = await import('../services/workoutHistory');
           const nextNumber = await getNextWorkoutNumber();
-          const newWorkoutName = `WORKOUT ${nextNumber}`;
+          const workoutTypePrefix = workoutType || 'WORKOUT';
+          const newWorkoutName = `${workoutTypePrefix} ${nextNumber}`;
           setWorkoutName(newWorkoutName);
           console.log('Setting workout name to:', newWorkoutName);
           
@@ -669,7 +671,8 @@ export default function NewWorkoutScreen() {
       } catch (error) {
         console.error('Error initializing workout name:', error);
         if (sessionExercises.length === 0) {
-          setWorkoutName('WORKOUT 1');
+          const fallbackType = workoutType || 'WORKOUT';
+          setWorkoutName(`${fallbackType} 1`);
         }
       }
     };
@@ -678,7 +681,7 @@ export default function NewWorkoutScreen() {
     if (sessionExercises.length === 0) {
       initializeWorkoutName();
     }
-  }, [sessionExercises.length]);
+  }, [sessionExercises.length, workoutType]);
 
 
 
@@ -937,14 +940,14 @@ export default function NewWorkoutScreen() {
             </View>
             <View style={{ flexDirection: 'row', width: '100%', marginBottom: 18 }}>
               <TextInput
-                style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
+                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8, opacity: 0.7 }}
                 placeholder="ADD EXERCISE"
                 placeholderTextColor={theme.colors.neon}
                 value={search}
                 onChangeText={setSearch}
                 onFocus={() => setModalVisible(true)}
               />
-              <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }} onPress={() => setModalVisible(true)}>
+              <TouchableOpacity style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', opacity: 0.7 }} onPress={() => setModalVisible(true)}>
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 28, fontWeight: 'bold', marginTop: -2 }}>+</Text>
               </TouchableOpacity>
             </View>
@@ -1012,14 +1015,14 @@ export default function NewWorkoutScreen() {
             <View style={{ width: '100%', paddingHorizontal: 0, marginTop: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 16, paddingHorizontal: 8 }}>
             <TextInput
-                  style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 12, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
+                  style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 12, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8, opacity: 0.7 }}
                   placeholder="ADD EXERCISE"
               placeholderTextColor={theme.colors.neon}
               value={search}
               onChangeText={setSearch}
               onFocus={() => setModalVisible(true)}
             />
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }} onPress={() => setModalVisible(true)}>
+                <TouchableOpacity style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', opacity: 0.7 }} onPress={() => setModalVisible(true)}>
                   <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 32, fontWeight: 'bold', marginTop: -2 }}>+</Text>
             </TouchableOpacity>
           </View>

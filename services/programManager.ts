@@ -417,47 +417,21 @@ export class ProgramManager {
       const programs = await db.select().from(schema.user_programs);
       console.log(`Found ${programs.length} programs to delete`);
       
-      // Collect template IDs that were used by programs
-      const templateIds = new Set<number>();
-      
-      // For each program, collect template IDs and clean up related data
+      // For each program, clean up related data
       for (const program of programs) {
-        // Get program days to find associated templates
-        const programDays = await db.select()
-          .from(schema.program_days)
-          .where(eq(schema.program_days.program_id, program.id));
-        
-        // Collect template IDs
-        for (const day of programDays) {
-          if (day.template_id) {
-            templateIds.add(day.template_id);
-          }
-        }
-        
         // Delete program days
         await db.delete(schema.program_days)
           .where(eq(schema.program_days.program_id, program.id));
         
+        // Delete any workout templates that were created for this program
+        // (This is optional since templates might be shared)
         console.log(`Deleted data for program: ${program.name}`);
-      }
-      
-      // Delete workout templates that were created for programs
-      for (const templateId of templateIds) {
-        await db.delete(schema.workout_templates)
-          .where(eq(schema.workout_templates.id, templateId));
-        
-        // Also delete template exercises
-        await db.delete(schema.template_exercises)
-          .where(eq(schema.template_exercises.template_id, templateId));
       }
       
       // Finally delete all programs
       await db.delete(schema.user_programs);
       
-      // Also clean up any temp program workouts
-      await db.delete(schema.temp_program_workouts);
-      
-      console.log('Successfully deleted all programs and associated templates');
+      console.log('Successfully deleted all programs');
     } catch (error) {
       console.error('Error deleting all programs:', error);
       throw error;
@@ -484,6 +458,32 @@ export class ProgramManager {
     } catch (error) {
       console.error('Error getting all programs with progress:', error);
       return [];
+    }
+  }
+
+  /**
+   * Delete a specific program and its related data
+   */
+  static async deleteProgram(programId: number): Promise<void> {
+    try {
+      console.log(`Starting to delete program with ID: ${programId}`);
+      
+      // Delete program days
+      await db.delete(schema.program_days)
+        .where(eq(schema.program_days.program_id, programId));
+      
+      // Delete any workouts associated with this program
+      await db.delete(schema.workouts)
+        .where(eq(schema.workouts.program_id, programId));
+      
+      // Finally delete the program
+      await db.delete(schema.user_programs)
+        .where(eq(schema.user_programs.id, programId));
+      
+      console.log(`Successfully deleted program with ID: ${programId}`);
+    } catch (error) {
+      console.error('Error deleting program:', error);
+      throw error;
     }
   }
 }

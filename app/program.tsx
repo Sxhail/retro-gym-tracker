@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Alert, FlatList } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { eq } from 'drizzle-orm';
 import theme from '../styles/theme';
 import { db } from '../db/client';
 import * as schema from '../db/schema';
 import { ProgramManager, ProgramData } from '../services/programManager';
+import { useProgramRefresh } from '../context/ProgramContext';
 
 interface ProgramConfig {
   programName: string;
@@ -38,6 +39,39 @@ export default function ProgramScreen() {
   });
   const [workouts, setWorkouts] = useState<DayWorkout[]>([]);
   const [assignedDays, setAssignedDays] = useState<Set<string>>(new Set());
+  const [existingPrograms, setExistingPrograms] = useState<any[]>([]);
+  const { triggerRefresh } = useProgramRefresh();
+
+  // Load existing programs
+  const loadExistingPrograms = async () => {
+    try {
+      const programs = await ProgramManager.getAllProgramsWithProgress();
+      setExistingPrograms(programs);
+    } catch (error) {
+      console.error('Error loading existing programs:', error);
+    }
+  };
+
+  // Load existing programs when component mounts
+  useEffect(() => {
+    loadExistingPrograms();
+  }, []);
+
+  // Reload programs when returning to step 1
+  useEffect(() => {
+    if (step === 1) {
+      loadExistingPrograms();
+    }
+  }, [step]);
+
+  // Reload programs when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (step === 1) {
+        loadExistingPrograms();
+      }
+    }, [step])
+  );
 
   // Load temp workout data when reaching step 4
   useEffect(() => {
@@ -190,6 +224,43 @@ export default function ProgramScreen() {
     }
   };
 
+  const handleDeleteProgram = (programId: number, programName: string) => {
+    Alert.alert(
+      'Delete Program',
+      `Are you sure you want to delete "${programName}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await ProgramManager.deleteProgram(programId);
+              Alert.alert(
+                'Success', 
+                `"${programName}" has been deleted.`,
+                [
+                  { 
+                    text: 'OK', 
+                    onPress: () => {
+                      // Reload programs on this screen
+                      loadExistingPrograms();
+                      // Trigger global refresh for other screens
+                      triggerRefresh();
+                    }
+                  }
+                ]
+              );
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete program.');
+              console.error('Error deleting program:', error);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleDeleteAllPrograms = () => {
     Alert.alert(
       'Delete All Programs',
@@ -203,6 +274,9 @@ export default function ProgramScreen() {
             try {
               await ProgramManager.deleteAllPrograms();
               Alert.alert('Success', 'All programs have been deleted.');
+              
+              // Trigger global refresh
+              triggerRefresh();
               
               // Force immediate reload of the program screen
               router.replace('/program');
@@ -235,6 +309,57 @@ export default function ProgramScreen() {
     setWorkouts([]);
     setAssignedDays(new Set());
     console.log('Program builder state reset');
+  };
+
+  const renderProgramDashboard = () => {
+    if (existingPrograms.length === 0) {
+      return null;
+    }
+
+    return (
+      <View style={styles.dashboardContainer}>
+        <Text style={styles.dashboardTitle}>YOUR PROGRAMS</Text>
+        <FlatList
+          data={existingPrograms}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.programsList}
+          keyExtractor={(item) => item.program.id.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.programCard}>
+              <View style={styles.programCardHeader}>
+                <Text style={styles.programCardTitle} numberOfLines={1}>
+                  {item.program.name}
+                </Text>
+                <TouchableOpacity
+                  style={styles.programDeleteButton}
+                  onPress={() => handleDeleteProgram(item.program.id, item.program.name)}
+                >
+                  <Text style={styles.programDeleteButtonText}>−</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.programProgress}>
+                Week {item.actualProgress.currentWeek}/{item.actualProgress.totalWeeks}
+              </Text>
+              <Text style={styles.programPercentage}>
+                {item.actualProgress.realPercentage}% Complete
+              </Text>
+              <Text style={styles.programNextWorkout} numberOfLines={1}>
+                Next: {item.nextWorkout}
+              </Text>
+              <View style={styles.programStatus}>
+                <Text style={[
+                  styles.statusIndicator,
+                  item.program.is_active ? styles.activeStatus : styles.inactiveStatus
+                ]}>
+                  {item.program.is_active ? 'ACTIVE' : 'INACTIVE'}
+                </Text>
+              </View>
+            </View>
+          )}
+        />
+      </View>
+    );
   };
 
   const handleStartNewProgram = async () => {
@@ -547,6 +672,7 @@ export default function ProgramScreen() {
       {/* Show pathway selection only on step 1, otherwise show progress */}
       {step === 1 ? (
         <View style={styles.pathwayContainer}>
+          {renderProgramDashboard()}
           
           {/* Template Path */}
           <TouchableOpacity 
@@ -1192,5 +1318,107 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: 'black',
     fontWeight: 'bold',
+  },
+  // Dashboard styles
+  dashboardContainer: {
+    marginBottom: 32,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    marginHorizontal: 16,
+  },
+  dashboardTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    marginBottom: 20,
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  programsList: {
+    paddingRight: 20,
+    paddingLeft: 4,
+  },
+  programCard: {
+    backgroundColor: 'rgba(0, 255, 0, 0.08)',
+    borderRadius: 16,
+    padding: 20,
+    marginRight: 16,
+    width: 240,
+    height: 180,
+  },
+  programCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  programCardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    flex: 1,
+    marginRight: 8,
+    lineHeight: 22,
+  },
+  programProgress: {
+    fontSize: 16,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.code,
+    marginBottom: 6,
+    opacity: 0.9,
+  },
+  programPercentage: {
+    fontSize: 16,
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    marginBottom: 6,
+    fontWeight: '600',
+  },
+  programNextWorkout: {
+    fontSize: 15,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.code,
+    marginBottom: 12,
+    opacity: 0.8,
+    lineHeight: 18,
+  },
+  programStatus: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+  },
+  statusIndicator: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: theme.fonts.code,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    overflow: 'hidden',
+    letterSpacing: 0.5,
+  },
+  activeStatus: {
+    backgroundColor: 'rgba(0, 255, 0, 0.25)',
+    color: theme.colors.neon,
+  },
+  inactiveStatus: {
+    backgroundColor: 'rgba(128, 128, 128, 0.25)',
+    color: '#aaa',
+  },
+  programDeleteButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 0, 0, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  programDeleteButtonText: {
+    fontSize: 16,
+    color: '#ff4444',
+    fontWeight: 'bold',
+    lineHeight: 16,
   },
 });

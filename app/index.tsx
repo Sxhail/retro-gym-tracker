@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
+import { useProgramRefresh } from '../context/ProgramContext';
 import theme from '../styles/theme';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
 import { ProgramManager } from '../services/programManager';
@@ -30,20 +31,44 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [allPrograms, setAllPrograms] = useState<any[]>([]);
+  const [refreshKey, setRefreshKey] = useState(Date.now());
   const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
+  const { refreshTrigger } = useProgramRefresh();
 
   // Load all programs on component mount
   useEffect(() => {
     loadAllPrograms();
   }, []);
 
+  // Reload programs when screen comes into focus (e.g., returning from program deletion)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🎯 useFocusEffect triggered - reloading programs');
+      // Add a small delay to ensure any database transactions are complete
+      setTimeout(() => {
+        loadAllPrograms();
+      }, 100);
+    }, [])
+  );
+
+  // Watch for global program refresh triggers
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('🎯 Global refresh trigger detected - reloading programs');
+      loadAllPrograms();
+    }
+  }, [refreshTrigger]);
+
   const loadAllPrograms = async () => {
     try {
+      console.log('🔄 Loading all programs...');
       const programs = await ProgramManager.getAllProgramsWithProgress();
       setAllPrograms(programs);
-      console.log('Loaded programs:', programs.length);
+      setRefreshKey(Date.now()); // Force re-render
+      console.log('✅ Loaded programs:', programs.length);
+      console.log('📊 Program data:', programs.map(p => ({ id: p.program.id, name: p.program.name })));
     } catch (error) {
-      console.error('Error loading programs:', error);
+      console.error('❌ Error loading programs:', error);
     }
   };
 
@@ -98,7 +123,7 @@ export default function HomeScreen() {
         {allPrograms.length > 0 ? (
           allPrograms.map((programData, index) => (
             <ProgramProgressWidget
-              key={programData.program.id}
+              key={`${programData.program.id}-${refreshKey}`}
               programName={programData.program.name}
               currentWeek={programData.actualProgress.currentWeek}
               totalWeeks={programData.actualProgress.totalWeeks}
@@ -125,19 +150,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <BottomNav
-        activeTab={activeTab}
-        onTabPress={(tab) => {
-          setActiveTab(tab);
-          if (tab === 'program') router.push('/program');
-          if (tab === 'history') router.push('/history');
-          // if (tab === 'exercises') router.push('/exercises');
-          if (tab === 'progress') router.push('/stats');
-        }}
-      />
-
-      {/* Action Buttons - moved below navigation */}
+      {/* Action Buttons - moved to appear just before navigation */}
       <View style={styles.bottomActionSection}>
         {isWorkoutActive ? (
           <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
@@ -149,6 +162,18 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Bottom Navigation */}
+      <BottomNav
+        activeTab={activeTab}
+        onTabPress={(tab) => {
+          setActiveTab(tab);
+          if (tab === 'program') router.push('/program');
+          if (tab === 'history') router.push('/history');
+          // if (tab === 'exercises') router.push('/exercises');
+          if (tab === 'progress') router.push('/stats');
+        }}
+      />
       
       {/* Training Selection Modal */}
       <Modal

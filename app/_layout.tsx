@@ -9,6 +9,7 @@ import { useFonts as useShareTechMono, ShareTechMono_400Regular } from '@expo-go
 import * as SplashScreen from 'expo-splash-screen';
 import { DatabaseProvider } from '../context/DatabaseContext';
 import { WorkoutSessionProvider } from '../context/WorkoutSessionContext';
+import { ProgramProvider } from '../context/ProgramContext';
 import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
@@ -60,18 +61,20 @@ export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DatabaseProvider>
-        <WorkoutSessionProvider>
-          <BackgroundWorkoutPersistence>
-            <AppLayout>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  animation: 'none',
-                }}
-              />
-            </AppLayout>
-          </BackgroundWorkoutPersistence>
-        </WorkoutSessionProvider>
+        <ProgramProvider>
+          <WorkoutSessionProvider>
+            <BackgroundWorkoutPersistence>
+              <AppLayout>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    animation: 'none',
+                  }}
+                />
+              </AppLayout>
+            </BackgroundWorkoutPersistence>
+          </WorkoutSessionProvider>
+        </ProgramProvider>
       </DatabaseProvider>
     </GestureHandlerRootView>
   );

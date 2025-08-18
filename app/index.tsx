@@ -64,9 +64,15 @@ export default function HomeScreen() {
         if (completedCount >= totalWorkouts) {
           nextWorkout = 'Program Complete';
         } else if (nextDay && nextDay.template_id) {
-          // Get workout template name
+          // Get workout template name, but only show the workout name (not program name)
+          let workoutName = nextDay.day_name;
           const template = nextDay.template_id && nextDay.day_name ? await ProgramManager.getProgramWorkoutTemplate(program.id, nextDay.day_name) : null;
-          nextWorkout = template && template.template && template.template.name ? template.template.name : nextDay.day_name;
+          if (template && template.template && template.template.name) {
+            // If template name is "ProgramName - WorkoutName", extract only WorkoutName
+            const parts = template.template.name.split(' - ');
+            workoutName = parts.length > 1 ? parts[1] : template.template.name;
+          }
+          nextWorkout = workoutName;
         } else {
           nextWorkout = nextDay ? nextDay.day_name : 'Next Workout';
         }

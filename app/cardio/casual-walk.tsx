@@ -75,32 +75,7 @@ export default function CasualWalkScreen() {
       {/* Main Timer */}
       <Text style={styles.mainTimer}>{formatTime(timeElapsed)}</Text>
 
-      {/* Stats Grid */}
-      <View style={styles.statsGrid}>
-        {/* Distance */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>DISTANCE</Text>
-          <Text style={styles.statValue}>{distance.toFixed(2)} KM</Text>
-        </View>
-
-        {/* Pace */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>PACE</Text>
-          <Text style={styles.statValue}>{pace}</Text>
-        </View>
-
-        {/* Speed */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>SPEED</Text>
-          <Text style={styles.statValue}>{speed.toFixed(1)} KM/H</Text>
-        </View>
-
-        {/* Calories */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>CALORIES</Text>
-          <Text style={styles.statValue}>{calories}</Text>
-        </View>
-      </View>
+  {/* Stats Grid removed: distance, speed, pace, calories */}
 
       {/* Control Buttons */}
       <View style={styles.controlButtons}>

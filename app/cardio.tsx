@@ -46,7 +46,7 @@ export default function CardioScreen() {
         router.push('/cardio/custom-hiit');
         break;
       case 'walk_run':
-        router.push('/cardio/walk-run');
+        router.push('/cardio/distance-run');
         break;
       case 'time_run':
         router.push('/cardio/time-run');

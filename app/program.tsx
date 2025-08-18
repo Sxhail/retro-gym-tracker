@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Alert, Modal, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { eq } from 'drizzle-orm';
 import theme from '../styles/theme';
 import { db } from '../db/client';
 import * as schema from '../db/schema';
 import { ProgramManager, ProgramData } from '../services/programManager';
+import ExerciseCard from '../components/ExerciseCard';
+import { dbOperations } from '../services/database';
+import { getExerciseMaxWeights } from '../services/workoutHistory';
 
 interface ProgramConfig {
   programName: string;
@@ -44,6 +47,38 @@ export default function ProgramScreen() {
   });
   const [workouts, setWorkouts] = useState<DayWorkout[]>([]);
   const [assignedDays, setAssignedDays] = useState<Set<string>>(new Set());
+
+  // Exercise picker states (same as new.tsx)
+  const [modalVisible, setModalVisible] = useState(false);
+  const [search, setSearch] = useState('');
+  const [pickerExercises, setPickerExercises] = useState<any[]>([]);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('All');
+  const [selectedEquipment, setSelectedEquipment] = useState<string>('All');
+  const [sortBy, setSortBy] = useState<string>('A-Z');
+  const [maxWeights, setMaxWeights] = useState<Record<number, { weight: number; reps: number }>>({});
+  
+  // Add exercise modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [newMuscleGroups, setNewMuscleGroups] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  // Program exercises for step 2
+  const [programExercises, setProgramExercises] = useState<Array<{
+    id: number;
+    name: string;
+    sets: number;
+    reps: string;
+  }>>([]);
+
+  const MUSCLE_GROUP_OPTIONS = [
+    'Chest', 'Back', 'Legs', 'Glutes', 'Shoulders', 'Triceps', 'Biceps', 'Core', 'Arms'
+  ];
+  const CATEGORY_OPTIONS = [
+    'Barbell', 'Dumbbell', 'Machine', 'Smith Machine', 'Bodyweight', 'Cable', 'Trap Bar', 'Kettlebell', 'Band', 'Other'
+  ];
 
   // Load temp workout data when reaching step 4
   useEffect(() => {

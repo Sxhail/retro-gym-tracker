@@ -308,17 +308,17 @@ export default function WorkoutEditorScreen() {
           {/* Header */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16 }}>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 28 }}>←</Text>
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 24 }}>←</Text>
             </TouchableOpacity>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 24, fontWeight: 'bold' }}>EXERCISES</Text>
-            <View style={{ width: 28 }} />
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>EXERCISES</Text>
+            <View style={{ width: 24 }} />
           </View>
 
           {/* Search Bar */}
           <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, backgroundColor: 'transparent', paddingHorizontal: 12 }}>
               <TextInput
-                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, paddingVertical: 14 }}
+                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 12 }}
                 placeholder="SEARCH"
                 placeholderTextColor={theme.colors.neon}
                 value={search}
@@ -327,35 +327,78 @@ export default function WorkoutEditorScreen() {
             </View>
           </View>
 
-          {/* Filter Options */}
+          {/* Muscle Groups Filter */}
           <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
-              {['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'].map((group) => (
-                <TouchableOpacity
-                  key={group}
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 20,
-                    marginRight: 8,
-                    backgroundColor: selectedMuscleGroup === group ? theme.colors.neon : 'transparent',
-                    borderWidth: 1,
-                    borderColor: theme.colors.neon,
-                  }}
-                  onPress={() => setSelectedMuscleGroup(group)}
-                >
-                  <Text style={{
-                    color: selectedMuscleGroup === group ? theme.colors.background : theme.colors.neon,
-                    fontFamily: theme.fonts.code,
-                    fontSize: 14,
-                    fontWeight: 'bold',
-                  }}>
-                    {group}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>MUSCLE GROUPS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row' }}>
+                {['All', 'Chest', 'Arms', 'Legs', 'Back', 'Core', 'Shoulders'].map((group) => (
+                  <TouchableOpacity
+                    key={group}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: theme.colors.neon,
+                      borderRadius: 16,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      marginRight: 8,
+                      backgroundColor: selectedMuscleGroup === group ? theme.colors.neon : 'transparent'
+                    }}
+                    onPress={() => setSelectedMuscleGroup(group)}
+                  >
+                    <Text style={{ 
+                      color: selectedMuscleGroup === group ? 'black' : theme.colors.neon, 
+                      fontFamily: theme.fonts.code, 
+                      fontSize: 12 
+                    }}>{group}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </ScrollView>
           </View>
+
+          {/* Equipment Filter */}
+          <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>CATEGORY</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row' }}>
+                {['All', 'Bodyweight', 'Dumbbell', 'Barbell', 'Machine', 'Cable'].map((equipment) => (
+                  <TouchableOpacity
+                    key={equipment}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: theme.colors.neon,
+                      borderRadius: 16,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      marginRight: 8,
+                      backgroundColor: selectedEquipment === equipment ? theme.colors.neon : 'transparent'
+                    }}
+                    onPress={() => setSelectedEquipment(equipment)}
+                  >
+                    <Text style={{ 
+                      color: selectedEquipment === equipment ? 'black' : theme.colors.neon, 
+                      fontFamily: theme.fonts.code, 
+                      fontSize: 12 
+                    }}>{equipment}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+
+          {/* Clear Filters */}
+          {(selectedMuscleGroup !== 'All' || selectedEquipment !== 'All') && (
+            <TouchableOpacity 
+              style={{ paddingHorizontal: 16, paddingBottom: 12 }}
+              onPress={() => {
+                setSelectedMuscleGroup('All');
+                setSelectedEquipment('All');
+              }}
+            >
+              <Text style={{ color: '#FF0000', fontFamily: theme.fonts.code, fontSize: 12 }}>CLEAR ALL FILTERS</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Exercise List */}
           {pickerLoading ? (
@@ -408,15 +451,15 @@ export default function WorkoutEditorScreen() {
       <Modal visible={showAddModal} animationType="slide" transparent={true} onRequestClose={() => setShowAddModal(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ backgroundColor: theme.colors.background, borderRadius: 16, padding: 24, width: '90%', maxWidth: 400 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontWeight: 'bold', fontSize: 20, marginBottom: 16, textAlign: 'center' }}>Add New Exercise</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 20, marginBottom: 16, textAlign: 'center' }}>Add New Exercise</Text>
             <TextInput
-              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: 'transparent', marginBottom: 16 }}
+              style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: 'transparent', marginBottom: 16 }}
               placeholder="Exercise Name"
               placeholderTextColor={theme.colors.neon}
               value={newExerciseName}
               onChangeText={setNewExerciseName}
             />
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, marginBottom: 8 }}>Muscle Groups</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14, marginBottom: 8 }}>Muscle Groups</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
               {MUSCLE_GROUP_OPTIONS.map((group) => (
                 <TouchableOpacity
@@ -432,18 +475,14 @@ export default function WorkoutEditorScreen() {
                     backgroundColor: newMuscleGroups.includes(group) ? theme.colors.neon : 'transparent',
                   }}
                   onPress={() => {
-                    if (newMuscleGroups.includes(group)) {
-                      setNewMuscleGroups(newMuscleGroups.filter(g => g !== group));
-                    } else {
-                      setNewMuscleGroups([...newMuscleGroups, group]);
-                    }
+                    setNewMuscleGroups((prev) => prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]);
                   }}
                 >
-                  <Text style={{ color: newMuscleGroups.includes(group) ? theme.colors.background : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>{group}</Text>
+                  <Text style={{ color: newMuscleGroups.includes(group) ? theme.colors.background : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 13 }}>{group}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, marginBottom: 8 }}>Category</Text>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14, marginBottom: 8 }}>Category</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
               {CATEGORY_OPTIONS.map((cat) => (
                 <TouchableOpacity
@@ -460,13 +499,13 @@ export default function WorkoutEditorScreen() {
                   }}
                   onPress={() => setNewCategory(cat)}
                 >
-                  <Text style={{ color: newCategory === cat ? theme.colors.background : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12 }}>{cat}</Text>
+                  <Text style={{ color: newCategory === cat ? theme.colors.background : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 13 }}>{cat}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
               <TouchableOpacity onPress={() => setShowAddModal(false)} style={{ paddingVertical: 10, paddingHorizontal: 18 }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16 }}>Cancel</Text>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 16 }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ backgroundColor: theme.colors.neon, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 18 }}

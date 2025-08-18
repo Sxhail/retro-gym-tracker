@@ -42,23 +42,48 @@ export default function HomeScreen() {
       const allPrograms = await ProgramManager.getUserPrograms();
       const progressData: any = {};
       for (const program of allPrograms) {
-        // Get progress and next workout for each program
-        let nextWorkout = 'Inactive';
+        let nextWorkout = '';
         let daysSinceLastWorkout = null;
         let currentWeek = program.current_week;
         let totalWeeks = program.duration_weeks;
         let progressPercentage = program.completion_percentage;
-        if (program.is_active) {
-          // Use getActiveProgram for the active one, otherwise calculate manually
-          const activeData = await ProgramManager.getActiveProgram();
-          if (activeData && activeData.program.id === program.id) {
-            nextWorkout = activeData.nextWorkout;
-            daysSinceLastWorkout = activeData.daysSinceLastWorkout;
-            currentWeek = activeData.actualProgress.currentWeek;
-            totalWeeks = activeData.actualProgress.totalWeeks;
-            progressPercentage = activeData.actualProgress.realPercentage;
-          }
+
+        // Get program days and completed workouts
+        const programDays = await ProgramManager.getProgramDays(program.id);
+        const workoutDays = programDays.filter(day => !day.is_rest_day);
+        const totalWorkouts = workoutDays.length * program.duration_weeks;
+        // Get completed workouts for this program
+        // Use direct DB query for completed workouts
+        // For simplicity, use program.current_day and current_week for now
+
+        // Find next workout day
+        const completedCount = (program.current_week - 1) * workoutDays.length + (program.current_day - 1);
+        const workoutsPerWeek = workoutDays.length;
+        const currentDayInWeek = (completedCount % workoutsPerWeek);
+        let nextDay = workoutDays[currentDayInWeek];
+        if (completedCount >= totalWorkouts) {
+          nextWorkout = 'Program Complete';
+        } else if (nextDay && nextDay.template_id) {
+          // Get workout template name
+          const template = nextDay.template_id && nextDay.day_name ? await ProgramManager.getProgramWorkoutTemplate(program.id, nextDay.day_name) : null;
+          nextWorkout = template && template.template && template.template.name ? template.template.name : nextDay.day_name;
+        } else {
+          nextWorkout = nextDay ? nextDay.day_name : 'Next Workout';
         }
+
+        // Days since last workout (use last_workout_date if available)
+        if (program.last_workout_date) {
+          const lastWorkoutDate = new Date(program.last_workout_date);
+          daysSinceLastWorkout = Math.floor((Date.now() - lastWorkoutDate.getTime()) / (1000 * 60 * 60 * 24));
+        } else if (program.start_date) {
+          const startDate = new Date(program.start_date);
+          daysSinceLastWorkout = Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        // Calculate progress percentage
+        progressPercentage = totalWorkouts > 0 ? Math.round((completedCount / totalWorkouts) * 100) : 0;
+        currentWeek = Math.min(Math.floor(completedCount / workoutsPerWeek) + 1, totalWeeks);
+
         progressData[program.id] = {
           nextWorkout,
           daysSinceLastWorkout,

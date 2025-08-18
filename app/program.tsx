@@ -186,6 +186,31 @@ export default function ProgramScreen() {
     }
   };
 
+  // Load active programs for info box
+  const [activePrograms, setActivePrograms] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const allPrograms = await ProgramManager.getUserPrograms();
+        setActivePrograms(allPrograms.filter(p => p.is_active));
+      } catch (err) {
+        setActivePrograms([]);
+      }
+    };
+    fetchPrograms();
+  }, []);
+
+  // Delete program handler
+  const handleDeleteProgram = async (programId: number) => {
+    try {
+      await db.delete(schema.user_programs).where(eq(schema.user_programs.id, programId));
+      setActivePrograms(activePrograms.filter(p => p.id !== programId));
+      Alert.alert('Deleted', 'Program deleted.');
+    } catch (err) {
+      Alert.alert('Error', 'Could not delete program.');
+    }
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => router.back()}>
@@ -474,6 +499,27 @@ export default function ProgramScreen() {
       {/* Show pathway selection only on step 1, otherwise show progress */}
       {step === 1 ? (
         <View style={styles.pathwayContainer}>
+          {/* YOUR PROGRAMS info box */}
+          <View style={styles.programsBox}>
+            <Text style={styles.programsTitle}>YOUR PROGRAMS</Text>
+            {activePrograms.length === 0 ? (
+              <Text style={styles.programsEmpty}>No active programs.</Text>
+            ) : (
+              activePrograms.map(program => (
+                <View key={program.id} style={styles.programRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.programName}>{program.name}</Text>
+                    <Text style={styles.programMeta}>Duration: {program.duration_weeks} weeks</Text>
+                    <Text style={styles.programMeta}>Progress: {Math.round(program.completion_percentage)}%</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => handleDeleteProgram(program.id)} style={styles.deleteButton}>
+                    <Text style={styles.deleteButtonText}>-</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </View>
+          
           {/* Template Path */}
           <TouchableOpacity 
             style={styles.pathwayCard}
@@ -582,14 +628,60 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: theme.colors.background,
   },
-  pathwayTitle: {
+  programsBox: {
+    backgroundColor: 'rgba(0,255,0,0.05)',
+    borderColor: theme.colors.neon,
+    borderWidth: 1,
+    borderRadius: 12,
+    margin: 16,
+    marginBottom: 8,
+    padding: 16,
+  },
+  programsTitle: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 18,
+    fontFamily: theme.fonts.display,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 24,
-    letterSpacing: 2,
+    fontSize: 16,
+    marginBottom: 8,
+    letterSpacing: 1,
+  },
+  programsEmpty: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  programRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.neonDim,
+    paddingVertical: 8,
+  },
+  programName: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.display,
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  programMeta: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 13,
+  },
+  deleteButton: {
+    marginLeft: 12,
+    backgroundColor: 'rgba(0,255,0,0.10)',
+    borderRadius: 16,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+  },
+  deleteButtonText: {
+    color: theme.colors.neon,
+    fontSize: 22,
+    fontWeight: 'bold',
+    fontFamily: theme.fonts.display,
   },
   pathwayCard: {
     borderWidth: 1,

@@ -42,7 +42,8 @@ export default function HomeScreen() {
       const allPrograms = await ProgramManager.getUserPrograms();
       const progressData: any = {};
       for (const program of allPrograms) {
-        let nextWorkout = '';
+  let nextWorkout = '';
+  let nextWorkoutDayName = '';
         let daysSinceLastWorkout = null;
         let currentWeek = program.current_week;
         let totalWeeks = program.duration_weeks;
@@ -63,9 +64,11 @@ export default function HomeScreen() {
         let nextDay = workoutDays[currentDayInWeek];
         if (completedCount >= totalWorkouts) {
           nextWorkout = 'Program Complete';
+          nextWorkoutDayName = '';
         } else if (nextDay && nextDay.template_id) {
           // Get workout template name, but only show the workout name (not program name)
           let workoutName = nextDay.day_name;
+          nextWorkoutDayName = nextDay.day_name;
           const template = nextDay.template_id && nextDay.day_name ? await ProgramManager.getProgramWorkoutTemplate(program.id, nextDay.day_name) : null;
           if (template && template.template && template.template.name) {
             // If template name is "ProgramName - WorkoutName", extract only WorkoutName
@@ -75,6 +78,7 @@ export default function HomeScreen() {
           nextWorkout = workoutName;
         } else {
           nextWorkout = nextDay ? nextDay.day_name : 'Next Workout';
+          nextWorkoutDayName = nextDay ? nextDay.day_name : '';
         }
 
         // Days since last workout (use last_workout_date if available)
@@ -92,6 +96,7 @@ export default function HomeScreen() {
 
         progressData[program.id] = {
           nextWorkout,
+          nextWorkoutDayName,
           daysSinceLastWorkout,
           currentWeek,
           totalWeeks,
@@ -111,7 +116,8 @@ export default function HomeScreen() {
       // Only allow if program is active and not complete
       const progress = programProgress[program.id];
       if (!program.is_active || !progress || progress.nextWorkout === 'Program Complete' || progress.nextWorkout === 'Rest Day') return;
-      await startProgramWorkout(program.id, progress.nextWorkout);
+      // Use the actual day name for the session loader
+      await startProgramWorkout(program.id, progress.nextWorkoutDayName);
       router.push('/new');
     } catch (error) {
       console.error('Failed to start program workout:', error);

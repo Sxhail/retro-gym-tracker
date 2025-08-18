@@ -7,6 +7,7 @@ import theme from '../styles/theme';
 import { db } from '../db/client';
 import * as schema from '../db/schema';
 import { ProgramManager, ProgramData } from '../services/programManager';
+import Carousel from 'react-native-snap-carousel';
 
 interface ProgramConfig {
   programName: string;
@@ -505,23 +506,35 @@ export default function ProgramScreen() {
             {allPrograms.length === 0 ? (
               <Text style={styles.programsEmpty}>No programs created.</Text>
             ) : (
-              <>
-                {allPrograms.map(program => (
-                  <View key={program.id} style={[styles.programRow, { borderColor: program.is_active ? theme.colors.neon : theme.colors.neonDim, borderWidth: 2, borderRadius: 8, marginBottom: 8, padding: 8, backgroundColor: program.is_active ? theme.colors.background : theme.colors.backgroundOverlay }]}> 
+              <Carousel
+                data={allPrograms}
+                renderItem={({ item: program }) => (
+                  <View style={[styles.programRow, {
+                    borderColor: program.is_active ? theme.colors.neon : theme.colors.neonDim,
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    marginBottom: 8,
+                    padding: 8,
+                    backgroundColor: program.is_active ? theme.colors.background : theme.colors.backgroundOverlay,
+                    opacity: program.is_active ? 1 : 0.4,
+                    width: 220,
+                    marginHorizontal: 8,
+                  }]}> 
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.programName, { color: program.is_active ? theme.colors.neon : theme.colors.textSecondary }]}>{program.name}</Text>
                       <Text style={styles.programMeta}>Duration: {program.duration_weeks} weeks</Text>
                       <Text style={styles.programMeta}>Progress: {Math.round(program.completion_percentage)}%</Text>
-                      <Text style={{ color: program.is_active ? theme.colors.neon : theme.colors.textSecondary, fontWeight: 'bold', marginTop: 2 }}>
-                        {program.is_active ? 'ACTIVE' : 'INACTIVE'}
-                      </Text>
                     </View>
                     <TouchableOpacity onPress={() => handleDeleteProgram(program.id)} style={styles.deleteButton}>
                       <Text style={styles.deleteButtonText}>-</Text>
                     </TouchableOpacity>
                   </View>
-                ))}
-              </>
+                )}
+                sliderWidth={340}
+                itemWidth={240}
+                inactiveSlideOpacity={0.4}
+                inactiveSlideScale={0.95}
+              />
             )}
           </View>
           

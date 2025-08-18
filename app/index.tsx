@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Image, Modal } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
@@ -31,6 +32,19 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
+  // Handler for deleting a program from dashboard
+  const handleDeleteProgram = async (programId: number) => {
+    try {
+      // Remove from DB
+      await ProgramManager.deleteProgram(programId);
+      // Remove from local state
+      setPrograms(prev => prev.filter(p => p.id !== programId));
+      // Optionally, reload progress
+      loadAllProgramsWithProgress();
+    } catch (error) {
+      console.error('Failed to delete program:', error);
+    }
+  };
   const [programProgress, setProgramProgress] = useState<any>({});
   const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
 
@@ -153,20 +167,31 @@ export default function HomeScreen() {
         {/* Program Progress Widgets for all existing programs */}
         {programs.filter(p => p != null && p.id).map((program) => {
           const progress = programProgress[program.id] || {};
-          // Only show if program still exists (not deleted)
           if (!program.name || !program.duration_weeks) return null;
           return (
-            <View key={program.id} style={{ marginBottom: 24 }}>
-              <ProgramProgressWidget
-                programName={program.name}
-                currentWeek={progress.currentWeek || program.current_week}
-                totalWeeks={progress.totalWeeks || program.duration_weeks}
-                progressPercentage={progress.progressPercentage || program.completion_percentage}
-                nextWorkout={progress.nextWorkout || 'Inactive'}
-                daysSinceLastWorkout={progress.daysSinceLastWorkout ?? null}
-                onStartWorkout={() => handleStartProgramWorkout(program)}
-              />
-            </View>
+            <Swipeable
+              key={program.id}
+              renderRightActions={() => (
+                <TouchableOpacity
+                  style={{ backgroundColor: 'red', justifyContent: 'center', alignItems: 'center', width: 100, height: '100%' }}
+                  onPress={() => handleDeleteProgram(program.id)}
+                >
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>Delete</Text>
+                </TouchableOpacity>
+              )}
+            >
+              <View style={{ marginBottom: 24 }}>
+                <ProgramProgressWidget
+                  programName={program.name}
+                  currentWeek={progress.currentWeek || program.current_week}
+                  totalWeeks={progress.totalWeeks || program.duration_weeks}
+                  progressPercentage={progress.progressPercentage || program.completion_percentage}
+                  nextWorkout={progress.nextWorkout || 'Inactive'}
+                  daysSinceLastWorkout={progress.daysSinceLastWorkout ?? null}
+                  onStartWorkout={() => handleStartProgramWorkout(program)}
+                />
+              </View>
+            </Swipeable>
           );
         })}
 

@@ -29,6 +29,7 @@
     "expo-splash-screen": "~0.30.7",
     "expo-sqlite": "~15.2.14",
     "expo-status-bar": "~2.2.3",
+    "expo-updates": "~0.28.17",
     "papaparse": "^5.5.3",
     "react": "19.0.0",
     "react-native": "^0.79.5",
@@ -36,9 +37,9 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
+    "react-native-snap-carousel": "^3.9.1",
     "react-native-svg": "15.11.2",
-    "sqlite3": "^5.1.7",
-    "expo-updates": "~0.28.17"
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

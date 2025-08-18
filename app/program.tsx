@@ -106,12 +106,9 @@ export default function ProgramScreen() {
     try {
       // Create array of all 7 days with workout or rest day data
       const allDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-      
       const programDays = allDays.map((dayName, index) => {
         const workoutForDay = workouts.find(w => w.day.toUpperCase() === dayName);
-        
         if (workoutForDay) {
-          // This is an assigned workout day with actual data
           return {
             dayName,
             dayOrder: index + 1,
@@ -120,7 +117,6 @@ export default function ProgramScreen() {
             isRestDay: false,
           };
         } else {
-          // This is a rest day
           return {
             dayName,
             dayOrder: index + 1,
@@ -138,15 +134,15 @@ export default function ProgramScreen() {
         days: programDays,
       };
 
-      // Create the program in the database
+      // Create the program in the database (does not overwrite previous)
       const programId = await ProgramManager.createProgram(programData);
-      
-      // Activate the program
+
+      // Only activate the new program, previous programs remain in DB
       await ProgramManager.activateProgram(programId);
-      
-      // Clean up temp workout data
+
+      // Clean up temp workout data for next creation
       await db.delete(schema.temp_program_workouts);
-      
+
       Alert.alert(
         'Program Created!',
         `${config.programName} has been created and activated. You can now track your progress on the home screen.`,
@@ -454,8 +450,6 @@ export default function ProgramScreen() {
       {/* Show pathway selection only on step 1, otherwise show progress */}
       {step === 1 ? (
         <View style={styles.pathwayContainer}>
-          <Text style={styles.pathwayTitle}>CHOOSE YOUR PATH</Text>
-          
           {/* Template Path */}
           <TouchableOpacity 
             style={styles.pathwayCard}

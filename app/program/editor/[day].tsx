@@ -385,7 +385,14 @@ export default function WorkoutEditorScreen() {
                     style={{ marginTop: 16, backgroundColor: theme.colors.neon, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24 }}
                     onPress={() => {
                       setNewExerciseName(search);
-                      setShowAddModal(true);
+                      setNewMuscleGroups([]);
+                      setNewCategory('');
+                      // Close the main modal first to avoid conflicts
+                      setModalVisible(false);
+                      // Small delay to ensure modal closes, then show add modal
+                      setTimeout(() => {
+                        setShowAddModal(true);
+                      }, 100);
                     }}
                   >
                     <Text style={{ color: theme.colors.background, fontFamily: theme.fonts.code, fontWeight: 'bold', fontSize: 16 }}>+ Add "{search.trim()}" as new exercise</Text>
@@ -473,18 +480,25 @@ export default function WorkoutEditorScreen() {
                       category: newCategory,
                       is_custom: 1,
                     });
-                    // Refresh pickerExercises after adding
-                    const refreshedExercises = await dbOperations.getExercises();
-                    setPickerExercises(refreshedExercises.filter(ex =>
-                      ex.name.toLowerCase().includes(search.trim().toLowerCase()) ||
-                      ex.muscle_group?.toLowerCase().includes(search.trim().toLowerCase()) ||
-                      ex.category?.toLowerCase().includes(search.trim().toLowerCase())
-                    ));
+                    
                     setShowAddModal(false);
                     // Reset add exercise form
                     setNewExerciseName('');
                     setNewMuscleGroups([]);
                     setNewCategory('');
+                    
+                    // Reopen the main modal and refresh the exercise list
+                    setTimeout(() => {
+                      setModalVisible(true);
+                      // Refresh the exercise list to include the newly added exercise
+                      dbOperations.getExercises().then(refreshedExercises => {
+                        setPickerExercises(refreshedExercises.filter(ex =>
+                          ex.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+                          ex.muscle_group?.toLowerCase().includes(search.trim().toLowerCase()) ||
+                          ex.category?.toLowerCase().includes(search.trim().toLowerCase())
+                        ));
+                      });
+                    }, 100);
                   } catch (err) {
                     console.error('Error adding exercise:', err);
                   } finally {

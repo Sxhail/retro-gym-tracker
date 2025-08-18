@@ -1185,7 +1185,12 @@ export default function NewWorkoutScreen() {
                       setNewExerciseName(search);
                       setNewMuscleGroups([]);
                       setNewCategory('');
-                      setShowAddModal(true);
+                      // Close the main modal first to avoid conflicts
+                      setModalVisible(false);
+                      // Small delay to ensure modal closes, then show add modal
+                      setTimeout(() => {
+                        setShowAddModal(true);
+                      }, 100);
                     }}
                   >
                     <Text style={{ color: theme.colors.background, fontFamily: theme.fonts.heading, fontWeight: 'bold', fontSize: 16 }}>+ Add "{search.trim()}" as new exercise</Text>
@@ -1268,26 +1273,25 @@ export default function NewWorkoutScreen() {
                       category: newCategory,
                       is_custom: 1,
                     });
-                    // Refresh pickerExercises after adding
-                    const results = await dbOperations.getExercises();
-                    setPickerExercises(results.filter(ex =>
-                      ex.name.toLowerCase().includes(search.trim().toLowerCase()) ||
-                      ex.muscle_group?.toLowerCase().includes(search.trim().toLowerCase()) ||
-                      ex.category?.toLowerCase().includes(search.trim().toLowerCase())
-                    ));
+                    
                     setShowAddModal(false);
-                    // Keep the main picker modal open after adding
-                    // Refresh the exercise list to include the newly added exercise
-                    const refreshedExercises = await dbOperations.getExercises();
-                    setPickerExercises(refreshedExercises.filter(ex =>
-                      ex.name.toLowerCase().includes(search.trim().toLowerCase()) ||
-                      ex.muscle_group?.toLowerCase().includes(search.trim().toLowerCase()) ||
-                      ex.category?.toLowerCase().includes(search.trim().toLowerCase())
-                    ));
                     // Reset the form
                     setNewExerciseName('');
                     setNewMuscleGroups([]);
                     setNewCategory('');
+                    
+                    // Reopen the main modal and refresh the exercise list
+                    setTimeout(() => {
+                      setModalVisible(true);
+                      // Refresh the exercise list to include the newly added exercise
+                      dbOperations.getExercises().then(refreshedExercises => {
+                        setPickerExercises(refreshedExercises.filter(ex =>
+                          ex.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+                          ex.muscle_group?.toLowerCase().includes(search.trim().toLowerCase()) ||
+                          ex.category?.toLowerCase().includes(search.trim().toLowerCase())
+                        ));
+                      });
+                    }, 100);
                   } catch (err) {
                     // Optionally show error
                   } finally {

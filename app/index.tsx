@@ -30,23 +30,62 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
+  const [programProgress, setProgramProgress] = useState<any>({});
   const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
 
-  // Load active program on component mount
   useEffect(() => {
-    loadAllPrograms();
+    loadAllProgramsWithProgress();
   }, []);
 
-  const loadAllPrograms = async () => {
+  const loadAllProgramsWithProgress = async () => {
     try {
       const allPrograms = await ProgramManager.getUserPrograms();
+      const progressData: any = {};
+      for (const program of allPrograms) {
+        // Get progress and next workout for each program
+        let nextWorkout = 'Inactive';
+        let daysSinceLastWorkout = null;
+        let currentWeek = program.current_week;
+        let totalWeeks = program.duration_weeks;
+        let progressPercentage = program.completion_percentage;
+        if (program.is_active) {
+          // Use getActiveProgram for the active one, otherwise calculate manually
+          const activeData = await ProgramManager.getActiveProgram();
+          if (activeData && activeData.program.id === program.id) {
+            nextWorkout = activeData.nextWorkout;
+            daysSinceLastWorkout = activeData.daysSinceLastWorkout;
+            currentWeek = activeData.actualProgress.currentWeek;
+            totalWeeks = activeData.actualProgress.totalWeeks;
+            progressPercentage = activeData.actualProgress.realPercentage;
+          }
+        }
+        progressData[program.id] = {
+          nextWorkout,
+          daysSinceLastWorkout,
+          currentWeek,
+          totalWeeks,
+          progressPercentage,
+        };
+      }
       setPrograms(allPrograms);
+      setProgramProgress(progressData);
     } catch (error) {
       console.error('Error loading programs:', error);
     }
   };
 
-  // Removed old handleStartProgramWorkout logic. Use per-program start buttons below.
+  // Handler for starting the correct program workout
+  const handleStartProgramWorkout = async (program) => {
+    try {
+      // Only allow if program is active and not complete
+      const progress = programProgress[program.id];
+      if (!program.is_active || !progress || progress.nextWorkout === 'Program Complete' || progress.nextWorkout === 'Rest Day') return;
+      await startProgramWorkout(program.id, progress.nextWorkout);
+      router.push('/new');
+    } catch (error) {
+      console.error('Failed to start program workout:', error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -66,22 +105,25 @@ export default function HomeScreen() {
           </View>
           <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
         </View>
-        
+
         {/* Program Progress Widgets for all programs */}
-        {programs.map((program) => (
-          <View key={program.id} style={{ marginBottom: 24 }}>
-            <ProgramProgressWidget
-              programName={program.name}
-              currentWeek={program.current_week}
-              totalWeeks={program.duration_weeks}
-              progressPercentage={program.completion_percentage}
-              nextWorkout={program.is_active ? 'Next workout available' : 'Inactive'}
-              daysSinceLastWorkout={program.is_active ? 0 : null}
-              onStartWorkout={() => router.push('/new')}
-            />
-          </View>
-        ))}
-        
+        {programs.map((program) => {
+          const progress = programProgress[program.id] || {};
+          return (
+            <View key={program.id} style={{ marginBottom: 24 }}>
+              <ProgramProgressWidget
+                programName={program.name}
+                currentWeek={progress.currentWeek || program.current_week}
+                totalWeeks={progress.totalWeeks || program.duration_weeks}
+                progressPercentage={progress.progressPercentage || program.completion_percentage}
+                nextWorkout={progress.nextWorkout || 'Inactive'}
+                daysSinceLastWorkout={progress.daysSinceLastWorkout ?? null}
+                onStartWorkout={() => handleStartProgramWorkout(program)}
+              />
+            </View>
+          );
+        })}
+
         {/* Header */}
         <View style={styles.headerSection}>
         </View>
@@ -111,7 +153,7 @@ export default function HomeScreen() {
           if (tab === 'progress') router.push('/stats');
         }}
       />
-      
+
       {/* Training Selection Modal */}
       <Modal
         visible={showTrainingModal}
@@ -128,10 +170,10 @@ export default function HomeScreen() {
               <Text style={styles.modalTitle}>SELECT TRAINING TYPE</Text>
               <View style={{ width: 36 }} />
             </View>
-            
+
             <View style={styles.modalBody}>
-              <TouchableOpacity 
-                style={styles.modalTrainingButton} 
+              <TouchableOpacity
+                style={styles.modalTrainingButton}
                 onPress={() => {
                   setShowTrainingModal(false);
                   router.push('/new');
@@ -140,9 +182,9 @@ export default function HomeScreen() {
                 <Text style={styles.modalTrainingTitle}>LIFT</Text>
                 <Text style={styles.modalTrainingDescription}>Weight training with sets and reps</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.modalTrainingButton} 
+
+              <TouchableOpacity
+                style={styles.modalTrainingButton}
                 onPress={() => {
                   setShowTrainingModal(false);
                   router.push('/cardio');
@@ -155,7 +197,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-        </SafeAreaView>
+    </SafeAreaView>
   );
 }
 

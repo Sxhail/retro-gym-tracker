@@ -505,22 +505,24 @@ export default function ProgramScreen() {
             {allPrograms.length === 0 ? (
               <Text style={styles.programsEmpty}>No programs created.</Text>
             ) : (
-              allPrograms.map(program => (
-                <View key={program.id} style={[styles.programRow, { borderColor: program.is_active ? theme.colors.neon : theme.colors.neonDim, borderWidth: 2, borderRadius: 8, marginBottom: 8, padding: 8, backgroundColor: program.is_active ? theme.colors.background : theme.colors.backgroundOverlay }]}> 
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.programName, { color: program.is_active ? theme.colors.neon : theme.colors.textSecondary }]}>{program.name}</Text>
-                    <Text style={styles.programMeta}>Duration: {program.duration_weeks} weeks</Text>
-                    <Text style={styles.programMeta}>Progress: {Math.round(program.completion_percentage)}%</Text>
-                    <Text style={{ color: program.is_active ? theme.colors.neon : theme.colors.textSecondary, fontWeight: 'bold', marginTop: 2 }}>
-                      {program.is_active ? 'ACTIVE' : 'INACTIVE'}
-                    </Text>
+              <>
+                {allPrograms.map(program => (
+                  <View key={program.id} style={[styles.programRow, { borderColor: program.is_active ? theme.colors.neon : theme.colors.neonDim, borderWidth: 2, borderRadius: 8, marginBottom: 8, padding: 8, backgroundColor: program.is_active ? theme.colors.background : theme.colors.backgroundOverlay }]}> 
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.programName, { color: program.is_active ? theme.colors.neon : theme.colors.textSecondary }]}>{program.name}</Text>
+                      <Text style={styles.programMeta}>Duration: {program.duration_weeks} weeks</Text>
+                      <Text style={styles.programMeta}>Progress: {Math.round(program.completion_percentage)}%</Text>
+                      <Text style={{ color: program.is_active ? theme.colors.neon : theme.colors.textSecondary, fontWeight: 'bold', marginTop: 2 }}>
+                        {program.is_active ? 'ACTIVE' : 'INACTIVE'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleDeleteProgram(program.id)} style={styles.deleteButton}>
+                      <Text style={styles.deleteButtonText}>-</Text>
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => handleDeleteProgram(program.id)} style={styles.deleteButton}>
-                    <Text style={styles.deleteButtonText}>-</Text>
-                  </TouchableOpacity>
-                </View>
-              ))
-            }
+                ))}
+              </>
+            )}
           </View>
           
           {/* Template Path */}

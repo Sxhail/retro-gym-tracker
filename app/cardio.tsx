@@ -20,10 +20,10 @@ export default function CardioScreen() {
     ],
     RUN: [
       {
-  title: 'WALK - RUN',
-        subtitle: 'TRACK PACE & DISTANCE',
+        title: 'WALK - RUN',
+        subtitle: 'INTERVAL TRAINING • WALK & RUN PHASES',
         duration: null,
-  type: 'walk_run'
+        type: 'walk_run'
       }
     ],
     STEADY: [

@@ -392,4 +392,17 @@ export class ProgramManager {
       return [];
     }
   }
+
+  /**
+   * Permanently delete a program and its days
+   */
+  static async deleteProgram(programId: number): Promise<void> {
+    try {
+      await db.delete(schema.program_days).where(eq(schema.program_days.program_id, programId));
+      await db.delete(schema.user_programs).where(eq(schema.user_programs.id, programId));
+    } catch (error) {
+      console.error('Error deleting program:', error);
+      throw new Error('Failed to delete program');
+    }
+  }
 }

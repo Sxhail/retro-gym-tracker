@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { eq } from 'drizzle-orm';
@@ -97,6 +98,22 @@ export default function ProgramScreen() {
 
     loadAssignedDays();
   }, [step]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (step === 3) {
+        (async () => {
+          try {
+            const tempWorkouts = await db.select().from(schema.temp_program_workouts);
+            const savedDays = new Set(tempWorkouts.map(tw => tw.day_name));
+            setAssignedDays(savedDays);
+          } catch (error) {
+            console.error('Error loading assigned days:', error);
+          }
+        })();
+      }
+    }, [step])
+  );
 
   const markDayAsAssigned = (day: string) => {
     setAssignedDays(prev => new Set([...prev, day.toUpperCase()]));

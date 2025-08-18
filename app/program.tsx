@@ -688,11 +688,12 @@ const styles = StyleSheet.create({
   deleteButton: {
     marginLeft: 12,
     backgroundColor: 'rgba(0,255,0,0.10)',
-    borderRadius: 16,
-    padding: 6,
+      borderRadius: 12,
+      padding: 2,
     borderWidth: 1,
     borderColor: theme.colors.neon,
   },
+  // ...existing code...
   deleteButtonText: {
     color: theme.colors.neon,
     fontSize: 22,

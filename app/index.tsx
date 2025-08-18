@@ -5,6 +5,7 @@ import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
 import { ProgramManager } from '../services/programManager';
+import { useFocusEffect } from '@react-navigation/native';
 
 const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (tab: string) => void }) => (
   <SafeAreaView style={styles.bottomNavContainer}>
@@ -36,6 +37,12 @@ export default function HomeScreen() {
   useEffect(() => {
     loadAllProgramsWithProgress();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadAllProgramsWithProgress();
+    }, [])
+  );
 
   const loadAllProgramsWithProgress = async () => {
     try {
@@ -143,9 +150,11 @@ export default function HomeScreen() {
           <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
         </View>
 
-        {/* Program Progress Widgets for all programs */}
-        {programs.map((program) => {
+        {/* Program Progress Widgets for all existing programs */}
+        {programs.filter(p => p != null && p.id).map((program) => {
           const progress = programProgress[program.id] || {};
+          // Only show if program still exists (not deleted)
+          if (!program.name || !program.duration_weeks) return null;
           return (
             <View key={program.id} style={{ marginBottom: 24 }}>
               <ProgramProgressWidget
@@ -509,4 +518,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-}); 
+});

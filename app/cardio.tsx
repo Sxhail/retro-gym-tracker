@@ -16,12 +16,6 @@ export default function CardioScreen() {
         subtitle: '15 MIN • HIGH INTENSITY',
         duration: 15,
         type: 'quick_hiit'
-      },
-      {
-        title: 'CUSTOM HIIT',
-        subtitle: 'CUSTOMIZE YOUR INTERVALS',
-        duration: null,
-        type: 'custom_hiit'
       }
     ],
     RUN: [
@@ -30,12 +24,6 @@ export default function CardioScreen() {
         subtitle: 'TRACK PACE & DISTANCE',
         duration: null,
         type: 'distance_run'
-      },
-      {
-        title: 'CUSTOM RUN',
-        subtitle: 'SET YOUR OWN GOALS',
-        duration: null,
-        type: 'time_run'
       }
     ],
     STEADY: [
@@ -44,12 +32,6 @@ export default function CardioScreen() {
         subtitle: 'LOW INTENSITY • RECOVERY',
         duration: null,
         type: 'casual_walk'
-      },
-      {
-        title: 'CUSTOM WALK',
-        subtitle: 'SET YOUR OWN PACE',
-        duration: null,
-        type: 'power_walk'
       }
     ]
   };

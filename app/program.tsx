@@ -534,38 +534,83 @@ export default function ProgramScreen() {
       {/* Show pathway selection only on step 1, otherwise show progress */}
       {step === 1 ? (
         <View style={styles.pathwayContainer}>
-          {/* YOUR PROGRAMS info box */}
-          <View style={[styles.pathwayCard, { marginBottom: 16 }]}> {/* Use pathwayCard style for outline/size */}
-            <Text style={styles.programsTitle}>YOUR PROGRAMS</Text>
+          {/* YOUR PROGRAMS section with improved UI */}
+          <View style={styles.programsSection}>
+            <Text style={styles.programsSectionTitle}>YOUR PROGRAMS</Text>
             {allPrograms.length === 0 ? (
-              <Text style={styles.programsEmpty}>No programs created.</Text>
+              <View style={styles.programsEmptyState}>
+                <Text style={styles.programsEmptyText}>NO PROGRAMS CREATED</Text>
+                <Text style={styles.programsEmptySubtext}>Create your first program below</Text>
+              </View>
             ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
-                {allPrograms.map(program => (
-                  <View
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                style={styles.programsCarousel}
+                contentContainerStyle={styles.programsCarouselContent}
+              >
+                {allPrograms.map((program, index) => (
+                  <TouchableOpacity
                     key={program.id}
-                    style={{
-                      width: 220,
-                      marginRight: 12,
-                      borderColor: theme.colors.neon,
-                      borderWidth: 2,
-                      borderRadius: 12,
-                      padding: 12,
-                      backgroundColor: theme.colors.background,
-                      opacity: program.is_active ? 1 : 0.4,
-                      shadowColor: theme.colors.neon,
-                      shadowOpacity: program.is_active ? 0.3 : 0.1,
-                      shadowRadius: 8,
-                      shadowOffset: { width: 0, height: 2 },
-                    }}
+                    style={[
+                      styles.programCard,
+                      program.is_active && styles.programCardActive
+                    ]}
+                    onPress={() => router.push(`/program/${program.id}`)}
+                    activeOpacity={0.8}
                   >
-                    <Text style={[styles.programName, { color: theme.colors.neon, fontWeight: 'bold', fontSize: 18 }]}>{program.name}</Text>
-                    <Text style={styles.programMeta}>Duration: {program.duration_weeks} weeks</Text>
-                    <Text style={styles.programMeta}>Progress: {Math.round(program.completion_percentage)}%</Text>
-                    <TouchableOpacity onPress={() => handleDeleteProgram(program.id)} style={styles.deleteButton}>
-                      <Text style={styles.deleteButtonText}>-</Text>
-                    </TouchableOpacity>
-                  </View>
+                    {/* Active indicator */}
+                    {program.is_active && (
+                      <View style={styles.activeIndicator}>
+                        <Text style={styles.activeIndicatorText}>● ACTIVE</Text>
+                      </View>
+                    )}
+                    
+                    {/* Program name */}
+                    <Text style={[
+                      styles.programCardName,
+                      program.is_active && styles.programCardNameActive
+                    ]}>
+                      {program.name}
+                    </Text>
+                    
+                    {/* Program meta */}
+                    <View style={styles.programCardMeta}>
+                      <Text style={[
+                        styles.programCardMetaText,
+                        program.is_active && styles.programCardMetaTextActive
+                      ]}>
+                        {program.duration_weeks} WEEKS
+                      </Text>
+                      <Text style={[
+                        styles.programCardMetaText,
+                        program.is_active && styles.programCardMetaTextActive
+                      ]}>
+                        {Math.round(program.completion_percentage || 0)}% DONE
+                      </Text>
+                    </View>
+                    
+                    {/* Progress bar */}
+                    <View style={styles.programCardProgressBar}>
+                      <View 
+                        style={[
+                          styles.programCardProgressFill,
+                          { width: `${program.completion_percentage || 0}%` },
+                          program.is_active && styles.programCardProgressFillActive
+                        ]} 
+                      />
+                    </View>
+                    
+                    {/* Quick actions */}
+                    <View style={styles.programCardActions}>
+                      <Text style={[
+                        styles.programCardActionText,
+                        program.is_active && styles.programCardActionTextActive
+                      ]}>
+                        TAP FOR DETAILS
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             )}
@@ -1245,5 +1290,129 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.code,
     fontSize: 12,
     marginRight: 12,
+  },
+  // Enhanced YOUR PROGRAMS styles
+  programsSection: {
+    marginBottom: 20,
+  },
+  programsSectionTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
+    fontSize: 20,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  programsEmptyState: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 0, 0.3)',
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+  },
+  programsEmptyText: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  programsEmptySubtext: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    opacity: 0.7,
+  },
+  programsCarousel: {
+    marginBottom: 8,
+  },
+  programsCarouselContent: {
+    paddingHorizontal: 8,
+  },
+  programCard: {
+    width: 240,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 0, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+    minHeight: 140,
+  },
+  programCardActive: {
+    borderColor: theme.colors.neon,
+    borderWidth: 2,
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+    shadowColor: theme.colors.neon,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  activeIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: theme.colors.neon,
+  },
+  activeIndicatorText: {
+    color: theme.colors.background,
+    fontFamily: theme.fonts.code,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  programCardName: {
+    color: 'rgba(0, 255, 0, 0.7)',
+    fontFamily: theme.fonts.heading,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  programCardNameActive: {
+    color: theme.colors.neon,
+  },
+  programCardMeta: {
+    marginBottom: 12,
+  },
+  programCardMetaText: {
+    color: 'rgba(0, 255, 0, 0.5)',
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  programCardMetaTextActive: {
+    color: 'rgba(0, 255, 0, 0.8)',
+  },
+  programCardProgressBar: {
+    height: 4,
+    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+    borderRadius: 2,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  programCardProgressFill: {
+    height: '100%',
+    backgroundColor: 'rgba(0, 255, 0, 0.5)',
+    borderRadius: 2,
+  },
+  programCardProgressFillActive: {
+    backgroundColor: theme.colors.neon,
+  },
+  programCardActions: {
+    alignItems: 'center',
+  },
+  programCardActionText: {
+    color: 'rgba(0, 255, 0, 0.4)',
+    fontFamily: theme.fonts.code,
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  programCardActionTextActive: {
+    color: 'rgba(0, 255, 0, 0.7)',
   },
 });

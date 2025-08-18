@@ -405,4 +405,110 @@ export class ProgramManager {
       throw new Error('Failed to delete program');
     }
   }
+
+  /**
+   * Get a specific program by ID
+   */
+  static async getProgramById(programId: number): Promise<schema.UserProgram | null> {
+    try {
+      const programs = await db.select()
+        .from(schema.user_programs)
+        .where(eq(schema.user_programs.id, programId))
+        .limit(1);
+      
+      return programs.length > 0 ? programs[0] : null;
+    } catch (error) {
+      console.error('Error getting program by ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Calculate detailed program statistics
+   */
+  static async calculateProgramStats(programId: number): Promise<{
+    totalWorkouts: number;
+    completedWorkouts: number;
+    completionPercentage: number;
+    currentWeek: number;
+    totalWeeks: number;
+    nextWorkout: string;
+    daysSinceLastWorkout: number | null;
+    programDays: any[];
+  } | null> {
+    try {
+      // Get program
+      const program = await this.getProgramById(programId);
+      if (!program) return null;
+
+      // Get program days
+      const programDays = await db.select()
+        .from(schema.program_days)
+        .leftJoin(schema.workout_templates, eq(schema.program_days.template_id, schema.workout_templates.id))
+        .where(eq(schema.program_days.program_id, programId))
+        .orderBy(schema.program_days.day_order);
+
+      // Get completed workouts
+      const completedWorkouts = await db.select()
+        .from(schema.workouts)
+        .where(eq(schema.workouts.program_id, programId))
+        .orderBy(desc(schema.workouts.date));
+
+      // Calculate stats
+      const workoutDays = programDays.filter(day => !day.program_days.is_rest_day);
+      const totalWorkouts = workoutDays.length * program.duration_weeks;
+      const completedCount = completedWorkouts.length;
+      const completionPercentage = totalWorkouts > 0 ? Math.round((completedCount / totalWorkouts) * 100) : 0;
+
+      // Calculate current week
+      const workoutsPerWeek = workoutDays.length;
+      const currentWeek = Math.min(Math.floor(completedCount / workoutsPerWeek) + 1, program.duration_weeks);
+
+      // Find next workout
+      const currentDayInWeek = (completedCount % workoutsPerWeek);
+      let nextWorkout = 'Program Complete';
+      
+      if (completedCount < totalWorkouts) {
+        if (currentDayInWeek < workoutDays.length) {
+          const nextDay = workoutDays[currentDayInWeek];
+          
+          if (nextDay.program_days.is_rest_day) {
+            nextWorkout = 'Rest Day';
+          } else if (nextDay.workout_templates?.name) {
+            const parts = nextDay.workout_templates.name.split(' - ');
+            nextWorkout = parts.length > 1 ? parts[1] : nextDay.program_days.day_name;
+          } else {
+            nextWorkout = nextDay.program_days.day_name;
+          }
+        } else {
+          nextWorkout = 'Next Workout';
+        }
+      }
+
+      // Calculate days since last workout
+      let daysSinceLastWorkout = null;
+      if (completedWorkouts.length > 0) {
+        const lastWorkoutDate = new Date(completedWorkouts[0].date);
+        daysSinceLastWorkout = Math.floor((Date.now() - lastWorkoutDate.getTime()) / (1000 * 60 * 60 * 24));
+      }
+
+      return {
+        totalWorkouts,
+        completedWorkouts: completedCount,
+        completionPercentage,
+        currentWeek,
+        totalWeeks: program.duration_weeks,
+        nextWorkout,
+        daysSinceLastWorkout,
+        programDays: programDays.map(pd => ({
+          day_name: pd.program_days.day_name,
+          is_rest_day: pd.program_days.is_rest_day,
+          template_name: pd.workout_templates?.name || null,
+        })),
+      };
+    } catch (error) {
+      console.error('Error calculating program stats:', error);
+      return null;
+    }
+  }
 }

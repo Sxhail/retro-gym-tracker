@@ -29,52 +29,24 @@ export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
-  const [programData, setProgramData] = useState<any>(null);
+  const [programs, setPrograms] = useState<any[]>([]);
   const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
 
   // Load active program on component mount
   useEffect(() => {
-    loadActiveProgram();
+    loadAllPrograms();
   }, []);
 
-  const loadActiveProgram = async () => {
+  const loadAllPrograms = async () => {
     try {
-      const activeProgram = await ProgramManager.getActiveProgram();
-      setProgramData(activeProgram);
+      const allPrograms = await ProgramManager.getUserPrograms();
+      setPrograms(allPrograms);
     } catch (error) {
-      console.error('Error loading active program:', error);
+      console.error('Error loading programs:', error);
     }
   };
 
-  const handleStartProgramWorkout = async () => {
-    if (programData) {
-      try {
-        // Calculate the actual next workout day based on completed workouts
-        const completedCount = programData.actualProgress.completedWorkouts;
-        const dayNames = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-        
-        // Get program schedule to determine next day
-        const programDays = await ProgramManager.getProgramDays(programData.program.id);
-        const workoutDays = programDays.filter(day => !day.is_rest_day);
-        
-        if (workoutDays.length > 0) {
-          const nextDayIndex = completedCount % workoutDays.length;
-          const nextDayName = workoutDays[nextDayIndex].day_name;
-          
-          // Start program workout with correct day
-          await startProgramWorkout(programData.program.id, nextDayName);
-          router.push('/new');
-        } else {
-          // Fallback to regular workout if no workout days
-          router.push('/new');
-        }
-      } catch (error) {
-        console.error('Error starting program workout:', error);
-        // Fallback to regular workout flow
-        router.push('/new');
-      }
-    }
-  };
+  // Removed old handleStartProgramWorkout logic. Use per-program start buttons below.
 
   return (
     <SafeAreaView style={styles.root}>
@@ -95,18 +67,20 @@ export default function HomeScreen() {
           <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
         </View>
         
-        {/* Program Progress Widget */}
-        {programData && (
-          <ProgramProgressWidget
-            programName={programData.program.name}
-            currentWeek={programData.actualProgress.currentWeek}
-            totalWeeks={programData.actualProgress.totalWeeks}
-            progressPercentage={programData.actualProgress.realPercentage}
-            nextWorkout={programData.nextWorkout}
-            daysSinceLastWorkout={programData.daysSinceLastWorkout}
-            onStartWorkout={handleStartProgramWorkout}
-          />
-        )}
+        {/* Program Progress Widgets for all programs */}
+        {programs.map((program) => (
+          <View key={program.id} style={{ marginBottom: 24 }}>
+            <ProgramProgressWidget
+              programName={program.name}
+              currentWeek={program.current_week}
+              totalWeeks={program.duration_weeks}
+              progressPercentage={program.completion_percentage}
+              nextWorkout={program.is_active ? 'Next workout available' : 'Inactive'}
+              daysSinceLastWorkout={program.is_active ? 0 : null}
+              onStartWorkout={() => router.push('/new')}
+            />
+          </View>
+        ))}
         
         {/* Header */}
         <View style={styles.headerSection}>

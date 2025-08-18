@@ -29,6 +29,13 @@ interface DayWorkout {
 export default function ProgramScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+
+  // Clear temp workouts when starting a new program (step 1)
+  useEffect(() => {
+    if (step === 1) {
+      db.delete(schema.temp_program_workouts);
+    }
+  }, [step]);
   const [config, setConfig] = useState<ProgramConfig>({
     programName: '',
     duration: '',

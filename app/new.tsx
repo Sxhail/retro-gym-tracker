@@ -1183,6 +1183,8 @@ export default function NewWorkoutScreen() {
                     style={{ marginTop: 16, backgroundColor: theme.colors.neon, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24 }}
                     onPress={() => {
                       setNewExerciseName(search);
+                      setNewMuscleGroups([]);
+                      setNewCategory('');
                       setShowAddModal(true);
                     }}
                   >
@@ -1274,9 +1276,18 @@ export default function NewWorkoutScreen() {
                       ex.category?.toLowerCase().includes(search.trim().toLowerCase())
                     ));
                     setShowAddModal(false);
-                    // Do NOT close the main picker modal here
-                    // setModalVisible(false); <-- do not call this
-                    // setSearch(''); <-- do not clear search, keep the new exercise visible
+                    // Keep the main picker modal open after adding
+                    // Refresh the exercise list to include the newly added exercise
+                    const refreshedExercises = await dbOperations.getExercises();
+                    setPickerExercises(refreshedExercises.filter(ex =>
+                      ex.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+                      ex.muscle_group?.toLowerCase().includes(search.trim().toLowerCase()) ||
+                      ex.category?.toLowerCase().includes(search.trim().toLowerCase())
+                    ));
+                    // Reset the form
+                    setNewExerciseName('');
+                    setNewMuscleGroups([]);
+                    setNewCategory('');
                   } catch (err) {
                     // Optionally show error
                   } finally {

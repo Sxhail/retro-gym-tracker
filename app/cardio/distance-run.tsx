@@ -82,7 +82,7 @@ export default function DistanceRunScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>DISTANCE RUN</Text>
+  <Text style={styles.headerTitle}>WALK - RUN</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -136,32 +136,7 @@ export default function DistanceRunScreen() {
         </View>
       </View>
 
-      {/* Stats Grid */}
-      <View style={styles.statsGrid}>
-        {/* Distance */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>DISTANCE</Text>
-          <Text style={styles.statValue}>{distance.toFixed(2)} KM</Text>
-        </View>
-
-        {/* Pace */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>PACE</Text>
-          <Text style={styles.statValue}>{pace}</Text>
-        </View>
-
-        {/* Speed */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>SPEED</Text>
-          <Text style={styles.statValue}>{speed.toFixed(1)} KM/H</Text>
-        </View>
-
-        {/* Calories */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>CALORIES</Text>
-          <Text style={styles.statValue}>{calories}</Text>
-        </View>
-      </View>
+  {/* Stats Grid removed: distance, pace, speed, calories */}
 
       {/* Control Buttons */}
       <View style={styles.controlButtons}>

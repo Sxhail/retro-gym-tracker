@@ -20,10 +20,10 @@ export default function CardioScreen() {
     ],
     RUN: [
       {
-        title: 'DISTANCE RUN',
+  title: 'WALK - RUN',
         subtitle: 'TRACK PACE & DISTANCE',
         duration: null,
-        type: 'distance_run'
+  type: 'walk_run'
       }
     ],
     STEADY: [
@@ -45,8 +45,8 @@ export default function CardioScreen() {
       case 'custom_hiit':
         router.push('/cardio/custom-hiit');
         break;
-      case 'distance_run':
-        router.push('/cardio/distance-run');
+      case 'walk_run':
+        router.push('/cardio/walk-run');
         break;
       case 'time_run':
         router.push('/cardio/time-run');

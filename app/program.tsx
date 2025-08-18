@@ -1297,7 +1297,7 @@ const styles = StyleSheet.create({
   },
   programsSectionTitle: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.heading,
+    fontFamily: theme.fonts.display,
     fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 2,

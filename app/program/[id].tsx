@@ -55,7 +55,7 @@ export default function ProgramDetailsScreen() {
 
   const handleEditProgram = () => {
     // Navigate to program editor
-    Alert.alert('Edit Program', 'Program editing functionality coming soon!');
+    router.push(`/program/edit/${id}`);
   };
 
   const handleDeleteProgram = () => {

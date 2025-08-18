@@ -14,6 +14,21 @@ export default function DistanceRunScreen() {
   const [calories, setCalories] = useState(0);
   const [runTime, setRunTime] = useState(30);
   const [walkTime, setWalkTime] = useState(30);
+  
+  // New lap tracking states
+  const [currentRunLaps, setCurrentRunLaps] = useState(0);
+  const [totalRunLaps, setTotalRunLaps] = useState(4);
+  const [currentWalkLaps, setCurrentWalkLaps] = useState(0);
+  const [totalWalkLaps, setTotalWalkLaps] = useState(2);
+  
+  // Phase tracking
+  const [isRunPhase, setIsRunPhase] = useState(true);
+  const [phaseTimeLeft, setPhaseTimeLeft] = useState(30);
+  
+  // Initialize phase time
+  useEffect(() => {
+    setPhaseTimeLeft(isRunPhase ? runTime : walkTime);
+  }, [runTime, walkTime, isRunPhase]);
 
   useEffect(() => {
     let interval: any;
@@ -21,6 +36,57 @@ export default function DistanceRunScreen() {
     if (isRunning) {
       interval = setInterval(() => {
         setTimeElapsed(prev => prev + 1);
+        setPhaseTimeLeft(prev => {
+          if (prev <= 1) {
+            // Phase complete, switch phases or laps
+            if (isRunPhase) {
+              const newRunLaps = currentRunLaps + 1;
+              setCurrentRunLaps(newRunLaps);
+              
+              if (newRunLaps < totalRunLaps) {
+                // More run laps to go, switch to walk
+                setIsRunPhase(false);
+                return walkTime;
+              } else {
+                // All run laps complete, check walk laps
+                if (currentWalkLaps < totalWalkLaps) {
+                  setIsRunPhase(false);
+                  return walkTime;
+                } else {
+                  // All laps complete
+                  setIsRunning(false);
+                  return 0;
+                }
+              }
+            } else {
+              const newWalkLaps = currentWalkLaps + 1;
+              setCurrentWalkLaps(newWalkLaps);
+              
+              if (newWalkLaps < totalWalkLaps) {
+                // More walk laps, but check if we need more run laps
+                if (currentRunLaps < totalRunLaps) {
+                  setIsRunPhase(true);
+                  return runTime;
+                } else {
+                  // Continue walk
+                  return walkTime;
+                }
+              } else {
+                // All walk laps complete
+                if (currentRunLaps < totalRunLaps) {
+                  setIsRunPhase(true);
+                  return runTime;
+                } else {
+                  // Workout complete
+                  setIsRunning(false);
+                  return 0;
+                }
+              }
+            }
+          }
+          return prev - 1;
+        });
+        
         // Calculate pace and speed based on distance and time
         if (distance > 0) {
           const paceInSeconds = timeElapsed / distance;
@@ -35,7 +101,7 @@ export default function DistanceRunScreen() {
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, timeElapsed, distance]);
+  }, [isRunning, timeElapsed, distance, isRunPhase, currentRunLaps, totalRunLaps, currentWalkLaps, totalWalkLaps, runTime, walkTime]);
 
   const handleStart = () => {
     setIsRunning(true);
@@ -55,14 +121,42 @@ export default function DistanceRunScreen() {
 
   const adjustRunTime = (increment: boolean) => {
     if (!isRunning) {
-      setRunTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+      setRunTime(prev => {
+        const newTime = increment ? prev + 5 : Math.max(5, prev - 5);
+        if (isRunPhase) {
+          setPhaseTimeLeft(newTime);
+        }
+        return newTime;
+      });
     }
   };
 
   const adjustWalkTime = (increment: boolean) => {
     if (!isRunning) {
-      setWalkTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+      setWalkTime(prev => {
+        const newTime = increment ? prev + 5 : Math.max(5, prev - 5);
+        if (!isRunPhase) {
+          setPhaseTimeLeft(newTime);
+        }
+        return newTime;
+      });
     }
+  };
+
+  const adjustRunLaps = (increment: boolean) => {
+    if (!isRunning) {
+      setTotalRunLaps(prev => increment ? prev + 1 : Math.max(1, prev - 1));
+    }
+  };
+
+  const adjustWalkLaps = (increment: boolean) => {
+    if (!isRunning) {
+      setTotalWalkLaps(prev => increment ? prev + 1 : Math.max(1, prev - 1));
+    }
+  };
+
+  const getPhaseText = () => {
+    return isRunPhase ? 'RUN PHASE' : 'WALK PHASE';
   };
 
   const formatTime = (seconds: number) => {
@@ -82,12 +176,32 @@ export default function DistanceRunScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-  <Text style={styles.headerTitle}>WALK - RUN</Text>
+        <Text style={styles.headerTitle}>WALK - RUN</Text>
         <View style={styles.placeholder} />
+      </View>
+
+      {/* Phase Title */}
+      <Text style={styles.phaseTitle}>{getPhaseText()}</Text>
+
+      {/* Progress Bar */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBar}>
+          <View 
+            style={[
+              styles.progressFill,
+              { 
+                width: `${((isRunPhase ? runTime - phaseTimeLeft : walkTime - phaseTimeLeft) / (isRunPhase ? runTime : walkTime)) * 100}%`
+              }
+            ]} 
+          />
+        </View>
       </View>
 
       {/* Main Timer */}
       <Text style={styles.mainTimer}>{formatTime(timeElapsed)}</Text>
+      
+      {/* Phase Timer */}
+      <Text style={styles.phaseTimer}>{formatTime(phaseTimeLeft)}</Text>
 
       {/* RUN/WALK Settings */}
       <View style={styles.settingsGrid}>
@@ -134,6 +248,57 @@ export default function DistanceRunScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Run Laps */}
+        <View style={styles.settingCard}>
+          <Text style={styles.settingLabel}>LAPS</Text>
+          <Text style={styles.settingValue}>{totalRunLaps}</Text>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustRunLaps(false)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>-</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustRunLaps(true)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Walk Laps */}
+        <View style={styles.settingCard}>
+          <Text style={styles.settingLabel}>LAP</Text>
+          <Text style={styles.settingValue}>{totalWalkLaps}</Text>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustWalkLaps(false)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>-</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustWalkLaps(true)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      {/* Lap Progress */}
+      <View style={styles.lapProgress}>
+        <Text style={styles.lapText}>
+          RUN LAPS: {currentRunLaps}/{totalRunLaps} | WALK LAPS: {currentWalkLaps}/{totalWalkLaps}
+        </Text>
       </View>
 
   {/* Stats Grid removed: distance, pace, speed, calories */}
@@ -322,5 +487,49 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     lineHeight: 20,
+  },
+  phaseTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
+    letterSpacing: 1,
+  },
+  progressContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.neon,
+    borderRadius: 3,
+  },
+  phaseTimer: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
+    fontSize: 32,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: theme.spacing.lg,
+    letterSpacing: 2,
+  },
+  lapProgress: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+  },
+  lapText: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    textAlign: 'center',
+    opacity: 0.8,
   },
 });

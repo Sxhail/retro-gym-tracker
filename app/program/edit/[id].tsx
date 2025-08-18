@@ -124,15 +124,25 @@ export default function EditProgramScreen() {
 
   const handleToggleRestDay = async (dayId: number, currentIsRestDay: boolean) => {
     try {
-      // Toggle rest day status
-      await db.update(schema.program_days)
-        .set({
-          is_rest_day: currentIsRestDay ? 0 : 1,
-          template_id: currentIsRestDay ? null : null, // Clear template if switching to rest
-        })
-        .where(eq(schema.program_days.id, dayId));
+      if (currentIsRestDay) {
+        // Switching from rest day to workout day
+        await db.update(schema.program_days)
+          .set({
+            is_rest_day: 0,
+            // Keep template_id as null initially, user can edit the day to assign a template
+          })
+          .where(eq(schema.program_days.id, dayId));
+      } else {
+        // Switching from workout to rest day
+        await db.update(schema.program_days)
+          .set({
+            is_rest_day: 1,
+            template_id: null, // Clear template when switching to rest
+          })
+          .where(eq(schema.program_days.id, dayId));
+      }
 
-      // Reload program days
+      // Reload program days to reflect changes
       await loadProgramData();
     } catch (error) {
       console.error('Error toggling rest day:', error);

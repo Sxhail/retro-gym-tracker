@@ -18,9 +18,15 @@ interface Exercise {
 
 export default function WorkoutEditorScreen() {
   const router = useRouter();
-  const { day } = useLocalSearchParams<{ day: string }>();
+  const { day, editMode, programId, dayId } = useLocalSearchParams<{ 
+    day: string; 
+    editMode?: string; 
+    programId?: string; 
+    dayId?: string; 
+  }>();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [workoutType, setWorkoutType] = useState('');
+  const [loading, setLoading] = useState(false);
   
   // Exercise picker modal states (same as new.tsx)
   const [modalVisible, setModalVisible] = useState(false);
@@ -55,16 +61,22 @@ export default function WorkoutEditorScreen() {
   useEffect(() => {
     const loadWorkoutData = async () => {
       try {
-        const existingWorkout = await db.select()
-          .from(schema.temp_program_workouts)
-          .where(eq(schema.temp_program_workouts.day_name, (day as string).toUpperCase()))
-          .limit(1);
+        if (editMode && dayId) {
+          // Load from program_days if in edit mode
+          await loadExistingDayData();
+        } else {
+          // Load from temp storage for new program creation
+          const existingWorkout = await db.select()
+            .from(schema.temp_program_workouts)
+            .where(eq(schema.temp_program_workouts.day_name, (day as string).toUpperCase()))
+            .limit(1);
 
-        if (existingWorkout.length > 0) {
-          const workout = existingWorkout[0];
-          setWorkoutType(workout.workout_type);
-          const exercisesData = JSON.parse(workout.exercises_json);
-          setExercises(exercisesData);
+          if (existingWorkout.length > 0) {
+            const workout = existingWorkout[0];
+            setWorkoutType(workout.workout_type);
+            const exercisesData = JSON.parse(workout.exercises_json);
+            setExercises(exercisesData);
+          }
         }
       } catch (error) {
         console.error('Error loading workout data:', error);
@@ -74,7 +86,70 @@ export default function WorkoutEditorScreen() {
     if (day) {
       loadWorkoutData();
     }
-  }, [day]);
+  }, [day, editMode, dayId]);
+
+  const loadExistingDayData = async () => {
+    try {
+      setLoading(true);
+      const dayIdNum = parseInt(dayId as string);
+      
+      // Get the program day data
+      const dayData = await db.select()
+        .from(schema.program_days)
+        .leftJoin(schema.workout_templates, eq(schema.program_days.template_id, schema.workout_templates.id))
+        .where(eq(schema.program_days.id, dayIdNum))
+        .limit(1);
+
+      if (dayData.length > 0) {
+        const dayInfo = dayData[0];
+        
+        if (dayInfo.workout_templates) {
+          setWorkoutType(dayInfo.workout_templates.name);
+          
+          // Load exercises from template_exercises and template_sets
+          const templateExercises = await db.select()
+            .from(schema.template_exercises)
+            .leftJoin(schema.exercises, eq(schema.template_exercises.exercise_id, schema.exercises.id))
+            .leftJoin(schema.template_sets, eq(schema.template_exercises.id, schema.template_sets.template_exercise_id))
+            .where(eq(schema.template_exercises.template_id, dayInfo.workout_templates.id))
+            .orderBy(schema.template_exercises.exercise_order);
+
+          // Group by exercises and collect sets
+          const exerciseMap = new Map<number, Exercise>();
+          
+          templateExercises.forEach(row => {
+            if (row.exercises) {
+              const exerciseId = row.exercises.id;
+              if (!exerciseMap.has(exerciseId)) {
+                exerciseMap.set(exerciseId, {
+                  id: exerciseId,
+                  name: row.exercises.name,
+                  sets: 0,
+                  reps: '',
+                });
+              }
+              
+              if (row.template_sets) {
+                const exercise = exerciseMap.get(exerciseId)!;
+                exercise.sets += 1;
+                if (exercise.reps) {
+                  exercise.reps += `, ${row.template_sets.target_reps}`;
+                } else {
+                  exercise.reps = row.template_sets.target_reps.toString();
+                }
+              }
+            }
+          });
+
+          setExercises(Array.from(exerciseMap.values()));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading day data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Exercise picker logic (same as new.tsx)
   useEffect(() => {
@@ -154,26 +229,116 @@ export default function WorkoutEditorScreen() {
     }
     
     try {
-      // Save workout data to temp table
-      const workoutData = {
-        day_name: (day as string).toUpperCase(),
-        workout_type: workoutType,
-        exercises_json: JSON.stringify(exercises)
-      };
-
-      // First, delete any existing temp data for this day
-      await db.delete(schema.temp_program_workouts)
-        .where(eq(schema.temp_program_workouts.day_name, workoutData.day_name));
-
-      // Insert new temp data
-      await db.insert(schema.temp_program_workouts).values(workoutData);
+      if (editMode && programId && dayId) {
+        // Save to existing program day
+        await saveToExistingProgram();
+      } else {
+        // Save to temp table for new program creation
+        await saveToTempStorage();
+      }
       
-      console.log('Workout saved to temp storage:', workoutData);
       router.back();
     } catch (error) {
       console.error('Error saving workout:', error);
       alert('Failed to save workout. Please try again.');
     }
+  };
+
+  const saveToTempStorage = async () => {
+    const workoutData = {
+      day_name: (day as string).toUpperCase(),
+      workout_type: workoutType,
+      exercises_json: JSON.stringify(exercises)
+    };
+
+    // First, delete any existing temp data for this day
+    await db.delete(schema.temp_program_workouts)
+      .where(eq(schema.temp_program_workouts.day_name, workoutData.day_name));
+
+    // Insert new temp data
+    await db.insert(schema.temp_program_workouts).values(workoutData);
+    console.log('Workout saved to temp storage:', workoutData);
+  };
+
+  const saveToExistingProgram = async () => {
+    const dayIdNum = parseInt(dayId as string);
+    const programIdNum = parseInt(programId as string);
+
+    // Get existing day data to check if it has a template
+    const existingDay = await db.select()
+      .from(schema.program_days)
+      .where(eq(schema.program_days.id, dayIdNum))
+      .limit(1);
+
+    if (existingDay.length === 0) {
+      throw new Error('Program day not found');
+    }
+
+    const currentDay = existingDay[0];
+    let templateId = currentDay.template_id;
+
+    if (templateId) {
+      // Update existing template
+      await db.update(schema.workout_templates)
+        .set({
+          name: workoutType.trim(),
+        })
+        .where(eq(schema.workout_templates.id, templateId));
+
+      // Clear existing template exercises and sets
+      await db.delete(schema.template_exercises)
+        .where(eq(schema.template_exercises.template_id, templateId));
+    } else {
+      // Create new template
+      const newTemplate = await db.insert(schema.workout_templates)
+        .values({
+          name: workoutType.trim(),
+          description: `Template for ${day?.toUpperCase()}`,
+          category: 'Custom',
+          difficulty: 'intermediate',
+          estimated_duration: 60,
+        })
+        .returning();
+
+      templateId = newTemplate[0].id;
+
+      // Update program_days to link to new template
+      await db.update(schema.program_days)
+        .set({ template_id: templateId })
+        .where(eq(schema.program_days.id, dayIdNum));
+    }
+
+    // Insert exercises and sets
+    for (let i = 0; i < exercises.length; i++) {
+      const exercise = exercises[i];
+      
+      const newTemplateExercise = await db.insert(schema.template_exercises)
+        .values({
+          template_id: templateId,
+          exercise_id: exercise.id,
+          exercise_order: i + 1,
+        })
+        .returning();
+
+      const templateExerciseId = newTemplateExercise[0].id;
+
+      // Parse reps and create sets
+      const repsArray = exercise.reps.split(',').map(r => parseInt(r.trim())).filter(r => !isNaN(r));
+      
+      for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
+        const targetReps = repsArray[setIndex] || repsArray[0] || 10;
+        
+        await db.insert(schema.template_sets)
+          .values({
+            template_exercise_id: templateExerciseId,
+            set_index: setIndex + 1,
+            target_reps: targetReps,
+            target_rest: 60, // Default 60 seconds rest
+          });
+      }
+    }
+
+    console.log('Workout saved to existing program');
   };
 
   // Check if save button should be enabled
@@ -204,7 +369,7 @@ export default function WorkoutEditorScreen() {
           ]}
           value={workoutType}
           onChangeText={setWorkoutType}
-          placeholder="e.g., Push Day, Legs, Full Body"
+          placeholder=""
           placeholderTextColor="rgba(0, 255, 0, 0.5)"
         />
       </View>

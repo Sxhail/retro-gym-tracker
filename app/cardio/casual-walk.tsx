@@ -12,6 +12,10 @@ export default function CasualWalkScreen() {
   const [pace, setPace] = useState('--:--');
   const [speed, setSpeed] = useState(0.0);
   const [calories, setCalories] = useState(0);
+  
+  // Lap tracking states
+  const [currentLap, setCurrentLap] = useState(1);
+  const [totalLaps, setTotalLaps] = useState(1);
 
   useEffect(() => {
     let interval: any;
@@ -51,6 +55,29 @@ export default function CasualWalkScreen() {
     router.back();
   };
 
+  const adjustTotalLaps = (increment: boolean) => {
+    if (!isRunning) {
+      setTotalLaps(prev => increment ? prev + 1 : Math.max(1, prev - 1));
+    }
+  };
+
+  const handleNextLap = () => {
+    if (currentLap < totalLaps) {
+      setCurrentLap(prev => prev + 1);
+    }
+  };
+
+  const handleReset = () => {
+    setIsRunning(false);
+    setIsPaused(false);
+    setTimeElapsed(0);
+    setCurrentLap(1);
+    setDistance(0);
+    setPace('--:--');
+    setSpeed(0);
+    setCalories(0);
+  };
+
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -75,7 +102,43 @@ export default function CasualWalkScreen() {
       {/* Main Timer */}
       <Text style={styles.mainTimer}>{formatTime(timeElapsed)}</Text>
 
-  {/* Stats Grid removed: distance, speed, pace, calories */}
+      {/* Lap Settings Grid */}
+      <View style={styles.settingsGrid}>
+        {/* Total Laps */}
+        <View style={styles.settingCard}>
+          <Text style={styles.settingLabel}>LAPS</Text>
+          <Text style={styles.settingValue}>{totalLaps}</Text>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustTotalLaps(false)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>-</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.adjustButton} 
+              onPress={() => adjustTotalLaps(true)}
+              disabled={isRunning}
+            >
+              <Text style={styles.adjustButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Current Lap */}
+        <View style={styles.settingCard}>
+          <Text style={styles.settingLabel}>LAP</Text>
+          <Text style={styles.settingValue}>{currentLap}</Text>
+          <TouchableOpacity 
+            style={styles.nextLapButton} 
+            onPress={handleNextLap}
+            disabled={!isRunning || currentLap >= totalLaps}
+          >
+            <Text style={styles.nextLapButtonText}>NEXT</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Control Buttons */}
       <View style={styles.controlButtons}>
@@ -93,6 +156,13 @@ export default function CasualWalkScreen() {
           disabled={!isRunning}
         >
           <Text style={styles.controlButtonText}>PAUSE</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.controlButton]} 
+          onPress={handleReset}
+        >
+          <Text style={styles.controlButtonText}>RESET</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -205,6 +275,71 @@ const styles = StyleSheet.create({
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
     fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  settingsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.xl,
+  },
+  settingCard: {
+    width: '48%',
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 12,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+    alignItems: 'center',
+  },
+  settingLabel: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    letterSpacing: 1,
+    marginBottom: theme.spacing.xs,
+  },
+  settingValue: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: theme.spacing.sm,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  adjustButton: {
+    width: 32,
+    height: 32,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+  },
+  adjustButtonText: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  nextLapButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+  },
+  nextLapButtonText: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
     fontWeight: 'bold',
     letterSpacing: 1,
   },

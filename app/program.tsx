@@ -187,14 +187,14 @@ export default function ProgramScreen() {
   };
 
   // Load active programs for info box
-  const [activePrograms, setActivePrograms] = useState<any[]>([]);
+  const [allPrograms, setAllPrograms] = useState<any[]>([]);
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
-        const allPrograms = await ProgramManager.getUserPrograms();
-        setActivePrograms(allPrograms.filter(p => p.is_active));
+        const programs = await ProgramManager.getUserPrograms();
+        setAllPrograms(programs);
       } catch (err) {
-        setActivePrograms([]);
+        setAllPrograms([]);
       }
     };
     fetchPrograms();
@@ -203,8 +203,8 @@ export default function ProgramScreen() {
   // Delete program handler
   const handleDeleteProgram = async (programId: number) => {
     try {
-      await db.delete(schema.user_programs).where(eq(schema.user_programs.id, programId));
-      setActivePrograms(activePrograms.filter(p => p.id !== programId));
+      await ProgramManager.deleteProgram(programId);
+      setAllPrograms(allPrograms.filter(p => p.id !== programId));
       Alert.alert('Deleted', 'Program deleted.');
     } catch (err) {
       Alert.alert('Error', 'Could not delete program.');
@@ -500,24 +500,27 @@ export default function ProgramScreen() {
       {step === 1 ? (
         <View style={styles.pathwayContainer}>
           {/* YOUR PROGRAMS info box */}
-          <View style={styles.programsBox}>
+          <View style={[styles.pathwayCard, { marginBottom: 16 }]}> {/* Use pathwayCard style for outline/size */}
             <Text style={styles.programsTitle}>YOUR PROGRAMS</Text>
-            {activePrograms.length === 0 ? (
-              <Text style={styles.programsEmpty}>No active programs.</Text>
+            {allPrograms.length === 0 ? (
+              <Text style={styles.programsEmpty}>No programs created.</Text>
             ) : (
-              activePrograms.map(program => (
-                <View key={program.id} style={styles.programRow}>
+              allPrograms.map(program => (
+                <View key={program.id} style={[styles.programRow, { borderColor: program.is_active ? theme.colors.neon : theme.colors.neonDim, borderWidth: 2, borderRadius: 8, marginBottom: 8, padding: 8, backgroundColor: program.is_active ? theme.colors.background : theme.colors.backgroundOverlay }]}> 
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.programName}>{program.name}</Text>
+                    <Text style={[styles.programName, { color: program.is_active ? theme.colors.neon : theme.colors.textSecondary }]}>{program.name}</Text>
                     <Text style={styles.programMeta}>Duration: {program.duration_weeks} weeks</Text>
                     <Text style={styles.programMeta}>Progress: {Math.round(program.completion_percentage)}%</Text>
+                    <Text style={{ color: program.is_active ? theme.colors.neon : theme.colors.textSecondary, fontWeight: 'bold', marginTop: 2 }}>
+                      {program.is_active ? 'ACTIVE' : 'INACTIVE'}
+                    </Text>
                   </View>
                   <TouchableOpacity onPress={() => handleDeleteProgram(program.id)} style={styles.deleteButton}>
                     <Text style={styles.deleteButtonText}>-</Text>
                   </TouchableOpacity>
                 </View>
               ))
-            )}
+            }
           </View>
           
           {/* Template Path */}

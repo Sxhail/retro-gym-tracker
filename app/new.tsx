@@ -6,6 +6,7 @@ import { dbOperations } from '../services/database';
 import * as schema from '../db/schema';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import ExerciseCard from '../components/ExerciseCard';
+import { backgroundSessionService } from '../services/backgroundSession';
 
 import { getExerciseMaxWeights, getPreviousSetForExerciseSetNumber } from '../services/workoutHistory';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -29,9 +30,127 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
   const [restStartTime, setRestStartTime] = useState<Date | null>(null);
   const [restLastResumeTime, setRestLastResumeTime] = useState<Date | null>(null);
   const [restAccumulatedTime, setRestAccumulatedTime] = useState<number>(0);
+  
+  // Rest timer persistence (using session ID from main workout)
+  const restTimerIdRef = useRef<string | null>(null);
+  const sessionWorkout = useWorkoutSession(); // Access session for persistence
+  
+  // Generate unique rest timer ID for this set
+  const getRestTimerId = () => {
+    if (!restTimerIdRef.current) {
+      // Use session start time to create consistent session-based ID
+      const sessionTime = sessionWorkout.sessionStartTime?.getTime() || Date.now();
+      restTimerIdRef.current = `rest_${sessionTime}_${exerciseId}_${setIdx}`;
+    }
+    return restTimerIdRef.current;
+  };
+  
+  // Save rest timer state to background storage
+  const saveRestTimerState = async () => {
+    if (!sessionWorkout.isWorkoutActive || !restActive) return;
+    
+    try {
+      const timerId = getRestTimerId();
+      const saveTime = new Date();
+      let resumeTime: Date;
+      let accumulatedTimeOnly: number;
+      
+      if (timerPaused) {
+        // If paused, save current accumulated time
+        resumeTime = saveTime;
+        accumulatedTimeOnly = restAccumulatedTime;
+      } else {
+        // If active, save when current segment started and accumulated time
+        if (restLastResumeTime) {
+          resumeTime = restLastResumeTime;
+          accumulatedTimeOnly = restAccumulatedTime;
+        } else {
+          resumeTime = restStartTime || saveTime;
+          accumulatedTimeOnly = 0;
+        }
+      }
+      
+      await backgroundSessionService.saveTimerState({
+        sessionId: timerId,
+        timerType: 'rest',
+        startTime: resumeTime,
+        duration: Number(set.rest ?? 120),
+        elapsedWhenPaused: accumulatedTimeOnly,
+        isActive: !timerPaused,
+      });
+      
+      console.log('🔄 Rest timer state saved for set', setIdx, exerciseId);
+    } catch (error) {
+      console.error('Failed to save rest timer state:', error);
+    }
+  };
+  
+  // Restore rest timer state from background storage
+  const restoreRestTimerState = async () => {
+    if (!sessionWorkout.isWorkoutActive) return;
+    
+    try {
+      const timerId = getRestTimerId();
+      const timerState = await backgroundSessionService.restoreTimerState(timerId, 'rest');
+      
+      if (timerState) {
+        const now = new Date();
+        const totalElapsed = timerState.elapsedWhenPaused;
+        const totalRestDuration = Number(set.rest ?? 120);
+        const remaining = Math.max(0, totalRestDuration - totalElapsed);
+        
+        // If timer was still active and hasn't finished
+        if (remaining > 0) {
+          setRestActive(true);
+          setRestStartTime(timerState.startTime);
+          setRestLastResumeTime(timerState.isActive ? timerState.startTime : null);
+          setRestAccumulatedTime(timerState.elapsedWhenPaused);
+          setRestTime(remaining);
+          setTimerPaused(!timerState.isActive);
+          
+          console.log('🔄 Rest timer state restored for set', setIdx, exerciseId, '- remaining:', remaining, 's');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to restore rest timer state:', error);
+    }
+  };
+  
+  // Clear rest timer state from background storage
+  const clearRestTimerState = async () => {
+    try {
+      const timerId = getRestTimerId();
+      await backgroundSessionService.clearSessionData(timerId);
+      console.log('🧹 Rest timer state cleared for set', setIdx, exerciseId);
+    } catch (error) {
+      console.error('Failed to clear rest timer state:', error);
+    }
+  };
 
   // Previous set state
   const [previousSet, setPreviousSet] = useState<{ weight: number, reps: number } | null>(null);
+
+  // Restore rest timer state on component mount
+  useEffect(() => {
+    restoreRestTimerState();
+  }, [sessionWorkout.isWorkoutActive]);
+
+  // Auto-save rest timer state when it changes
+  useEffect(() => {
+    if (restActive) {
+      saveRestTimerState();
+    }
+  }, [restActive, timerPaused, restAccumulatedTime, restLastResumeTime]);
+
+  // Cleanup rest timer state when component unmounts or set is no longer completed
+  useEffect(() => {
+    return () => {
+      // Clear background state if rest timer is no longer needed
+      if (!set.completed) {
+        clearRestTimerState();
+      }
+    };
+  }, [set.completed]);
 
   useEffect(() => {
     let mounted = true;
@@ -85,6 +204,8 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     setRestAccumulatedTime(0);
     setRestTime(Number(set.rest ?? 120));
     setTimerPaused(false);
+    // Clear background state when timer is skipped
+    clearRestTimerState();
   };
 
   // Background-persistent rest timer (timestamp-based like main workout timer)
@@ -106,6 +227,8 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
           setRestStartTime(null);
           setRestLastResumeTime(null);
           setRestAccumulatedTime(0);
+          // Clear background state when timer finishes
+          clearRestTimerState();
         }
       }, 1000);
     } else {
@@ -142,6 +265,8 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       setRestAccumulatedTime(0);
       setRestTime(Number(set.rest ?? 120));
       setTimerPaused(false);
+      // Clear background state when timer stops
+      clearRestTimerState();
     }
   }, [set.completed, canComplete, set.rest]);
 

@@ -9,9 +9,11 @@ import { useFonts as useShareTechMono, ShareTechMono_400Regular } from '@expo-go
 import * as SplashScreen from 'expo-splash-screen';
 import { DatabaseProvider } from '../context/DatabaseContext';
 import { WorkoutSessionProvider } from '../context/WorkoutSessionContext';
+import { CardioSessionProvider } from '../context/CardioSessionContext';
 import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
+import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
 import CustomSplashScreen from '../components/CustomSplashScreen';
 
 // Keep the splash screen visible while we fetch resources
@@ -61,16 +63,20 @@ export default function Layout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <DatabaseProvider>
         <WorkoutSessionProvider>
-          <BackgroundWorkoutPersistence>
-            <AppLayout>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  animation: 'none',
-                }}
-              />
-            </AppLayout>
-          </BackgroundWorkoutPersistence>
+          <CardioSessionProvider>
+            <BackgroundWorkoutPersistence>
+              <BackgroundCardioSessionPersistence>
+                <AppLayout>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      animation: 'none',
+                    }}
+                  />
+                </AppLayout>
+              </BackgroundCardioSessionPersistence>
+            </BackgroundWorkoutPersistence>
+          </CardioSessionProvider>
         </WorkoutSessionProvider>
       </DatabaseProvider>
     </GestureHandlerRootView>

@@ -2,117 +2,100 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
-import { saveCardioSession, type CardioSessionData } from '../../services/cardioTracking';
+import { useCardioSession } from '../../context/CardioSessionContext';
 
 export default function QuickHiitScreen() {
   const router = useRouter();
-  const [timeLeft, setTimeLeft] = useState(10); // 10 second get ready
-  const [isGetReady, setIsGetReady] = useState(true);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [workTime, setWorkTime] = useState(20);
-  const [restTime, setRestTime] = useState(10);
-  const [rounds, setRounds] = useState(8);
-  const [currentRound, setCurrentRound] = useState(1);
-  const [isWorkPhase, setIsWorkPhase] = useState(true);
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [totalElapsed, setTotalElapsed] = useState(0);
+  const { 
+    isActive, isPaused, elapsedTime, workTime, restTime, rounds, currentRound, isWorkPhase, phaseTimeLeft, cardioType,
+    startSession, pauseSession, resumeSession, endSession, resetSession 
+  } = useCardioSession();
+  
+  // Local state for configuration
+  const [configWorkTime, setConfigWorkTime] = useState(20);
+  const [configRestTime, setConfigRestTime] = useState(10);
+  const [configRounds, setConfigRounds] = useState(8);
+  const [showGetReady, setShowGetReady] = useState(true);
+  const [getReadyTime, setGetReadyTime] = useState(10);
 
+  // Initialize or restore session
   useEffect(() => {
-    let interval: any;
+    if (!isActive && !cardioType) {
+      // Session not active, show config screen
+      setShowGetReady(true);
+      setGetReadyTime(10);
+    } else if (cardioType === 'hiit') {
+      // Session already active, hide get ready
+      setShowGetReady(false);
+    }
+  }, [isActive, cardioType]);
+
+  // Get ready countdown
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
     
-    if (isRunning && timeLeft > 0) {
+    if (showGetReady && isActive && getReadyTime > 0) {
       interval = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
-        if (startTime) {
-          setTotalElapsed(Math.floor((Date.now() - startTime.getTime()) / 1000));
-        }
+        setGetReadyTime(prev => {
+          if (prev <= 1) {
+            setShowGetReady(false);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (timeLeft === 0 && isRunning) {
-      if (isGetReady) {
-        setIsGetReady(false);
-        setTimeLeft(workTime);
-        setIsWorkPhase(true);
-        setStartTime(new Date());
-      } else if (isWorkPhase) {
-        if (currentRound < rounds) {
-          setTimeLeft(restTime);
-          setIsWorkPhase(false);
-        } else {
-          // Workout complete
-          setIsRunning(false);
-          handleWorkoutComplete();
-        }
-      } else {
-        setTimeLeft(workTime);
-        setIsWorkPhase(true);
-        setCurrentRound(prev => prev + 1);
-      }
     }
 
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isGetReady, isWorkPhase, currentRound, rounds, workTime, restTime, startTime]);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [showGetReady, isActive, getReadyTime]);
 
   const handleStart = () => {
-    if (!startTime) {
-      setStartTime(new Date());
-    }
-    setIsRunning(true);
-    setIsPaused(false);
+    const config = {
+      workTime: configWorkTime,
+      restTime: configRestTime,
+      rounds: configRounds,
+    };
+    
+    startSession('hiit', 'QUICK HIIT', config);
+    setShowGetReady(true);
+    setGetReadyTime(10);
   };
 
   const handlePause = () => {
-    setIsRunning(false);
-    setIsPaused(true);
+    pauseSession();
+  };
+
+  const handleResume = () => {
+    resumeSession();
   };
 
   const handleReset = () => {
-    setIsRunning(false);
-    setIsPaused(false);
-    setIsGetReady(true);
-    setTimeLeft(10);
-    setCurrentRound(1);
-    setIsWorkPhase(true);
-    setStartTime(null);
-    setTotalElapsed(0);
-  };
-
-  const handleWorkoutComplete = async () => {
-    if (!startTime) return;
-    
-    const sessionData: CardioSessionData = {
-      type: 'hiit',
-      name: 'QUICK HIIT',
-      duration: totalElapsed,
-      work_time: workTime,
-      rest_time: restTime,
-      rounds: rounds,
-    };
-
-    try {
-      await saveCardioSession(sessionData);
-      Alert.alert('Workout Complete!', 'Your HIIT session has been saved.', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
-    } catch (error) {
-      console.error('Error saving workout:', error);
-      Alert.alert('Error', 'Failed to save workout. Please try again.');
-    }
+    resetSession();
+    setShowGetReady(true);
+    setGetReadyTime(10);
   };
 
   const handleFinish = () => {
     Alert.alert(
       'Finish Workout?',
-      'Are you sure you want to finish this workout? Your progress will be saved.',
+      'Are you sure you want to finish this HIIT workout? Your progress will be saved.',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Finish', 
           onPress: async () => {
-            if (startTime && totalElapsed > 0) {
-              await handleWorkoutComplete();
-            } else {
-              router.back();
+            try {
+              await endSession();
+              Alert.alert('Workout Complete!', 'Your HIIT session has been saved.', [
+                { text: 'OK', onPress: () => router.back() }
+              ]);
+            } catch (error) {
+              console.error('Error saving workout:', error);
+              Alert.alert('Error', 'Failed to save workout. Please try again.');
             }
           }
         }
@@ -121,20 +104,20 @@ export default function QuickHiitScreen() {
   };
 
   const adjustWorkTime = (increment: boolean) => {
-    if (!isRunning) {
-      setWorkTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    if (!isActive) {
+      setConfigWorkTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
     }
   };
 
   const adjustRestTime = (increment: boolean) => {
-    if (!isRunning) {
-      setRestTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    if (!isActive) {
+      setConfigRestTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
     }
   };
 
   const adjustRounds = (increment: boolean) => {
-    if (!isRunning) {
-      setRounds(prev => increment ? prev + 1 : Math.max(1, prev - 1));
+    if (!isActive) {
+      setConfigRounds(prev => increment ? prev + 1 : Math.max(1, prev - 1));
     }
   };
 
@@ -145,9 +128,22 @@ export default function QuickHiitScreen() {
   };
 
   const getPhaseText = () => {
-    if (isGetReady) return 'GET READY';
+    if (showGetReady) return 'GET READY';
     return isWorkPhase ? 'WORK TIME' : 'REST TIME';
   };
+
+  const getCurrentPhaseTime = () => {
+    if (showGetReady) return getReadyTime;
+    if (cardioType === 'hiit') {
+      return phaseTimeLeft;
+    }
+    return 0;
+  };
+
+  // Use config values or active session values
+  const displayWorkTime = isActive ? workTime : configWorkTime;
+  const displayRestTime = isActive ? restTime : configRestTime;
+  const displayRounds = isActive ? rounds : configRounds;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -170,9 +166,9 @@ export default function QuickHiitScreen() {
             style={[
               styles.progressFill,
               { 
-                width: isGetReady ? '100%' : 
-                       isWorkPhase ? `${((workTime - timeLeft) / workTime) * 100}%` :
-                       `${((restTime - timeLeft) / restTime) * 100}%`
+                width: showGetReady ? '100%' : 
+                       isWorkPhase ? `${((displayWorkTime - getCurrentPhaseTime()) / displayWorkTime) * 100}%` :
+                       `${((displayRestTime - getCurrentPhaseTime()) / displayRestTime) * 100}%`
               }
             ]} 
           />
@@ -180,26 +176,33 @@ export default function QuickHiitScreen() {
       </View>
 
       {/* Main Timer */}
-      <Text style={styles.mainTimer}>{formatTime(timeLeft)}</Text>
+      <Text style={styles.mainTimer}>{formatTime(getCurrentPhaseTime())}</Text>
+
+      {/* Elapsed Time Display */}
+      {isActive && (
+        <Text style={[styles.settingLabel, { textAlign: 'center', marginBottom: theme.spacing.md, fontSize: 14 }]}>
+          TOTAL: {formatTime(elapsedTime)}
+        </Text>
+      )}
 
       {/* Settings Grid */}
       <View style={styles.settingsGrid}>
         {/* Work Time */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>WORK TIME</Text>
-          <Text style={styles.settingValue}>{workTime}s</Text>
+          <Text style={styles.settingValue}>{displayWorkTime}s</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustWorkTime(false)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustWorkTime(true)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -209,19 +212,19 @@ export default function QuickHiitScreen() {
         {/* Rest Time */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>REST TIME</Text>
-          <Text style={styles.settingValue}>{restTime}s</Text>
+          <Text style={styles.settingValue}>{displayRestTime}s</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRestTime(false)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRestTime(true)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -231,19 +234,19 @@ export default function QuickHiitScreen() {
         {/* Rounds */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>ROUNDS</Text>
-          <Text style={styles.settingValue}>{rounds}</Text>
+          <Text style={styles.settingValue}>{displayRounds}</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRounds(false)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRounds(true)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -253,27 +256,34 @@ export default function QuickHiitScreen() {
         {/* Current Round */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>ROUND</Text>
-          <Text style={styles.settingValue}>{currentRound}</Text>
+          <Text style={styles.settingValue}>{isActive ? currentRound : 1}</Text>
         </View>
       </View>
 
       {/* Control Buttons */}
       <View style={styles.controlButtons}>
-        <TouchableOpacity 
-          style={[styles.controlButton, !isRunning && !isPaused && styles.startButton]} 
-          onPress={handleStart}
-          disabled={isRunning}
-        >
-          <Text style={styles.controlButtonText}>START</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.controlButton]} 
-          onPress={handlePause}
-          disabled={!isRunning}
-        >
-          <Text style={styles.controlButtonText}>PAUSE</Text>
-        </TouchableOpacity>
+        {!isActive ? (
+          <TouchableOpacity 
+            style={[styles.controlButton, styles.startButton]} 
+            onPress={handleStart}
+          >
+            <Text style={styles.controlButtonText}>START</Text>
+          </TouchableOpacity>
+        ) : isPaused ? (
+          <TouchableOpacity 
+            style={[styles.controlButton, styles.startButton]} 
+            onPress={handleResume}
+          >
+            <Text style={styles.controlButtonText}>RESUME</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.controlButton]} 
+            onPress={handlePause}
+          >
+            <Text style={styles.controlButtonText}>PAUSE</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity 
           style={[styles.controlButton]} 
@@ -285,6 +295,7 @@ export default function QuickHiitScreen() {
         <TouchableOpacity 
           style={[styles.controlButton, styles.stopButton]} 
           onPress={handleFinish}
+          disabled={!isActive}
         >
           <Text style={styles.controlButtonText}>FINISH</Text>
         </TouchableOpacity>

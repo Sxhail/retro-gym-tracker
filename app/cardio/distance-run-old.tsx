@@ -116,6 +116,24 @@ export default function DistanceRunScreen() {
       setConfigLaps(prev => increment ? prev + 1 : Math.max(1, prev - 1));
     }
   };
+          }
+  const adjustRunTime = (increment: boolean) => {
+    if (!isActive) {
+      setConfigRunTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    }
+  };
+
+  const adjustWalkTime = (increment: boolean) => {
+    if (!isActive) {
+      setConfigWalkTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    }
+  };
+
+  const adjustLaps = (increment: boolean) => {
+    if (!isActive) {
+      setConfigLaps(prev => increment ? prev + 1 : Math.max(1, prev - 1));
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -162,9 +180,9 @@ export default function DistanceRunScreen() {
             style={[
               styles.progressFill,
               { 
-                width: showGetReady ? '100%' : 
-                       isRunPhase ? `${((displayRunTime - getCurrentPhaseTime()) / displayRunTime) * 100}%` :
-                       `${((displayWalkTime - getCurrentPhaseTime()) / displayWalkTime) * 100}%`
+                width: isGetReady ? '100%' : 
+                       isRunPhase ? `${((runTime - timeLeft) / runTime) * 100}%` :
+                       `${((walkTime - timeLeft) / walkTime) * 100}%`
               }
             ]} 
           />
@@ -172,33 +190,26 @@ export default function DistanceRunScreen() {
       </View>
 
       {/* Main Timer */}
-      <Text style={styles.mainTimer}>{formatTime(getCurrentPhaseTime())}</Text>
-
-      {/* Elapsed Time Display */}
-      {isActive && (
-        <Text style={[styles.settingLabel, { textAlign: 'center', marginBottom: theme.spacing.md, fontSize: 14 }]}>
-          TOTAL: {formatTime(elapsedTime)}
-        </Text>
-      )}
+      <Text style={styles.mainTimer}>{formatTime(timeLeft)}</Text>
 
       {/* Settings Grid */}
       <View style={styles.settingsGrid}>
         {/* Run Time */}
         <View style={styles.settingCard}>
-          <Text style={styles.settingLabel}>RUN TIME</Text>
-          <Text style={styles.settingValue}>{displayRunTime}s</Text>
+          <Text style={styles.settingLabel}>RUN</Text>
+          <Text style={styles.settingValue}>{runTime}s</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRunTime(false)}
-              disabled={isActive}
+              disabled={isRunning}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRunTime(true)}
-              disabled={isActive}
+              disabled={isRunning}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -207,79 +218,72 @@ export default function DistanceRunScreen() {
 
         {/* Walk Time */}
         <View style={styles.settingCard}>
-          <Text style={styles.settingLabel}>WALK TIME</Text>
-          <Text style={styles.settingValue}>{displayWalkTime}s</Text>
+          <Text style={styles.settingLabel}>WALK</Text>
+          <Text style={styles.settingValue}>{walkTime}s</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustWalkTime(false)}
-              disabled={isActive}
+              disabled={isRunning}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustWalkTime(true)}
-              disabled={isActive}
+              disabled={isRunning}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Laps */}
+        {/* Run Laps */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>LAPS</Text>
-          <Text style={styles.settingValue}>{displayLaps}</Text>
+          <Text style={styles.settingValue}>{runLaps}</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
-              onPress={() => adjustLaps(false)}
-              disabled={isActive}
+              onPress={() => adjustRunLaps(false)}
+              disabled={isRunning}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
-              onPress={() => adjustLaps(true)}
-              disabled={isActive}
+              onPress={() => adjustRunLaps(true)}
+              disabled={isRunning}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Current Lap */}
+        {/* Current Round */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>LAP</Text>
-          <Text style={styles.settingValue}>{isActive ? currentLap : 1}</Text>
+          <Text style={styles.settingValue}>{currentRound}</Text>
         </View>
       </View>
 
       {/* Control Buttons */}
       <View style={styles.controlButtons}>
-        {!isActive ? (
-          <TouchableOpacity 
-            style={[styles.controlButton, styles.startButton]} 
-            onPress={handleStart}
-          >
-            <Text style={styles.controlButtonText}>START</Text>
-          </TouchableOpacity>
-        ) : isPaused ? (
-          <TouchableOpacity 
-            style={[styles.controlButton, styles.startButton]} 
-            onPress={handleResume}
-          >
-            <Text style={styles.controlButtonText}>RESUME</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity 
-            style={[styles.controlButton]} 
-            onPress={handlePause}
-          >
-            <Text style={styles.controlButtonText}>PAUSE</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity 
+          style={[styles.controlButton, !isRunning && !isPaused && styles.startButton]} 
+          onPress={handleStart}
+          disabled={isRunning}
+        >
+          <Text style={styles.controlButtonText}>START</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.controlButton]} 
+          onPress={handlePause}
+          disabled={!isRunning}
+        >
+          <Text style={styles.controlButtonText}>PAUSE</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.controlButton]} 
@@ -291,7 +295,6 @@ export default function DistanceRunScreen() {
         <TouchableOpacity 
           style={[styles.controlButton, styles.stopButton]} 
           onPress={handleFinish}
-          disabled={!isActive}
         >
           <Text style={styles.controlButtonText}>FINISH</Text>
         </TouchableOpacity>

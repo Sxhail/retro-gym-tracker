@@ -250,6 +250,27 @@ class BackgroundSessionService {
   }
 
   /**
+   * Clear specific timer data
+   */
+  async clearTimerData(sessionId: string, timerType: 'workout' | 'rest'): Promise<void> {
+    try {
+      await db
+        .delete(active_session_timers)
+        .where(
+          and(
+            eq(active_session_timers.session_id, sessionId),
+            eq(active_session_timers.timer_type, timerType)
+          )
+        );
+      
+      console.log(`✅ ${timerType} timer data cleared from background storage`);
+    } catch (error) {
+      console.error('❌ Error clearing timer data:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Clean up old/stale sessions (older than 24 hours)
    */
   async cleanupOldSessions(): Promise<void> {

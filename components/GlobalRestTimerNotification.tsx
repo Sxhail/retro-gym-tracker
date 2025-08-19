@@ -1,48 +1,67 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, Modal, Animated, Vibration } from 'react-native';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
 
 export function GlobalRestTimerNotification() {
-  const { setOnRestTimerComplete } = useWorkoutSession();
+  const { globalRestTimer, setOnRestTimerComplete } = useWorkoutSession();
   const [showNotification, setShowNotification] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const callbackSetRef = useRef(false);
+  const appStartTimeRef = useRef(Date.now());
   
   useEffect(() => {
-    // Set up the callback for when rest timer completes
-    setOnRestTimerComplete(() => {
-      console.log('🔔 Rest timer completed - showing notification');
-      
-      // Vibrate for tactile feedback
-      Vibration.vibrate([0, 500, 200, 500]);
-      
-      // Show notification
-      setShowNotification(true);
-      
-      // Animate in
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
+    // Only set up callback once and not immediately on mount (to avoid restoration triggers)
+    const timer = setTimeout(() => {
+      if (!callbackSetRef.current) {
+        callbackSetRef.current = true;
+        
+        setOnRestTimerComplete(() => {
+          // Additional safety: Don't show notification if app just started (within 5 seconds)
+          const timeSinceAppStart = Date.now() - appStartTimeRef.current;
+          if (timeSinceAppStart < 5000) {
+            console.log('🚫 Suppressing rest timer notification - app just started');
+            return;
+          }
+          
+          console.log('🔔 Rest timer completed - showing notification');
+          
+          // Vibrate for tactile feedback
+          Vibration.vibrate(500);
+          
+          // Show notification
+          setShowNotification(true);
+          
+          // Animate in
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
 
-      // Auto-hide after 4 seconds
-      setTimeout(() => {
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowNotification(false);
+          // Auto-hide after 2.5 seconds
+          setTimeout(() => {
+            Animated.timing(fadeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              setShowNotification(false);
+            });
+          }, 2500);
         });
-      }, 4000);
-    });
+      }
+    }, 2000); // Increased delay from 1 second to 2 seconds
 
     // Cleanup callback on unmount
     return () => {
-      setOnRestTimerComplete(null);
+      clearTimeout(timer);
+      if (callbackSetRef.current) {
+        setOnRestTimerComplete(null);
+        callbackSetRef.current = false;
+      }
     };
-  }, [setOnRestTimerComplete, fadeAnim]);
+  }, []);
 
   if (!showNotification) {
     return null;
@@ -60,39 +79,33 @@ export function GlobalRestTimerNotification() {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        zIndex: 9999,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
       }}>
         <Animated.View style={{
           opacity: fadeAnim,
           backgroundColor: theme.colors.background,
-          borderWidth: 3,
+          borderWidth: 2,
           borderColor: theme.colors.neon,
-          borderRadius: 12,
-          paddingVertical: 24,
-          paddingHorizontal: 32,
+          borderRadius: 8,
+          paddingVertical: 16,
+          paddingHorizontal: 24,
           alignItems: 'center',
-          shadowColor: theme.colors.neon,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.8,
-          shadowRadius: 20,
-          elevation: 20,
         }}>
           <Text style={{
             color: theme.colors.neon,
             fontFamily: theme.fonts.heading,
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: 'bold',
-            marginBottom: 8,
+            marginBottom: 4,
             textAlign: 'center',
           }}>
-            ⏰ REST COMPLETED
+            REST COMPLETED
           </Text>
           <Text style={{
             color: theme.colors.neon,
             fontFamily: theme.fonts.code,
-            fontSize: 16,
-            opacity: 0.9,
+            fontSize: 14,
+            opacity: 0.8,
             textAlign: 'center',
           }}>
             BACK TO LIFT

@@ -270,8 +270,8 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
-  // Only show rest timer for the most recently completed set
-  const showRestTimer = restActive && restTime > 0 && isLastCompleted;
+  // Show rest timer for the most recently completed set (including at 00:00 for completion display)
+  const showRestTimer = restActive && restTime >= 0 && isLastCompleted;
 
   // Render right action for swipe-to-delete (transparent, allows row to slide left)
   const renderRightActions = () => (
@@ -473,7 +473,9 @@ export default function NewWorkoutScreen() {
     resumeWorkout,
     endWorkout,
     saveWorkout,
-    resetSession
+    resetSession,
+    globalRestTimer,
+    setGlobalRestTimer
   } = useWorkoutSession();
 
   // Fetch max weights for exercises
@@ -607,7 +609,7 @@ export default function NewWorkoutScreen() {
 
   // Toggle set completion
   const handleToggleSetComplete = (exerciseId: number, setIdx: number) => {
-    setCurrentExercises(sessionExercises.map((ex) => {
+    const updatedExercises = sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
         const currentSets = ex.sets || [];
         if (setIdx >= 0 && setIdx < currentSets.length) {
@@ -618,7 +620,35 @@ export default function NewWorkoutScreen() {
         }
       }
       return ex;
-    }));
+    });
+    
+    // Check if set is being completed and start global rest timer
+    const targetExercise = updatedExercises.find(ex => ex.id === exerciseId);
+    if (targetExercise) {
+      const targetSet = targetExercise.sets?.[setIdx];
+      if (targetSet && !targetSet.completed) {  // If it's being completed now
+        const restDuration = targetSet.restDuration || 120;
+        const now = new Date();
+        
+        // Start global rest timer
+        setGlobalRestTimer({
+          isActive: true,
+          timeRemaining: restDuration,
+          originalDuration: restDuration,
+          exerciseId,
+          setIdx,
+          startTime: now,
+        });
+        
+        console.log('🏃 Started global rest timer:', restDuration, 'seconds');
+      } else if (targetSet && targetSet.completed) {  // If it's being uncompleted
+        // Stop global rest timer
+        setGlobalRestTimer(null);
+        console.log('⏹️ Stopped global rest timer');
+      }
+    }
+    
+    setCurrentExercises(updatedExercises);
   };
 
   // Update handleSetFieldChange to support 'notes' field

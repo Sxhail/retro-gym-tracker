@@ -170,19 +170,22 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
           timeRemaining: remaining 
         } : null);
         
-        // Timer finished
-        if (remaining === 0) {
+        // Timer finished - check for 0 or less
+        if (remaining <= 0) {
           clearInterval(globalRestTimerRef.current);
           globalRestTimerRef.current = null;
           
-          // Reset timer state
-          setGlobalRestTimer(null);
-          
-          // Trigger completion callback
-          if (onRestTimerComplete) {
-            console.log('🔔 Rest timer completed naturally');
-            onRestTimerComplete();
-          }
+          // Show 00:00 briefly before clearing timer and showing completion popup
+          setTimeout(() => {
+            // Reset timer state
+            setGlobalRestTimer(null);
+            
+            // Trigger completion callback
+            if (onRestTimerComplete) {
+              console.log('🔔 Rest timer completed naturally at 00:00');
+              onRestTimerComplete();
+            }
+          }, 200); // Show 00:00 for 200ms before clearing
         }
       }, 1000);
     } else if (!globalRestTimer?.isActive) {

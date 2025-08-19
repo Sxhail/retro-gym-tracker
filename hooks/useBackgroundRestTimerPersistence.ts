@@ -63,6 +63,13 @@ export function useBackgroundRestTimerPersistence() {
       return false; // Already restored or timer already active
     }
 
+    // CRITICAL: Only restore if there's actually an active workout session
+    if (!session.isWorkoutActive) {
+      console.log('🚫 Skipping rest timer restoration - no active workout session');
+      setIsRestored(true);
+      return false;
+    }
+
     try {
       const { db } = await import('../db/client');
       const { active_session_timers } = await import('../db/schema');
@@ -83,6 +90,14 @@ export function useBackgroundRestTimerPersistence() {
         const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
         const remaining = Math.max(0, restTimer.duration - elapsed);
         
+        // Check if timer is too old (more than 24 hours) - clean it up
+        if (elapsed > 24 * 60 * 60) {
+          console.log('🧹 Cleaning up old rest timer (> 24 hours)');
+          await backgroundSessionService.clearTimerData(restTimer.session_id, 'rest');
+          setIsRestored(true);
+          return false;
+        }
+        
         if (remaining > 0) {
           // Set restored flag BEFORE setting timer to prevent completion callback
           setIsRestored(true);
@@ -97,11 +112,16 @@ export function useBackgroundRestTimerPersistence() {
           });
           restSessionIdRef.current = restTimer.session_id;
           console.log('✅ Rest timer restored from background:', remaining, 'seconds remaining');
+          
+          // CRITICAL: Do not trigger completion callback during restoration
           return true;
         } else {
-          // Timer finished while app was closed, clean up silently
+          // Timer finished while app was closed, clean up silently WITHOUT triggering callback
           await backgroundSessionService.clearTimerData(restTimer.session_id, 'rest');
-          console.log('🔄 Rest timer finished while app was closed, cleaned up');
+          console.log('🔄 Rest timer finished while app was closed, cleaned up silently');
+          
+          // CRITICAL: Set restored flag to prevent any completion callbacks
+          setIsRestored(true);
         }
       }
       

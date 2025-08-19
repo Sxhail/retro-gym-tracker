@@ -1,66 +1,48 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Modal, Animated } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Modal, Animated, Vibration } from 'react-native';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
-import { useRouter, usePathname } from 'expo-router';
 import theme from '../styles/theme';
 
 export function GlobalRestTimerNotification() {
-  const { globalRestTimer, setOnRestTimerComplete } = useWorkoutSession();
+  const { setOnRestTimerComplete } = useWorkoutSession();
   const [showNotification, setShowNotification] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const pathname = usePathname();
-  const callbackSetRef = useRef(false);
   
   useEffect(() => {
-    // Only set up callback once to prevent multiple triggers
-    if (!callbackSetRef.current) {
-      callbackSetRef.current = true;
+    // Set up the callback for when rest timer completes
+    setOnRestTimerComplete(() => {
+      console.log('🔔 Rest timer completed - showing notification');
       
-      setOnRestTimerComplete(() => {
-        // Only show notification if user is NOT on the workout page
-        const currentPath = window?.location?.pathname || pathname;
-        const isOnWorkoutPage = currentPath === '/new' || pathname === '/new';
-        
-        console.log('🔔 Rest timer completed callback triggered:', {
-          currentPath,
-          pathname,
-          isOnWorkoutPage,
-          willShowNotification: !isOnWorkoutPage
-        });
-        
-        if (!isOnWorkoutPage) {
-          // Show notification
-          setShowNotification(true);
-          
-          // Animate in
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }).start();
+      // Vibrate for tactile feedback
+      Vibration.vibrate([0, 500, 200, 500]);
+      
+      // Show notification
+      setShowNotification(true);
+      
+      // Animate in
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
 
-          // Auto-hide after 3 seconds
-          setTimeout(() => {
-            Animated.timing(fadeAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }).start(() => {
-              setShowNotification(false);
-            });
-          }, 3000);
-        }
-      });
-    }
+      // Auto-hide after 4 seconds
+      setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowNotification(false);
+        });
+      }, 4000);
+    });
 
     // Cleanup callback on unmount
     return () => {
-      if (callbackSetRef.current) {
-        setOnRestTimerComplete(null);
-        callbackSetRef.current = false;
-      }
+      setOnRestTimerComplete(null);
     };
-  }, []); // Empty dependency array to run only once
+  }, [setOnRestTimerComplete, fadeAnim]);
 
   if (!showNotification) {
     return null;
@@ -72,37 +54,46 @@ export function GlobalRestTimerNotification() {
       visible={showNotification}
       animationType="none"
       pointerEvents="none"
+      statusBarTranslucent={true}
     >
       <View style={{
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        zIndex: 9999,
       }}>
         <Animated.View style={{
           opacity: fadeAnim,
           backgroundColor: theme.colors.background,
-          borderWidth: 2,
+          borderWidth: 3,
           borderColor: theme.colors.neon,
-          borderRadius: 8,
-          paddingVertical: 16,
-          paddingHorizontal: 24,
+          borderRadius: 12,
+          paddingVertical: 24,
+          paddingHorizontal: 32,
           alignItems: 'center',
+          shadowColor: theme.colors.neon,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 20,
+          elevation: 20,
         }}>
           <Text style={{
             color: theme.colors.neon,
             fontFamily: theme.fonts.heading,
-            fontSize: 18,
+            fontSize: 22,
             fontWeight: 'bold',
-            marginBottom: 4,
+            marginBottom: 8,
+            textAlign: 'center',
           }}>
-            REST COMPLETED
+            ⏰ REST COMPLETED
           </Text>
           <Text style={{
             color: theme.colors.neon,
             fontFamily: theme.fonts.code,
-            fontSize: 14,
-            opacity: 0.8,
+            fontSize: 16,
+            opacity: 0.9,
+            textAlign: 'center',
           }}>
             BACK TO LIFT
           </Text>

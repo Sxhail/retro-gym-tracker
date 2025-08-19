@@ -13,6 +13,7 @@ import { CardioSessionProvider } from '../context/CardioSessionContext';
 import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
+import BackgroundRestTimerPersistence from '../components/BackgroundRestTimerPersistence';
 import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
 import CustomSplashScreen from '../components/CustomSplashScreen';
 import { GlobalRestTimerNotification } from '../components/GlobalRestTimerNotification';
@@ -66,17 +67,19 @@ export default function Layout() {
         <WorkoutSessionProvider>
           <CardioSessionProvider>
             <BackgroundWorkoutPersistence>
-              <BackgroundCardioSessionPersistence>
-                <AppLayout>
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      animation: 'none',
-                    }}
-                  />
-                  <GlobalRestTimerNotification />
-                </AppLayout>
-              </BackgroundCardioSessionPersistence>
+              <BackgroundRestTimerPersistence>
+                <BackgroundCardioSessionPersistence>
+                  <AppLayout>
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                        animation: 'none',
+                      }}
+                    />
+                    <GlobalRestTimerNotification />
+                  </AppLayout>
+                </BackgroundCardioSessionPersistence>
+              </BackgroundRestTimerPersistence>
             </BackgroundWorkoutPersistence>
           </CardioSessionProvider>
         </WorkoutSessionProvider>

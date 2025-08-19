@@ -384,7 +384,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
             
             {/* Timer display */}
             <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>
-              {timerPaused ? 'PAUSED ' : ''}{formatRestTimer(restTime)}
+              {formatRestTimer(restTime)}
             </Text>
             
             {/* Connecting line */}
@@ -407,22 +407,6 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
           
           {/* Timer controls - inline with timer */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 8 }}>
-            {/* Pause/Resume button */}
-            <TouchableOpacity onPress={toggleTimerPause} style={{ 
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 6, 
-              borderWidth: 1, 
-              borderColor: timerPaused ? '#FFA500' : theme.colors.neon, 
-              backgroundColor: 'transparent',
-              justifyContent: 'center', 
-              alignItems: 'center',
-            }}>
-              <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 10, fontWeight: 'bold' }}>
-                {timerPaused ? 'RESUME' : 'PAUSE'}
-              </Text>
-            </TouchableOpacity>
-            
             {/* Skip button */}
             <TouchableOpacity onPress={skipTimer} style={{ 
               paddingHorizontal: 12,

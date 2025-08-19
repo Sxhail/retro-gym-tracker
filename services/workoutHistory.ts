@@ -480,27 +480,15 @@ export function formatDuration(seconds: number): string {
  */
 export async function getNextWorkoutNumber(): Promise<number> {
   try {
-    // Count workouts that start with "LIFT" to get the next LIFT number
+    // Count ALL workouts to get the next sequential number
     const result = await db
       .select({ 
-        name: workouts.name 
+        count: sql<number>`count(*)`.as('count')
       })
-      .from(workouts)
-      .where(like(workouts.name, 'LIFT %'));
+      .from(workouts);
 
-    // Extract numbers from LIFT workout names and find the highest
-    let maxNumber = 0;
-    result.forEach(workout => {
-      const match = workout.name.match(/^LIFT (\d+)$/);
-      if (match) {
-        const number = parseInt(match[1], 10);
-        if (number > maxNumber) {
-          maxNumber = number;
-        }
-      }
-    });
-
-    return maxNumber + 1;
+    const totalWorkouts = result[0]?.count || 0;
+    return totalWorkouts + 1;
   } catch (error) {
     console.error('Error getting next workout number:', error);
     // Fallback to 1 if there's an error

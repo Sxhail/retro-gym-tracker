@@ -135,12 +135,14 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     restoreRestTimerState();
   }, [sessionWorkout.isWorkoutActive]);
 
-  // Auto-save rest timer state when it changes
+  // Sync local timer display with global rest timer
   useEffect(() => {
-    if (restActive) {
-      saveRestTimerState();
+    const globalTimer = sessionWorkout.globalRestTimer;
+    if (globalTimer && globalTimer.exerciseId === exerciseId && globalTimer.setIdx === setIdx) {
+      setRestTime(globalTimer.timeRemaining);
+      setRestActive(globalTimer.isActive);
     }
-  }, [restActive, timerPaused, restAccumulatedTime, restLastResumeTime]);
+  }, [sessionWorkout.globalRestTimer, exerciseId, setIdx]);
 
   // Cleanup rest timer state when component unmounts or set is no longer completed
   useEffect(() => {
@@ -198,6 +200,10 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
 
   // Handle rest timer skip (timestamp-based)
   const skipTimer = () => {
+    // Stop global rest timer
+    sessionWorkout.setGlobalRestTimer(null);
+    
+    // Reset local state
     setRestActive(false);
     setRestStartTime(null);
     setRestLastResumeTime(null);
@@ -210,55 +216,41 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
 
   // Background-persistent rest timer (timestamp-based like main workout timer)
   useEffect(() => {
-    if (restActive && !timerPaused && restLastResumeTime) {
-      restInterval.current = setInterval(() => {
-        const now = new Date();
-        const currentSegmentElapsed = Math.floor((now.getTime() - restLastResumeTime.getTime()) / 1000);
-        const totalElapsed = restAccumulatedTime + currentSegmentElapsed;
-        const totalRestDuration = Number(set.rest ?? 120);
-        const remaining = Math.max(0, totalRestDuration - totalElapsed);
-        
-        setRestTime(remaining);
-        
-        // Timer finished
-        if (remaining === 0) {
-          clearInterval(restInterval.current);
-          setRestActive(false);
-          setRestStartTime(null);
-          setRestLastResumeTime(null);
-          setRestAccumulatedTime(0);
-          // Clear background state when timer finishes
-          clearRestTimerState();
-        }
-      }, 1000);
-    } else {
-      if (restInterval.current) {
-        clearInterval(restInterval.current);
-        restInterval.current = null;
-      }
-    }
-
+    // This effect is now handled by the global rest timer in WorkoutSessionContext
+    // Keep this for any local display updates if needed
     return () => {
       if (restInterval.current) {
         clearInterval(restInterval.current);
         restInterval.current = null;
       }
     };
-  }, [restActive, timerPaused, restLastResumeTime, restAccumulatedTime, set.rest]);
+  }, []);
 
   // Start/stop rest timer when set is marked/unmarked as complete
   useEffect(() => {
     if (set.completed && canComplete) {
-      // Start rest timer with timestamp-based approach
+      // Start global rest timer with timestamp-based approach
       const now = new Date();
+      const totalRestDuration = Number(set.rest ?? 120);
+      
+      sessionWorkout.setGlobalRestTimer({
+        isActive: true,
+        timeRemaining: totalRestDuration,
+        exerciseId,
+        setIdx,
+        startTime: now,
+      });
+      
+      // Local state for display
       setRestActive(true);
       setRestStartTime(now);
       setRestLastResumeTime(now);
       setRestAccumulatedTime(0);
-      setRestTime(Number(set.rest ?? 120));
+      setRestTime(totalRestDuration);
       setTimerPaused(false);
     } else {
-      // Stop rest timer
+      // Stop both global and local rest timer
+      sessionWorkout.setGlobalRestTimer(null);
       setRestActive(false);
       setRestStartTime(null);
       setRestLastResumeTime(null);  
@@ -811,60 +803,9 @@ export default function NewWorkoutScreen() {
     );
   };
 
-  // Handle back button with save prompt
+  // Handle back button - directly navigate back without save prompt
   const handleBackButton = () => {
-    // If there are exercises and workout is active, prompt to save
-    if (sessionExercises.length > 0 && isWorkoutActive) {
-      Alert.alert(
-        'Save Workout?',
-        'You have exercises in your workout. Do you want to save it before leaving?',
-        [
-          {
-            text: 'Discard',
-            style: 'destructive',
-            onPress: async () => {
-              await resetSession();
-              router.back();
-            }
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          },
-          {
-            text: 'Save & Exit',
-            onPress: async () => {
-              try {
-                setIsSaving(true);
-                
-                // Validate workout name
-                if (!workoutName || workoutName.trim().length === 0) {
-                  Alert.alert('Invalid Workout Name', 'Please enter a workout name before saving.');
-                  setIsSaving(false);
-                  return;
-                }
-
-                endWorkout();
-                const workoutId = await saveWorkout();
-                
-                if (workoutId) {
-                  await resetSession();
-                  router.back();
-                }
-              } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                Alert.alert('Save Failed', `Failed to save workout: ${errorMessage}`);
-              } finally {
-                setIsSaving(false);
-              }
-            }
-          }
-        ]
-      );
-    } else {
-      // No exercises, just go back
-      router.back();
-    }
+    router.back();
   };
 
   // Handle finish workout with improved duplicate prevention

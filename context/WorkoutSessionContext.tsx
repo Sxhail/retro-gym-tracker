@@ -48,6 +48,24 @@ interface WorkoutSessionContextType {
   // Timer state for background persistence
   lastResumeTime: Date | null;
   setLastResumeTime: (time: Date | null) => void;
+  // Global Rest Timer State
+  globalRestTimer: {
+    isActive: boolean;
+    timeRemaining: number;
+    exerciseId: number | null;
+    setIdx: number | null;
+    startTime: Date | null;
+  } | null;
+  setGlobalRestTimer: (timer: {
+    isActive: boolean;
+    timeRemaining: number;
+    exerciseId: number | null;
+    setIdx: number | null;
+    startTime: Date | null;
+  } | null) => void;
+  // Callback for when rest timer completes
+  onRestTimerComplete: (() => void) | null;
+  setOnRestTimerComplete: (callback: (() => void) | null) => void;
   accumulatedTime: number;
   setAccumulatedTime: (time: number) => void;
 }
@@ -87,6 +105,16 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const [currentProgramDayId, setCurrentProgramDayId] = useState<number | null>(null);
   const [isProgramWorkout, setIsProgramWorkout] = useState<boolean>(false);
 
+  // Global Rest Timer State
+  const [globalRestTimer, setGlobalRestTimer] = useState<{
+    isActive: boolean;
+    timeRemaining: number;
+    exerciseId: number | null;
+    setIdx: number | null;
+    startTime: Date | null;
+  } | null>(null);
+  const [onRestTimerComplete, setOnRestTimerComplete] = useState<(() => void) | null>(null);
+
   // Accurate timestamp-based timer effect with validation
   useEffect(() => {
     if (isWorkoutActive && !isPaused && lastResumeTime) {
@@ -121,6 +149,41 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       }
     };
   }, [isWorkoutActive, isPaused, lastResumeTime, accumulatedTime]);
+
+  // Global rest timer effect
+  const globalRestTimerRef = useRef<any>(null);
+  useEffect(() => {
+    if (globalRestTimer?.isActive && globalRestTimer.startTime) {
+      globalRestTimerRef.current = setInterval(() => {
+        const now = new Date();
+        const elapsed = Math.floor((now.getTime() - globalRestTimer.startTime!.getTime()) / 1000);
+        const remaining = Math.max(0, globalRestTimer.timeRemaining - elapsed);
+        
+        setGlobalRestTimer(prev => prev ? { ...prev, timeRemaining: remaining } : null);
+        
+        // Timer finished
+        if (remaining === 0) {
+          clearInterval(globalRestTimerRef.current);
+          setGlobalRestTimer(null);
+          if (onRestTimerComplete) {
+            onRestTimerComplete();
+          }
+        }
+      }, 1000);
+    } else {
+      if (globalRestTimerRef.current) {
+        clearInterval(globalRestTimerRef.current);
+        globalRestTimerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (globalRestTimerRef.current) {
+        clearInterval(globalRestTimerRef.current);
+        globalRestTimerRef.current = null;
+      }
+    };
+  }, [globalRestTimer?.isActive, globalRestTimer?.startTime, onRestTimerComplete]);
 
   const startWorkout = () => {
     if (!isWorkoutActive) {
@@ -344,6 +407,11 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       setLastResumeTime,
       accumulatedTime,
       setAccumulatedTime,
+      // Global Rest Timer State
+      globalRestTimer,
+      setGlobalRestTimer,
+      onRestTimerComplete,
+      setOnRestTimerComplete,
     }}>
       {children}
     </WorkoutSessionContext.Provider>

@@ -387,8 +387,9 @@ export default function NewWorkoutScreen() {
     isWorkoutActive,
     elapsedTime,
     isPaused,
-    setIsPaused,
     startWorkout,
+    pauseWorkout,
+    resumeWorkout,
     endWorkout,
     saveWorkout,
     resetSession
@@ -957,21 +958,43 @@ export default function NewWorkoutScreen() {
           {/* Show exercise timer in the middle */}
           <View style={{ alignItems: 'center', marginBottom: 18 }}>
             {sessionStartTime && sessionExercises.length > 0 && (
-              <Text 
-                style={{ 
-                  color: isPaused ? '#FFA500' : theme.colors.neon, // orange if paused
-                  fontFamily: theme.fonts.heading, 
-                  fontSize: 24, 
-                  fontWeight: 'bold', 
-                  letterSpacing: 2, 
-                  paddingVertical: 4, 
-                  paddingHorizontal: 16, 
-                  overflow: 'hidden',
-                  backgroundColor: 'transparent',
-                }}
-              >
-                {isPaused ? 'PAUSED' : formatElapsed(elapsedTime)}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Text 
+                  style={{ 
+                    color: isPaused ? '#FFA500' : theme.colors.neon, // orange if paused
+                    fontFamily: theme.fonts.heading, 
+                    fontSize: 24, 
+                    fontWeight: 'bold', 
+                    letterSpacing: 2, 
+                    paddingVertical: 4, 
+                    paddingHorizontal: 16, 
+                    overflow: 'hidden',
+                    backgroundColor: 'transparent',
+                  }}
+                >
+                  {isPaused ? 'PAUSED' : formatElapsed(elapsedTime)}
+                </Text>
+                {/* Workout Pause/Resume Button */}
+                <TouchableOpacity 
+                  onPress={isPaused ? resumeWorkout : pauseWorkout}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: isPaused ? '#FFA500' : theme.colors.neon,
+                    borderRadius: 4,
+                    paddingVertical: 6,
+                    paddingHorizontal: 10,
+                  }}
+                >
+                  <Text style={{ 
+                    color: isPaused ? '#FFA500' : theme.colors.neon, 
+                    fontFamily: theme.fonts.code, 
+                    fontSize: 12, 
+                    fontWeight: 'bold' 
+                  }}>
+                    {isPaused ? 'RESUME' : 'PAUSE'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
           <ScrollView style={{ flex: 1, marginBottom: 12 }}>

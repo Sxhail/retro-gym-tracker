@@ -35,6 +35,8 @@ interface WorkoutSessionContextType {
   isPaused: boolean;
   setIsPaused: (paused: boolean) => void;
   startWorkout: () => void;
+  pauseWorkout: () => void;
+  resumeWorkout: () => void;
   endWorkout: () => void;
   saveWorkout: () => Promise<number | null>;
   resetSession: () => void;
@@ -43,6 +45,11 @@ interface WorkoutSessionContextType {
   currentProgramDayId: number | null;
   isProgramWorkout: boolean;
   startProgramWorkout: (programId: number, dayName: string) => Promise<void>;
+  // Timer state for background persistence
+  lastResumeTime: Date | null;
+  setLastResumeTime: (time: Date | null) => void;
+  accumulatedTime: number;
+  setAccumulatedTime: (time: number) => void;
 }
 
 const WorkoutSessionContext = createContext<WorkoutSessionContextType | undefined>(undefined);
@@ -68,8 +75,11 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const [sessionEndTime, setSessionEndTime] = useState<Date | null>(null);
   const [isWorkoutActive, setIsWorkoutActive] = useState<boolean>(false);
   const [workoutName, setWorkoutName] = useState<string>('WORKOUT 1');
+  // Timer state
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [lastResumeTime, setLastResumeTime] = useState<Date | null>(null); // Track when timer was last resumed
+  const [accumulatedTime, setAccumulatedTime] = useState<number>(0); // Total time when paused segments ended
   const timerRef = useRef<any>(null);
 
   // Program context state
@@ -77,11 +87,15 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const [currentProgramDayId, setCurrentProgramDayId] = useState<number | null>(null);
   const [isProgramWorkout, setIsProgramWorkout] = useState<boolean>(false);
 
-  // Timer effect - runs when workout is active and not paused
+  // Accurate timestamp-based timer effect
   useEffect(() => {
-    if (isWorkoutActive && !isPaused) {
+    if (isWorkoutActive && !isPaused && lastResumeTime) {
+      // Use timestamp-based calculation for accuracy
       timerRef.current = setInterval(() => {
-        setElapsedTime(prev => prev + 1);
+        const now = new Date();
+        const currentSegmentElapsed = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
+        const totalElapsed = accumulatedTime + currentSegmentElapsed;
+        setElapsedTime(totalElapsed);
       }, 1000);
     } else {
       if (timerRef.current) {
@@ -96,23 +110,59 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
         timerRef.current = null;
       }
     };
-  }, [isWorkoutActive, isPaused]);
+  }, [isWorkoutActive, isPaused, lastResumeTime, accumulatedTime]);
 
   const startWorkout = () => {
     if (!isWorkoutActive) {
-      setSessionStartTime(new Date());
-      setIsWorkoutActive(true);
+      const now = new Date();
+      setSessionStartTime(now);
+      setLastResumeTime(now); // Start timing from now
+      setAccumulatedTime(0); // Reset accumulated time
       setElapsedTime(0); // Reset timer when starting new workout
+      setIsWorkoutActive(true);
       setIsPaused(false);
-      console.log('Workout session started');
+      console.log('Workout session started with timestamp-based timer');
+    }
+  };
+
+  const pauseWorkout = () => {
+    if (isWorkoutActive && !isPaused) {
+      // Calculate current total elapsed time and save as accumulated
+      if (lastResumeTime) {
+        const now = new Date();
+        const currentSegmentElapsed = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
+        const newAccumulated = accumulatedTime + currentSegmentElapsed;
+        setAccumulatedTime(newAccumulated);
+        setElapsedTime(newAccumulated);
+      }
+      setIsPaused(true);
+      setLastResumeTime(null);
+      console.log('Workout paused, accumulated time saved:', accumulatedTime);
+    }
+  };
+
+  const resumeWorkout = () => {
+    if (isWorkoutActive && isPaused) {
+      setLastResumeTime(new Date()); // Resume timing from now
+      setIsPaused(false);
+      console.log('Workout resumed with fresh timestamp');
     }
   };
 
   const endWorkout = () => {
     if (isWorkoutActive) {
+      // Finalize elapsed time calculation
+      if (!isPaused && lastResumeTime) {
+        const now = new Date();
+        const currentSegmentElapsed = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
+        const finalElapsed = accumulatedTime + currentSegmentElapsed;
+        setElapsedTime(finalElapsed);
+      }
+      
       setSessionEndTime(new Date());
       setIsWorkoutActive(false);
-      console.log('Workout session ended');
+      setLastResumeTime(null);
+      console.log('Workout session ended with final elapsed time:', elapsedTime);
     }
   };
 
@@ -242,13 +292,15 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     setWorkoutName(nextWorkoutName);
     setElapsedTime(0);
     setIsPaused(false);
+    setLastResumeTime(null);
+    setAccumulatedTime(0);
     
     // Reset program context
     setCurrentProgramId(null);
     setCurrentProgramDayId(null);
     setIsProgramWorkout(false);
     
-    console.log('Workout session reset');
+    console.log('Workout session reset with timer state cleared');
   };
 
   return (
@@ -267,6 +319,8 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       isPaused,
       setIsPaused,
       startWorkout,
+      pauseWorkout,
+      resumeWorkout,
       endWorkout,
       saveWorkout: saveWorkoutToDatabase,
       resetSession,
@@ -275,6 +329,11 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       currentProgramDayId,
       isProgramWorkout,
       startProgramWorkout,
+      // Timer state for background persistence
+      lastResumeTime,
+      setLastResumeTime,
+      accumulatedTime,
+      setAccumulatedTime,
     }}>
       {children}
     </WorkoutSessionContext.Provider>

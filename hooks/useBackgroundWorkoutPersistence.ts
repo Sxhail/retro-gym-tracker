@@ -38,32 +38,32 @@ export function useBackgroundWorkoutPersistence() {
     lastSaveTime.current = now;
 
     try {
-      // For timestamp-based timer, we need to calculate the correct resume time
+      // STRICT FIX: Use precise timestamp-based saving that avoids double-counting
+      const saveTime = new Date();
       let resumeTime: Date;
-      let currentElapsed: number;
+      let accumulatedTimeOnly: number; // Only time from completed segments
       
       if (session.isPaused) {
-        // If paused, use accumulated time as stored elapsed time
-        resumeTime = new Date(); // Doesn't matter as timer is paused
-        currentElapsed = session.accumulatedTime;
+        // If paused, save current accumulated time (completed segments only)
+        resumeTime = saveTime; // Doesn't matter as timer is paused
+        accumulatedTimeOnly = session.accumulatedTime; // Don't include current segment
       } else {
-        // If active, use lastResumeTime and calculate current elapsed
+        // If active, save when current segment started and accumulated time from previous segments
         if (session.lastResumeTime) {
-          resumeTime = session.lastResumeTime;
-          const currentSegmentElapsed = Math.floor((Date.now() - session.lastResumeTime.getTime()) / 1000);
-          currentElapsed = session.accumulatedTime + currentSegmentElapsed;
+          resumeTime = session.lastResumeTime; // When current active segment started
+          accumulatedTimeOnly = session.accumulatedTime; // Time from completed segments only
         } else {
-          // Fallback to session start time
-          resumeTime = session.sessionStartTime || new Date();
-          currentElapsed = session.elapsedTime;
+          // Fallback: treat session start as resume time
+          resumeTime = session.sessionStartTime || saveTime;
+          accumulatedTimeOnly = 0; // No previous completed segments
         }
       }
 
       const state: SessionState = {
         sessionId,
         name: session.workoutName,
-        startTime: resumeTime, // When current segment started (for active) or any time (for paused)
-        elapsedTime: currentElapsed, // Current total elapsed time
+        startTime: resumeTime, // When current segment started (for active restoration calculation)
+        elapsedTime: accumulatedTimeOnly, // ONLY accumulated time from completed segments
         isPaused: session.isPaused,
         currentExercises: session.currentExercises,
         sessionMeta: session.sessionMeta,
@@ -71,14 +71,21 @@ export function useBackgroundWorkoutPersistence() {
 
       await backgroundSessionService.saveSessionState(state);
 
-      // Save workout timer state with accurate timestamp info
+      // Save timer state - keep this simpler
       await backgroundSessionService.saveTimerState({
         sessionId,
         timerType: 'workout',
-        startTime: resumeTime, // When current active segment started
-        duration: 0, // Open-ended workout timer
-        elapsedWhenPaused: session.isPaused ? currentElapsed : session.accumulatedTime, // Accumulated time from completed segments
+        startTime: resumeTime,
+        duration: 0,
+        elapsedWhenPaused: accumulatedTimeOnly, // Only completed segments
         isActive: !session.isPaused,
+      });
+      
+      console.log('🔄 STRICT SAVE:', {
+        isPaused: session.isPaused,
+        resumeTime: resumeTime.toISOString(),
+        accumulatedOnly: accumulatedTimeOnly,
+        currentTotal: session.elapsedTime
       });
     } catch (error) {
       console.error('Failed to save background state:', error);
@@ -95,17 +102,9 @@ export function useBackgroundWorkoutPersistence() {
 
       console.log('🔄 Restoring background workout session...');
       
-      // Calculate current elapsed time based on stored state
-      let currentTotalElapsed: number;
-      if (restoredState.isPaused) {
-        // If was paused, use stored elapsed time
-        currentTotalElapsed = restoredState.elapsedTime;
-      } else {
-        // If was active, calculate time elapsed since startTime
-        const currentTime = new Date();
-        const segmentElapsed = Math.floor((currentTime.getTime() - restoredState.startTime.getTime()) / 1000);
-        currentTotalElapsed = restoredState.elapsedTime + segmentElapsed;
-      }
+      // STRICT RESTORE: The background service already calculated the correct elapsed time
+      // No need to double-calculate here - just use what was returned
+      const totalElapsedTime = restoredState.elapsedTime;
       
       // Restore session data using existing context methods
       session.setWorkoutName(restoredState.name);
@@ -114,15 +113,28 @@ export function useBackgroundWorkoutPersistence() {
       
       // For timestamp-based timer, restore timer state properly
       if (restoredState.isPaused) {
-        session.setAccumulatedTime(restoredState.elapsedTime);
-        session.setElapsedTime(restoredState.elapsedTime);
+        // If was paused, set accumulated time and keep paused
+        session.setAccumulatedTime(totalElapsedTime);
+        session.setElapsedTime(totalElapsedTime);
         session.setLastResumeTime(null);
-        // Don't call setIsPaused directly - let the context handle it
+        console.log('🔄 RESTORED (PAUSED):', { totalElapsed: totalElapsedTime });
       } else {
-        session.setAccumulatedTime(restoredState.elapsedTime); // Time from previous segments
+        // If was active, we need to figure out accumulated vs current segment
+        // Since the background service calculated total elapsed correctly,
+        // we can derive accumulated time by subtracting current segment
+        const currentTime = new Date();
+        const currentSegmentElapsed = Math.floor((currentTime.getTime() - restoredState.startTime.getTime()) / 1000);
+        const accumulatedFromPrevious = totalElapsedTime - currentSegmentElapsed;
+        
+        session.setAccumulatedTime(Math.max(0, accumulatedFromPrevious)); // Ensure non-negative
         session.setLastResumeTime(restoredState.startTime); // When current segment started
-        session.setElapsedTime(currentTotalElapsed);
-        // Don't call setIsPaused directly - let the context handle it
+        session.setElapsedTime(totalElapsedTime);
+        console.log('🔄 RESTORED (ACTIVE):', {
+          totalElapsed: totalElapsedTime,
+          currentSegment: currentSegmentElapsed,
+          accumulated: Math.max(0, accumulatedFromPrevious),
+          resumeTime: restoredState.startTime.toISOString()
+        });
       }
       
       // Set session ID for future saves
@@ -133,8 +145,8 @@ export function useBackgroundWorkoutPersistence() {
         // Manually set internal state to avoid resetting timer
         session.startWorkout();
         // Restore the timer state values after startWorkout resets them
-        session.setElapsedTime(currentTotalElapsed);
-        session.setAccumulatedTime(restoredState.elapsedTime);
+        session.setElapsedTime(totalElapsedTime);
+        session.setAccumulatedTime(Math.max(0, totalElapsedTime - (restoredState.isPaused ? 0 : Math.floor((new Date().getTime() - restoredState.startTime.getTime()) / 1000))));
         if (!restoredState.isPaused) {
           session.setLastResumeTime(restoredState.startTime);
         }

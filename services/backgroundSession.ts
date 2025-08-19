@@ -128,26 +128,47 @@ class BackgroundSessionService {
       const sessionData = JSON.parse(session.session_data);
       const startTime = new Date(session.start_time);
       
-      // Calculate current elapsed time with proper pause handling
+      // STRICT RESTORE: Calculate elapsed time correctly without double-counting
       const currentTime = new Date();
-      let elapsedTime: number;
+      let calculatedElapsedTime: number;
       
       if (session.is_paused) {
-        // If paused, use the stored elapsed time (total accumulated time)
-        elapsedTime = session.elapsed_time;
+        // If paused, use stored elapsed_time (accumulated time from completed segments)
+        calculatedElapsedTime = session.elapsed_time;
+        console.log('🔄 STRICT RESTORE (PAUSED):', {
+          storedElapsed: session.elapsed_time,
+          finalElapsed: calculatedElapsedTime
+        });
       } else {
-        // If active, the stored elapsed_time is accumulated time from previous segments
-        // startTime represents when the current active segment began
-        // Add time elapsed in current segment to accumulated time
-        const currentSegmentTime = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
-        elapsedTime = session.elapsed_time + currentSegmentTime;
+        // If active, add time since startTime (when current segment began) to accumulated time
+        const timeSinceSegmentStart = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
+        
+        // SAFETY CHECK: Prevent timer jumping due to invalid timestamps
+        const maxReasonableGap = 24 * 60 * 60; // 24 hours max gap
+        if (timeSinceSegmentStart > maxReasonableGap) {
+          console.warn('⚠️ Detected unreasonable time gap, capping elapsed time:', {
+            timeSinceStart: timeSinceSegmentStart,
+            maxAllowed: maxReasonableGap
+          });
+          calculatedElapsedTime = session.elapsed_time + Math.min(timeSinceSegmentStart, maxReasonableGap);
+        } else {
+          calculatedElapsedTime = session.elapsed_time + timeSinceSegmentStart;
+        }
+        
+        console.log('🔄 STRICT RESTORE (ACTIVE):', {
+          storedAccumulated: session.elapsed_time,
+          segmentStart: startTime.toISOString(),
+          currentTime: currentTime.toISOString(),
+          timeSinceStart: timeSinceSegmentStart,
+          finalElapsed: calculatedElapsedTime
+        });
       }
 
       const restoredState: SessionState = {
         sessionId: session.session_id,
         name: session.name,
-        startTime,
-        elapsedTime,
+        startTime, // When current segment started (for active) or save time (for paused)
+        elapsedTime: calculatedElapsedTime, // Correctly calculated total elapsed time
         isPaused: session.is_paused === 1,
         currentExercises: sessionData.currentExercises || [],
         sessionMeta: sessionData.sessionMeta,
@@ -155,7 +176,7 @@ class BackgroundSessionService {
       };
 
       console.log('✅ Session state restored from background storage');
-      console.log(`📊 Elapsed time: ${elapsedTime}s (${session.is_paused ? 'paused' : 'active'})`);
+      console.log(`📊 Elapsed time: ${calculatedElapsedTime}s (${session.is_paused ? 'paused' : 'active'})`);
       
       return restoredState;
     } catch (error) {

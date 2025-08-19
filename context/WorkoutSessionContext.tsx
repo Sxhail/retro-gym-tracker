@@ -87,7 +87,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const [currentProgramDayId, setCurrentProgramDayId] = useState<number | null>(null);
   const [isProgramWorkout, setIsProgramWorkout] = useState<boolean>(false);
 
-  // Accurate timestamp-based timer effect
+  // Accurate timestamp-based timer effect with validation
   useEffect(() => {
     if (isWorkoutActive && !isPaused && lastResumeTime) {
       // Use timestamp-based calculation for accuracy
@@ -95,6 +95,16 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
         const now = new Date();
         const currentSegmentElapsed = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
         const totalElapsed = accumulatedTime + currentSegmentElapsed;
+        
+        // SAFETY CHECK: Prevent unreasonable timer values
+        const maxReasonableWorkout = 12 * 60 * 60; // 12 hours max workout
+        if (totalElapsed > maxReasonableWorkout) {
+          console.warn('⚠️ Timer exceeded reasonable workout duration, pausing for safety');
+          setIsPaused(true);
+          setLastResumeTime(null);
+          return;
+        }
+        
         setElapsedTime(totalElapsed);
       }, 1000);
     } else {

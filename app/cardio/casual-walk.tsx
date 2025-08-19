@@ -130,13 +130,7 @@ export default function CasualWalkScreen() {
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>LAP</Text>
           <Text style={styles.settingValue}>{currentLap}</Text>
-          <TouchableOpacity 
-            style={styles.nextLapButton} 
-            onPress={handleNextLap}
-            disabled={!isRunning || currentLap >= totalLaps}
-          >
-            <Text style={styles.nextLapButtonText}>NEXT</Text>
-          </TouchableOpacity>
+            {/* NEXT button removed for CASUAL WALK */}
         </View>
       </View>
 

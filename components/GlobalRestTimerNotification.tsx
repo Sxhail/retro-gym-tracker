@@ -9,46 +9,58 @@ export function GlobalRestTimerNotification() {
   const [showNotification, setShowNotification] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const pathname = usePathname();
-  const previousTimerRef = useRef<typeof globalRestTimer>(null);
+  const callbackSetRef = useRef(false);
   
   useEffect(() => {
-    // Set up the callback for when rest timer completes
-    setOnRestTimerComplete(() => {
-      // Only show notification if user is NOT on the workout page
-      const isOnWorkoutPage = pathname === '/new';
+    // Only set up callback once to prevent multiple triggers
+    if (!callbackSetRef.current) {
+      callbackSetRef.current = true;
       
-      if (!isOnWorkoutPage) {
-        console.log('Rest timer completed while user is on:', pathname);
-        // Show notification
-        setShowNotification(true);
+      setOnRestTimerComplete(() => {
+        // Only show notification if user is NOT on the workout page
+        const currentPath = window?.location?.pathname || pathname;
+        const isOnWorkoutPage = currentPath === '/new' || pathname === '/new';
         
-        // Animate in
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
-
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
+        console.log('🔔 Rest timer completed callback triggered:', {
+          currentPath,
+          pathname,
+          isOnWorkoutPage,
+          willShowNotification: !isOnWorkoutPage
+        });
+        
+        if (!isOnWorkoutPage) {
+          // Show notification
+          setShowNotification(true);
+          
+          // Animate in
           Animated.timing(fadeAnim, {
-            toValue: 0,
+            toValue: 1,
             duration: 300,
             useNativeDriver: true,
-          }).start(() => {
-            setShowNotification(false);
-          });
-        }, 3000);
-      } else {
-        console.log('Rest timer completed while user is on workout page, no notification shown');
-      }
-    });
+          }).start();
 
-    // Cleanup
+          // Auto-hide after 3 seconds
+          setTimeout(() => {
+            Animated.timing(fadeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              setShowNotification(false);
+            });
+          }, 3000);
+        }
+      });
+    }
+
+    // Cleanup callback on unmount
     return () => {
-      setOnRestTimerComplete(null);
+      if (callbackSetRef.current) {
+        setOnRestTimerComplete(null);
+        callbackSetRef.current = false;
+      }
     };
-  }, [setOnRestTimerComplete, fadeAnim, pathname]);
+  }, []); // Empty dependency array to run only once
 
   if (!showNotification) {
     return null;

@@ -236,6 +236,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       sessionWorkout.setGlobalRestTimer({
         isActive: true,
         timeRemaining: totalRestDuration,
+        originalDuration: totalRestDuration,
         exerciseId,
         setIdx,
         startTime: now,

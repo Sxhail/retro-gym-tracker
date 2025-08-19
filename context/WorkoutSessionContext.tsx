@@ -52,6 +52,7 @@ interface WorkoutSessionContextType {
   globalRestTimer: {
     isActive: boolean;
     timeRemaining: number;
+    originalDuration: number;
     exerciseId: number | null;
     setIdx: number | null;
     startTime: Date | null;
@@ -59,6 +60,7 @@ interface WorkoutSessionContextType {
   setGlobalRestTimer: (timer: {
     isActive: boolean;
     timeRemaining: number;
+    originalDuration: number;
     exerciseId: number | null;
     setIdx: number | null;
     startTime: Date | null;
@@ -127,6 +129,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
             setGlobalRestTimer({
               isActive: true,
               timeRemaining: remaining,
+              originalDuration: restTimer.duration,
               exerciseId: null,
               setIdx: null,
               startTime: now, // Reset start time to now for continued counting
@@ -157,6 +160,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const [globalRestTimer, setGlobalRestTimer] = useState<{
     isActive: boolean;
     timeRemaining: number;
+    originalDuration: number; // Add original duration to track full timer duration
     exerciseId: number | null;
     setIdx: number | null;
     startTime: Date | null;
@@ -203,7 +207,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const [restTimerSessionId, setRestTimerSessionId] = useState<string | null>(null);
   
   useEffect(() => {
-    if (globalRestTimer?.isActive && globalRestTimer.startTime && globalRestTimer.timeRemaining > 0) {
+    if (globalRestTimer?.isActive && globalRestTimer.startTime) {
       // Generate session ID for rest timer if not exists
       if (!restTimerSessionId) {
         const sessionId = `rest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -217,10 +221,11 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
               sessionId,
               timerType: 'rest',
               startTime: globalRestTimer.startTime!,
-              duration: globalRestTimer.timeRemaining,
+              duration: globalRestTimer.originalDuration,
               elapsedWhenPaused: 0,
               isActive: true,
             });
+            console.log('✅ Rest timer saved to background storage');
           } catch (error) {
             console.error('Failed to save rest timer to background:', error);
           }
@@ -231,13 +236,18 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       globalRestTimerRef.current = setInterval(() => {
         const now = new Date();
         const elapsed = Math.floor((now.getTime() - globalRestTimer.startTime!.getTime()) / 1000);
-        const remaining = Math.max(0, globalRestTimer.timeRemaining - elapsed);
+        const remaining = Math.max(0, globalRestTimer.originalDuration - elapsed);
         
-        setGlobalRestTimer(prev => prev ? { ...prev, timeRemaining: remaining } : null);
+        // Update time remaining based on elapsed time since start
+        setGlobalRestTimer(prev => prev ? { 
+          ...prev, 
+          timeRemaining: remaining 
+        } : null);
         
         // Timer finished
         if (remaining === 0) {
           clearInterval(globalRestTimerRef.current);
+          globalRestTimerRef.current = null;
           
           // Clear from background storage first
           if (restTimerSessionId) {
@@ -245,6 +255,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
               try {
                 const { backgroundSessionService } = await import('../services/backgroundSession');
                 await backgroundSessionService.clearTimerData(restTimerSessionId!, 'rest');
+                console.log('✅ Rest timer cleared from background storage');
               } catch (error) {
                 console.error('Failed to clear rest timer from background:', error);
               }
@@ -256,24 +267,27 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
           setGlobalRestTimer(null);
           setRestTimerSessionId(null);
           
-          // Trigger completion callback only if timer actually finished naturally
+          // Trigger completion callback
           if (onRestTimerComplete) {
+            console.log('🔔 Rest timer completed, triggering callback');
             onRestTimerComplete();
           }
         }
       }, 1000);
-    } else {
+    } else if (!globalRestTimer?.isActive) {
+      // Clear interval when timer becomes inactive
       if (globalRestTimerRef.current) {
         clearInterval(globalRestTimerRef.current);
         globalRestTimerRef.current = null;
       }
       
-      // Clear rest timer from background if inactive
-      if (restTimerSessionId && globalRestTimer === null) {
+      // Clear rest timer from background storage when manually stopped
+      if (restTimerSessionId) {
         const clearRestTimer = async () => {
           try {
             const { backgroundSessionService } = await import('../services/backgroundSession');
             await backgroundSessionService.clearTimerData(restTimerSessionId, 'rest');
+            console.log('✅ Rest timer cleared from background storage (manual stop)');
           } catch (error) {
             console.error('Failed to clear rest timer from background:', error);
           }
@@ -289,7 +303,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
         globalRestTimerRef.current = null;
       }
     };
-  }, [globalRestTimer?.isActive, globalRestTimer?.startTime, globalRestTimer?.timeRemaining, onRestTimerComplete, restTimerSessionId]);
+  }, [globalRestTimer?.isActive, globalRestTimer?.startTime, globalRestTimer?.originalDuration, onRestTimerComplete, restTimerSessionId]);
 
   const startWorkout = () => {
     if (!isWorkoutActive) {

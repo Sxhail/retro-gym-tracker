@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, A
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 import { getWorkoutHistory, getTotalWorkoutStats, formatDuration, formatDate, type WorkoutHistoryItem } from '../services/workoutHistory';
+import { getCardioHistory, getTotalCardioStats, formatCardioDate, getCardioTypeDisplayName, type CardioSessionWithStats } from '../services/cardioTracking';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import * as FileSystem from 'expo-file-system';
@@ -65,6 +66,7 @@ function parseDurationToSeconds(durationStr: string): number {
 
 export default function HistoryListScreen() {
   const [workouts, setWorkouts] = useState<WorkoutHistoryItem[]>([]);
+  const [cardioSessions, setCardioSessions] = useState<CardioSessionWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,12 +91,12 @@ export default function HistoryListScreen() {
 
 
   // Calendar view state
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar'); // Start with calendar
+  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'cardio'>('calendar');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
 
-  // Slider state
-  const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = calendar, 1 = list
+  // Slider state - updated for 3 options
+  const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = calendar, 1 = list, 2 = cardio
   const [activeIndex, setActiveIndex] = useState(0); // Start with calendar (index 0)
 
   // Total stats state
@@ -104,6 +106,13 @@ export default function HistoryListScreen() {
     totalSets: 0,
     averageWorkoutDuration: 0,
     averageSetsPerWorkout: 0,
+  });
+
+  const [cardioStats, setCardioStats] = useState({
+    totalSessions: 0,
+    totalDuration: 0,
+    totalCalories: 0,
+    formattedDuration: '0:00',
   });
 
   const ITEMS_PER_PAGE = 10;
@@ -144,6 +153,34 @@ export default function HistoryListScreen() {
     }
   };
 
+  // Load cardio history
+  const loadCardioHistory = async (isRefresh = false) => {
+    try {
+      setError(null);
+      const offset = isRefresh ? 0 : Math.floor(cardioSessions.length / ITEMS_PER_PAGE) * ITEMS_PER_PAGE;
+      const cardioData = await getCardioHistory(Math.floor(offset / ITEMS_PER_PAGE), ITEMS_PER_PAGE);
+      
+      if (isRefresh) {
+        setCardioSessions(cardioData);
+      } else {
+        setCardioSessions(prev => [...prev, ...cardioData]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load cardio history');
+      console.error('Error loading cardio history:', err);
+    }
+  };
+
+  // Load cardio stats
+  const loadCardioStats = async () => {
+    try {
+      const stats = await getTotalCardioStats();
+      setCardioStats(stats);
+    } catch (err) {
+      console.error('Error loading cardio stats:', err);
+    }
+  };
+
   // Load more workouts
   const loadMore = () => {
     if (!loading && hasMore) {
@@ -157,6 +194,8 @@ export default function HistoryListScreen() {
     setRefreshing(true);
     loadWorkoutHistory(true);
     loadTotalStats();
+    loadCardioHistory(true);
+    loadCardioStats();
   };
 
   // Add import handler
@@ -475,7 +514,14 @@ export default function HistoryListScreen() {
       duration: 300,
       useNativeDriver: true,
     }).start();
-    setViewMode(index === 0 ? 'calendar' : 'list');
+    
+    if (index === 0) {
+      setViewMode('calendar');
+    } else if (index === 1) {
+      setViewMode('list');
+    } else {
+      setViewMode('cardio');
+    }
   };
 
   const handleSliderPress = (index: number) => {
@@ -486,6 +532,8 @@ export default function HistoryListScreen() {
   useEffect(() => {
     loadWorkoutHistory(true);
     loadTotalStats();
+    loadCardioHistory(true);
+    loadCardioStats();
   }, []);
 
   // Load more when page changes
@@ -581,7 +629,7 @@ export default function HistoryListScreen() {
         </View>
       </View>
 
-      {/* Refined Slider Toggle */}
+      {/* Refined Slider Toggle - Updated for 3 tabs */}
       <View style={styles.sliderContainer}>
         <View style={styles.sliderTrack}>
           <Animated.View 
@@ -590,8 +638,8 @@ export default function HistoryListScreen() {
               {
                 transform: [{
                   translateX: sliderPosition.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, (width - CARD_MARGIN * 2) * 0.5], // Use container width calculation
+                    inputRange: [0, 1, 2],
+                    outputRange: [0, (width - CARD_MARGIN * 2) / 3, (width - CARD_MARGIN * 2) * 2/3], // 3 equal sections
                   })
                 }]
               }
@@ -617,6 +665,17 @@ export default function HistoryListScreen() {
               activeIndex === 1 && styles.sliderTextActive
             ]}>
               LIST
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sliderOption}
+            onPress={() => handleSliderPress(2)}
+          >
+            <Text style={[
+              styles.sliderText,
+              activeIndex === 2 && styles.sliderTextActive
+            ]}>
+              CARDIO
             </Text>
           </TouchableOpacity>
         </View>
@@ -786,6 +845,123 @@ export default function HistoryListScreen() {
             <Text style={styles.endText}>END OF HISTORY</Text>
           </View>
         )}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Cardio View */}
+      {activeIndex === 2 && (
+        <View style={styles.listContainer}>
+          {/* Cardio Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{cardioStats.totalSessions}</Text>
+              <Text style={styles.statLabel}>SESSIONS</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{formatDurationAsHours(cardioStats.totalDuration)}</Text>
+              <Text style={styles.statLabel}>TOTAL TIME</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{cardioStats.totalCalories}</Text>
+              <Text style={styles.statLabel}>CALORIES</Text>
+            </View>
+          </View>
+
+          {/* Cardio List */}
+          <ScrollView 
+            style={styles.list} 
+            contentContainerStyle={{ paddingBottom: 12 }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={GREEN}
+                colors={[GREEN]}
+              />
+            }
+          >
+            {cardioSessions.length === 0 && !loading ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>NO CARDIO SESSIONS YET</Text>
+                <TouchableOpacity 
+                  style={styles.newWorkoutButton} 
+                  onPress={() => router.push('/cardio')}
+                >
+                  <Text style={styles.newWorkoutButtonText}>START CARDIO</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              cardioSessions.map((session, index) => (
+                <TouchableOpacity 
+                  key={session.id} 
+                  style={[styles.workoutCard, styles.cardioCard]}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.workoutHeader}>
+                    <Text style={styles.workoutTitle}>{session.name}</Text>
+                    <Text style={styles.workoutDate}>{formatCardioDate(session.date)}</Text>
+                  </View>
+                  
+                  <View style={styles.cardioTypeContainer}>
+                    <Text style={styles.cardioType}>{getCardioTypeDisplayName(session.type as any)}</Text>
+                  </View>
+                  
+                  <View style={styles.workoutDetails}>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>DURATION</Text>
+                      <Text style={styles.detailValue}>{formatDurationAsHrMin(session.duration)}</Text>
+                    </View>
+                    
+                    {session.type === 'hiit' && (
+                      <>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>ROUNDS</Text>
+                          <Text style={styles.detailValue}>{session.rounds || 0}</Text>
+                        </View>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>WORK/REST</Text>
+                          <Text style={styles.detailValue}>{session.work_time}s/{session.rest_time}s</Text>
+                        </View>
+                      </>
+                    )}
+                    
+                    {session.type === 'walk_run' && (
+                      <>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>LAPS</Text>
+                          <Text style={styles.detailValue}>{session.laps || 0}</Text>
+                        </View>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>RUN/WALK</Text>
+                          <Text style={styles.detailValue}>{session.run_time}s/{session.walk_time}s</Text>
+                        </View>
+                      </>
+                    )}
+                    
+                    {session.type === 'casual_walk' && (
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>LAPS</Text>
+                        <Text style={styles.detailValue}>{session.total_laps || 0}</Text>
+                      </View>
+                    )}
+                    
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>CALORIES</Text>
+                      <Text style={styles.detailValue}>{session.calories_burned || 0}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+
+            {loading && cardioSessions.length > 0 && (
+              <View style={styles.loadingMoreContainer}>
+                <ActivityIndicator size="small" color={GREEN} />
+                <Text style={styles.loadingMoreText}>LOADING MORE...</Text>
+              </View>
+            )}
           </ScrollView>
         </View>
       )}
@@ -1273,7 +1449,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: '50%', // Exactly half the container
+    width: '33.33%', // One third for 3 tabs
     height: '100%', // Full height of container
     backgroundColor: 'rgba(0, 255, 0, 0.2)',
     borderRadius: 8,
@@ -1304,5 +1480,24 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
+  },
+  // Cardio specific styles
+  cardioCard: {
+    borderColor: '#FF4444', // Red border for cardio
+  },
+  cardioTypeContainer: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 68, 68, 0.15)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  cardioType: {
+    color: '#FF4444',
+    fontFamily: theme.fonts.code,
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 }); 

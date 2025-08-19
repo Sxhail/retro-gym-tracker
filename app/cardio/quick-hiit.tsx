@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
+import { saveCardioSession, type CardioSessionData } from '../../services/cardioTracking';
 
 export default function QuickHiitScreen() {
   const router = useRouter();
@@ -14,6 +15,8 @@ export default function QuickHiitScreen() {
   const [rounds, setRounds] = useState(8);
   const [currentRound, setCurrentRound] = useState(1);
   const [isWorkPhase, setIsWorkPhase] = useState(true);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [totalElapsed, setTotalElapsed] = useState(0);
 
   useEffect(() => {
     let interval: any;
@@ -21,12 +24,16 @@ export default function QuickHiitScreen() {
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(prev => prev - 1);
+        if (startTime) {
+          setTotalElapsed(Math.floor((Date.now() - startTime.getTime()) / 1000));
+        }
       }, 1000);
     } else if (timeLeft === 0 && isRunning) {
       if (isGetReady) {
         setIsGetReady(false);
         setTimeLeft(workTime);
         setIsWorkPhase(true);
+        setStartTime(new Date());
       } else if (isWorkPhase) {
         if (currentRound < rounds) {
           setTimeLeft(restTime);
@@ -34,6 +41,7 @@ export default function QuickHiitScreen() {
         } else {
           // Workout complete
           setIsRunning(false);
+          handleWorkoutComplete();
         }
       } else {
         setTimeLeft(workTime);
@@ -43,9 +51,12 @@ export default function QuickHiitScreen() {
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isGetReady, isWorkPhase, currentRound, rounds, workTime, restTime]);
+  }, [isRunning, timeLeft, isGetReady, isWorkPhase, currentRound, rounds, workTime, restTime, startTime]);
 
   const handleStart = () => {
+    if (!startTime) {
+      setStartTime(new Date());
+    }
     setIsRunning(true);
     setIsPaused(false);
   };
@@ -62,10 +73,51 @@ export default function QuickHiitScreen() {
     setTimeLeft(10);
     setCurrentRound(1);
     setIsWorkPhase(true);
+    setStartTime(null);
+    setTotalElapsed(0);
   };
 
-  const handleStop = () => {
-    router.back();
+  const handleWorkoutComplete = async () => {
+    if (!startTime) return;
+    
+    const sessionData: CardioSessionData = {
+      type: 'hiit',
+      name: 'QUICK HIIT',
+      duration: totalElapsed,
+      work_time: workTime,
+      rest_time: restTime,
+      rounds: rounds,
+    };
+
+    try {
+      await saveCardioSession(sessionData);
+      Alert.alert('Workout Complete!', 'Your HIIT session has been saved.', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      Alert.alert('Error', 'Failed to save workout. Please try again.');
+    }
+  };
+
+  const handleFinish = () => {
+    Alert.alert(
+      'Finish Workout?',
+      'Are you sure you want to finish this workout? Your progress will be saved.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Finish', 
+          onPress: async () => {
+            if (startTime && totalElapsed > 0) {
+              await handleWorkoutComplete();
+            } else {
+              router.back();
+            }
+          }
+        }
+      ]
+    );
   };
 
   const adjustWorkTime = (increment: boolean) => {
@@ -232,9 +284,9 @@ export default function QuickHiitScreen() {
 
         <TouchableOpacity 
           style={[styles.controlButton, styles.stopButton]} 
-          onPress={handleStop}
+          onPress={handleFinish}
         >
-          <Text style={styles.controlButtonText}>STOP</Text>
+          <Text style={styles.controlButtonText}>FINISH</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

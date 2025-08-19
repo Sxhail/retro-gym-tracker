@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 import { getMonthlyAttendance, type AttendanceData } from '../services/workoutAttendance';
 import { getWorkoutHistory, formatDuration, formatDate, type WorkoutHistoryItem } from '../services/workoutHistory';
+import { getCardioSessionDates } from '../services/cardioTracking';
 
 interface AttendanceCalendarProps {
   year: number;
@@ -21,6 +22,7 @@ const MONTHS = [
 export default function AttendanceCalendar({ year, month, onDatePress, onMonthChange }: AttendanceCalendarProps) {
   const router = useRouter();
   const [attendance, setAttendance] = useState<AttendanceData[]>([]);
+  const [cardioSessionDates, setCardioSessionDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
@@ -83,11 +85,15 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
     try {
       setLoading(true);
       setError(null);
-      const data = await getMonthlyAttendance(year, month);
-      setAttendance(data.attendance);
+      const [attendanceData, cardioData] = await Promise.all([
+        getMonthlyAttendance(year, month),
+        getCardioSessionDates(year, month)
+      ]);
+      setAttendance(attendanceData.attendance);
+      setCardioSessionDates(cardioData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load attendance data');
-      console.error('Error loading attendance:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load calendar data');
+      console.error('Error loading calendar data:', err);
     } finally {
       setLoading(false);
     }
@@ -198,44 +204,62 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
 
       {/* Calendar Grid */}
       <View style={styles.calendarGrid}>
-        {calendarDays.map((day, index) => (
-                     <TouchableOpacity
-             key={index}
-             style={[
-               styles.dayCell,
-               day.isToday && styles.todayCell,
-               !day.isCurrentMonth && styles.otherMonthCell
-             ]}
-             onPress={() => handleDatePress(day.dateString)}
-             activeOpacity={0.7}
-           >
-             <View style={styles.dayContent}>
-               {day.workoutCount > 0 ? (
-                 <View style={[
-                   styles.dayWithWorkout,
-                   { backgroundColor: getIntensityColor(day.workoutCount) }
-                 ]}>
-                   <Text style={[
-                     styles.dayText,
-                     !day.isCurrentMonth && styles.otherMonthText,
-                     day.isToday && styles.todayText,
-                     { color: 'black' }
-                   ]}>
-                     {day.date.getDate()}
-                   </Text>
-                 </View>
-               ) : (
-                 <Text style={[
-                   styles.dayText,
-                   !day.isCurrentMonth && styles.otherMonthText,
-                   day.isToday && styles.todayText
-                 ]}>
-                   {day.date.getDate()}
-                 </Text>
-               )}
-             </View>
-           </TouchableOpacity>
-        ))}
+        {calendarDays.map((day, index) => {
+          const hasCardio = cardioSessionDates.includes(day.dateString);
+          
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.dayCell,
+                day.isToday && styles.todayCell,
+                !day.isCurrentMonth && styles.otherMonthCell
+              ]}
+              onPress={() => handleDatePress(day.dateString)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.dayContent}>
+                {day.workoutCount > 0 ? (
+                  <View style={[
+                    styles.dayWithWorkout,
+                    { backgroundColor: getIntensityColor(day.workoutCount) }
+                  ]}>
+                    <Text style={[
+                      styles.dayText,
+                      !day.isCurrentMonth && styles.otherMonthText,
+                      day.isToday && styles.todayText,
+                      { color: 'black' }
+                    ]}>
+                      {day.date.getDate()}
+                    </Text>
+                  </View>
+                ) : hasCardio ? (
+                  <View style={[
+                    styles.dayWithCardio,
+                    { backgroundColor: 'rgba(255, 68, 68, 0.8)' } // Red for cardio
+                  ]}>
+                    <Text style={[
+                      styles.dayText,
+                      !day.isCurrentMonth && styles.otherMonthText,
+                      day.isToday && styles.todayText,
+                      { color: 'white' }
+                    ]}>
+                      {day.date.getDate()}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={[
+                    styles.dayText,
+                    !day.isCurrentMonth && styles.otherMonthText,
+                    day.isToday && styles.todayText
+                  ]}>
+                    {day.date.getDate()}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Workout Details Modal */}
@@ -386,6 +410,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   dayWithWorkout: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    width: 32,
+    height: 32,
+  },
+  dayWithCardio: {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,

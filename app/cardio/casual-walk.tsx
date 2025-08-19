@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
+import { saveCardioSession, type CardioSessionData } from '../../services/cardioTracking';
 
 export default function CasualWalkScreen() {
   const router = useRouter();
@@ -50,9 +51,43 @@ export default function CasualWalkScreen() {
   };
 
   const handleFinish = () => {
-    setIsRunning(false);
-    // Here you could save the workout data
-    router.back();
+    Alert.alert(
+      'Finish Walk?',
+      'Are you sure you want to finish this walk? Your session will be saved.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Finish', 
+          onPress: async () => {
+            if (timeElapsed > 0) {
+              await handleWorkoutComplete();
+            } else {
+              router.back();
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleWorkoutComplete = async () => {
+    const sessionData: CardioSessionData = {
+      type: 'casual_walk',
+      name: 'CASUAL WALK',
+      duration: timeElapsed,
+      total_laps: totalLaps,
+      distance: distance > 0 ? distance : undefined,
+    };
+
+    try {
+      await saveCardioSession(sessionData);
+      Alert.alert('Walk Complete!', 'Your casual walk has been saved.', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      Alert.alert('Error', 'Failed to save walk. Please try again.');
+    }
   };
 
   const adjustTotalLaps = (increment: boolean) => {

@@ -209,8 +209,42 @@ export type NewProgramDay = typeof program_days.$inferInsert;
 export type TempProgramWorkout = typeof temp_program_workouts.$inferSelect;
 export type NewTempProgramWorkout = typeof temp_program_workouts.$inferInsert;
 
+// Cardio Sessions Tables
+export const cardio_sessions = sqliteTable('cardio_sessions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  type: text('type').notNull(), // 'hiit', 'walk_run', 'casual_walk'
+  name: text('name').notNull(), // display name
+  date: text('date').notNull(), // ISO timestamp
+  duration: integer('duration').notNull(), // total seconds
+  calories_burned: integer('calories_burned').default(0),
+  
+  // HIIT specific
+  work_time: integer('work_time'), // seconds per work interval
+  rest_time: integer('rest_time'), // seconds per rest interval
+  rounds: integer('rounds'), // number of work/rest cycles
+  
+  // Walk-Run specific  
+  run_time: integer('run_time'), // seconds per run interval
+  walk_time: integer('walk_time'), // seconds per walk interval
+  laps: integer('laps'), // number of run/walk cycles
+  
+  // Casual Walk specific
+  total_laps: integer('total_laps'), // number of walking laps
+  
+  // Optional tracking data
+  distance: real('distance'), // km or miles
+  average_heart_rate: integer('average_heart_rate'), // bpm
+  notes: text('notes'),
+  
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
+});
+
 // Background persistence types
 export type ActiveWorkoutSession = typeof active_workout_sessions.$inferSelect;
 export type NewActiveWorkoutSession = typeof active_workout_sessions.$inferInsert;
 export type ActiveSessionTimer = typeof active_session_timers.$inferSelect;
-export type NewActiveSessionTimer = typeof active_session_timers.$inferInsert; 
+export type NewActiveSessionTimer = typeof active_session_timers.$inferInsert;
+
+// Cardio types
+export type CardioSession = typeof cardio_sessions.$inferSelect;
+export type NewCardioSession = typeof cardio_sessions.$inferInsert; 

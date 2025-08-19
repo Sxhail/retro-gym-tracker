@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
+import { saveCardioSession, type CardioSessionData } from '../../services/cardioTracking';
 
 export default function DistanceRunScreen() {
   const router = useRouter();
@@ -14,6 +15,8 @@ export default function DistanceRunScreen() {
   const [runLaps, setRunLaps] = useState(4);
   const [currentRound, setCurrentRound] = useState(1);
   const [isRunPhase, setIsRunPhase] = useState(true);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [totalElapsed, setTotalElapsed] = useState(0);
 
   useEffect(() => {
     let interval: any;
@@ -21,12 +24,16 @@ export default function DistanceRunScreen() {
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(prev => prev - 1);
+        if (startTime) {
+          setTotalElapsed(Math.floor((Date.now() - startTime.getTime()) / 1000));
+        }
       }, 1000);
     } else if (timeLeft === 0 && isRunning) {
       if (isGetReady) {
         setIsGetReady(false);
         setTimeLeft(runTime);
         setIsRunPhase(true);
+        setStartTime(new Date());
       } else if (isRunPhase) {
         if (currentRound < runLaps) {
           setTimeLeft(walkTime);
@@ -34,6 +41,7 @@ export default function DistanceRunScreen() {
         } else {
           // Workout complete
           setIsRunning(false);
+          handleWorkoutComplete();
         }
       } else {
         setTimeLeft(runTime);
@@ -43,9 +51,12 @@ export default function DistanceRunScreen() {
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isGetReady, isRunPhase, currentRound, runLaps, runTime, walkTime]);
+  }, [isRunning, timeLeft, isGetReady, isRunPhase, currentRound, runLaps, runTime, walkTime, startTime]);
 
   const handleStart = () => {
+    if (!startTime) {
+      setStartTime(new Date());
+    }
     setIsRunning(true);
     setIsPaused(false);
   };
@@ -62,10 +73,51 @@ export default function DistanceRunScreen() {
     setTimeLeft(10);
     setCurrentRound(1);
     setIsRunPhase(true);
+    setStartTime(null);
+    setTotalElapsed(0);
+  };
+
+  const handleWorkoutComplete = async () => {
+    if (!startTime) return;
+    
+    const sessionData: CardioSessionData = {
+      type: 'walk_run',
+      name: 'WALK-RUN',
+      duration: totalElapsed,
+      run_time: runTime,
+      walk_time: walkTime,
+      laps: runLaps,
+    };
+
+    try {
+      await saveCardioSession(sessionData);
+      Alert.alert('Workout Complete!', 'Your Walk-Run session has been saved.', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      Alert.alert('Error', 'Failed to save workout. Please try again.');
+    }
   };
 
   const handleFinish = () => {
-    router.back();
+    Alert.alert(
+      'Finish Workout?',
+      'Are you sure you want to finish this workout? Your progress will be saved.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Finish', 
+          onPress: async () => {
+            if (startTime && totalElapsed > 0) {
+              await handleWorkoutComplete();
+            } else {
+              router.back();
+            }
+          }
+        }
+      ]
+    );
   };
 
   const adjustRunTime = (increment: boolean) => {

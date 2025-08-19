@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, PanResponder, Animated, SafeAreaView, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Audio } from 'expo-av';
 import theme from '../styles/theme';
 import { dbOperations } from '../services/database';
 import * as schema from '../db/schema';
@@ -20,59 +19,16 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
   // Only allow marking as complete if both KG and REPS are positive numbers
   const canComplete = !!set.weight && !!set.reps && Number(set.weight) > 0 && Number(set.reps) > 0;
 
-  // Rest timer state (per set)
+  // Rest timer state (per set) - timestamp-based for background persistence
   const [restTime, setRestTime] = useState(set.rest ?? 120);
   const [restActive, setRestActive] = useState(false);
   const [timerPaused, setTimerPaused] = useState(false);
   const restInterval = useRef<any>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
-
-  // Setup audio session for background playback on component mount
-  useEffect(() => {
-    const setupAudio = async () => {
-      try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          staysActiveInBackground: true,
-          playsInSilentModeIOS: true,
-          shouldDuckAndroid: true,
-          playThroughEarpieceAndroid: false,
-        });
-      } catch (error) {
-        console.log('Error setting up audio session:', error);
-      }
-    };
-    setupAudio();
-  }, []);
-
-  // Sound function for rest timer finish
-  const playRestFinishSound = async () => {
-    try {
-      // Unload previous sound if any
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-      
-      // Use the correct filename with spaces
-      const soundAsset = require('./assets/rest timer audio.wav');
-      
-      const { sound } = await Audio.Sound.createAsync(soundAsset);
-      soundRef.current = sound;
-      await sound.playAsync();
-
-      // Stop after 1 second (shortened from 5 seconds)
-      setTimeout(async () => {
-        if (soundRef.current) {
-          await soundRef.current.stopAsync();
-          await soundRef.current.unloadAsync();
-          soundRef.current = null;
-        }
-      }, 1000);
-    } catch (error) {
-      console.log('Error playing rest finish sound:', error);
-    }
-  };
+  
+  // Background-persistent timer state (like main workout timer)
+  const [restStartTime, setRestStartTime] = useState<Date | null>(null);
+  const [restLastResumeTime, setRestLastResumeTime] = useState<Date | null>(null);
+  const [restAccumulatedTime, setRestAccumulatedTime] = useState<number>(0);
 
   // Previous set state
   const [previousSet, setPreviousSet] = useState<{ weight: number, reps: number } | null>(null);
@@ -94,77 +50,100 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     }
   };
 
-  // Handle rest timer pause/resume
+  // Handle rest timer pause/resume (timestamp-based)
   const toggleTimerPause = () => {
-    setTimerPaused(!timerPaused);
+    if (restActive) {
+      if (timerPaused) {
+        // Resume timer
+        const now = new Date();
+        setRestLastResumeTime(now);
+        setTimerPaused(false);
+      } else {
+        // Pause timer - save accumulated time
+        if (restLastResumeTime) {
+          const now = new Date();
+          const currentSegmentElapsed = Math.floor((now.getTime() - restLastResumeTime.getTime()) / 1000);
+          const newAccumulated = restAccumulatedTime + currentSegmentElapsed;
+          setRestAccumulatedTime(newAccumulated);
+          
+          // Update display to show current remaining time
+          const totalRestDuration = Number(set.rest ?? 120);
+          const remaining = Math.max(0, totalRestDuration - newAccumulated);
+          setRestTime(remaining);
+        }
+        setTimerPaused(true);
+        setRestLastResumeTime(null);
+      }
+    }
   };
 
-  // Handle rest timer skip
+  // Handle rest timer skip (timestamp-based)
   const skipTimer = () => {
-    if (restInterval.current) clearInterval(restInterval.current);
     setRestActive(false);
+    setRestStartTime(null);
+    setRestLastResumeTime(null);
+    setRestAccumulatedTime(0);
     setRestTime(Number(set.rest ?? 120));
     setTimerPaused(false);
   };
 
+  // Background-persistent rest timer (timestamp-based like main workout timer)
+  useEffect(() => {
+    if (restActive && !timerPaused && restLastResumeTime) {
+      restInterval.current = setInterval(() => {
+        const now = new Date();
+        const currentSegmentElapsed = Math.floor((now.getTime() - restLastResumeTime.getTime()) / 1000);
+        const totalElapsed = restAccumulatedTime + currentSegmentElapsed;
+        const totalRestDuration = Number(set.rest ?? 120);
+        const remaining = Math.max(0, totalRestDuration - totalElapsed);
+        
+        setRestTime(remaining);
+        
+        // Timer finished
+        if (remaining === 0) {
+          clearInterval(restInterval.current);
+          setRestActive(false);
+          setRestStartTime(null);
+          setRestLastResumeTime(null);
+          setRestAccumulatedTime(0);
+        }
+      }, 1000);
+    } else {
+      if (restInterval.current) {
+        clearInterval(restInterval.current);
+        restInterval.current = null;
+      }
+    }
+
+    return () => {
+      if (restInterval.current) {
+        clearInterval(restInterval.current);
+        restInterval.current = null;
+      }
+    };
+  }, [restActive, timerPaused, restLastResumeTime, restAccumulatedTime, set.rest]);
+
   // Start/stop rest timer when set is marked/unmarked as complete
   useEffect(() => {
     if (set.completed && canComplete) {
+      // Start rest timer with timestamp-based approach
+      const now = new Date();
       setRestActive(true);
+      setRestStartTime(now);
+      setRestLastResumeTime(now);
+      setRestAccumulatedTime(0);
       setRestTime(Number(set.rest ?? 120));
       setTimerPaused(false);
-      if (restInterval.current) clearInterval(restInterval.current);
-      restInterval.current = setInterval(() => {
-        setRestTime((prev) => {
-          if (prev > 0) return prev - 1;
-          clearInterval(restInterval.current);
-          // Play sound when timer reaches 0
-          playRestFinishSound();
-          setRestActive(false);
-          return 0;
-        });
-      }, 1000);
     } else {
+      // Stop rest timer
       setRestActive(false);
+      setRestStartTime(null);
+      setRestLastResumeTime(null);  
+      setRestAccumulatedTime(0);
       setRestTime(Number(set.rest ?? 120));
       setTimerPaused(false);
-      if (restInterval.current) clearInterval(restInterval.current);
     }
-    return () => {
-      if (restInterval.current) clearInterval(restInterval.current);
-      // Cleanup sound
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-    };
-  }, [set.completed, canComplete, set.restActive, set.rest]);
-
-  // Handle timer pause/resume
-  useEffect(() => {
-    if (restActive && restTime > 0) {
-      if (timerPaused) {
-        // Pause timer
-        if (restInterval.current) clearInterval(restInterval.current);
-      } else {
-        // Resume or start timer
-        if (restInterval.current) clearInterval(restInterval.current);
-        restInterval.current = setInterval(() => {
-          setRestTime((prev) => {
-            if (prev > 0) return prev - 1;
-            clearInterval(restInterval.current);
-            // Play sound when timer reaches 0
-            playRestFinishSound();
-            setRestActive(false);
-            return 0;
-          });
-        }, 1000);
-      }
-    }
-    return () => {
-      if (restInterval.current) clearInterval(restInterval.current);
-    };
-  }, [timerPaused, restActive]);
+  }, [set.completed, canComplete, set.rest]);
 
   // Format rest timer mm:ss
   function formatRestTimer(seconds: number) {
@@ -659,7 +638,7 @@ export default function NewWorkoutScreen() {
           
           const { getNextWorkoutNumber } = await import('../services/workoutHistory');
           const nextNumber = await getNextWorkoutNumber();
-          const newWorkoutName = `WORKOUT ${nextNumber}`;
+          const newWorkoutName = `LIFT ${nextNumber}`;
           setWorkoutName(newWorkoutName);
           console.log('Setting workout name to:', newWorkoutName);
           
@@ -670,7 +649,7 @@ export default function NewWorkoutScreen() {
       } catch (error) {
         console.error('Error initializing workout name:', error);
         if (sessionExercises.length === 0) {
-          setWorkoutName('WORKOUT 1');
+          setWorkoutName('LIFT 1');
         }
       }
     };
@@ -958,43 +937,21 @@ export default function NewWorkoutScreen() {
           {/* Show exercise timer in the middle */}
           <View style={{ alignItems: 'center', marginBottom: 18 }}>
             {sessionStartTime && sessionExercises.length > 0 && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Text 
-                  style={{ 
-                    color: isPaused ? '#FFA500' : theme.colors.neon, // orange if paused
-                    fontFamily: theme.fonts.heading, 
-                    fontSize: 24, 
-                    fontWeight: 'bold', 
-                    letterSpacing: 2, 
-                    paddingVertical: 4, 
-                    paddingHorizontal: 16, 
-                    overflow: 'hidden',
-                    backgroundColor: 'transparent',
-                  }}
-                >
-                  {isPaused ? 'PAUSED' : formatElapsed(elapsedTime)}
-                </Text>
-                {/* Workout Pause/Resume Button */}
-                <TouchableOpacity 
-                  onPress={isPaused ? resumeWorkout : pauseWorkout}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: isPaused ? '#FFA500' : theme.colors.neon,
-                    borderRadius: 4,
-                    paddingVertical: 6,
-                    paddingHorizontal: 10,
-                  }}
-                >
-                  <Text style={{ 
-                    color: isPaused ? '#FFA500' : theme.colors.neon, 
-                    fontFamily: theme.fonts.code, 
-                    fontSize: 12, 
-                    fontWeight: 'bold' 
-                  }}>
-                    {isPaused ? 'RESUME' : 'PAUSE'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <Text 
+                style={{ 
+                  color: isPaused ? '#FFA500' : theme.colors.neon, // orange if paused
+                  fontFamily: theme.fonts.heading, 
+                  fontSize: 24, 
+                  fontWeight: 'bold', 
+                  letterSpacing: 2, 
+                  paddingVertical: 4, 
+                  paddingHorizontal: 16, 
+                  overflow: 'hidden',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                {isPaused ? 'PAUSED' : formatElapsed(elapsedTime)}
+              </Text>
             )}
           </View>
           <ScrollView style={{ flex: 1, marginBottom: 12 }}>

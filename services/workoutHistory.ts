@@ -1,6 +1,6 @@
 import { db } from '../db/client';
 import { workouts, workout_exercises, sets, exercises } from '../db/schema';
-import { eq, desc, asc, sql } from 'drizzle-orm';
+import { eq, desc, asc, sql, like } from 'drizzle-orm';
 import type { NewWorkout, NewWorkoutExercise, NewSet } from '../db/schema';
 
 export interface WorkoutSessionData {
@@ -480,11 +480,27 @@ export function formatDuration(seconds: number): string {
  */
 export async function getNextWorkoutNumber(): Promise<number> {
   try {
+    // Count workouts that start with "LIFT" to get the next LIFT number
     const result = await db
-      .select({ count: workouts.id })
-      .from(workouts);
+      .select({ 
+        name: workouts.name 
+      })
+      .from(workouts)
+      .where(like(workouts.name, 'LIFT %'));
 
-    return result.length + 1;
+    // Extract numbers from LIFT workout names and find the highest
+    let maxNumber = 0;
+    result.forEach(workout => {
+      const match = workout.name.match(/^LIFT (\d+)$/);
+      if (match) {
+        const number = parseInt(match[1], 10);
+        if (number > maxNumber) {
+          maxNumber = number;
+        }
+      }
+    });
+
+    return maxNumber + 1;
   } catch (error) {
     console.error('Error getting next workout number:', error);
     // Fallback to 1 if there's an error

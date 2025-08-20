@@ -278,9 +278,26 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         console.log('✅ Cardio session saved successfully with ID:', savedId);
       } catch (error) {
         console.error('❌ Failed to save cardio session:', error);
-        // Provide more specific error information
+        
+        // Provide specific error handling like lift workouts
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        throw new Error(`Failed to save workout: ${errorMessage}`);
+        
+        // Handle specific error cases
+        if (errorMessage.includes('Session name cannot be empty')) {
+          throw new Error('Please enter a session name.');
+        } else if (errorMessage.includes('too long')) {
+          throw new Error('Please shorten your session name or notes.');
+        } else if (errorMessage.includes('must be greater than 0')) {
+          throw new Error('Please check your session duration and configuration values.');
+        } else if (errorMessage.includes('cannot be negative')) {
+          throw new Error('Please check your time values - they cannot be negative.');
+        } else if (errorMessage.includes('Database is busy')) {
+          throw new Error('Database is busy. Please try again in a moment.');
+        } else if (errorMessage.includes('Database schema is missing')) {
+          throw new Error('Database error. Please restart the app and try again.');
+        } else {
+          throw new Error(`Failed to save workout: ${errorMessage}`);
+        }
       }
     } else {
       console.warn('⚠️ Cardio session not saved - missing required data:', {

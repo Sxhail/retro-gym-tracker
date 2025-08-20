@@ -95,7 +95,22 @@ export default function QuickHiitScreen() {
               ]);
             } catch (error) {
               console.error('Error saving workout:', error);
-              Alert.alert('Error', 'Failed to save workout. Please try again.');
+              const errorMessage = error instanceof Error ? error.message : 'Failed to save workout. Please try again.';
+              
+              // Handle specific error cases like lift workouts
+              if (errorMessage.includes('Please enter a session name')) {
+                Alert.alert('Invalid Session Name', errorMessage);
+              } else if (errorMessage.includes('Please shorten')) {
+                Alert.alert('Input Too Long', errorMessage);
+              } else if (errorMessage.includes('Please check your')) {
+                Alert.alert('Invalid Values', errorMessage);
+              } else if (errorMessage.includes('Database is busy')) {
+                Alert.alert('Database Busy', errorMessage);
+              } else if (errorMessage.includes('Database error')) {
+                Alert.alert('Database Error', 'Please restart the app and try again.');
+              } else {
+                Alert.alert('Save Failed', errorMessage);
+              }
             }
           }
         }

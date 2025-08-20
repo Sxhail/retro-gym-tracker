@@ -135,14 +135,31 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     restoreRestTimerState();
   }, [sessionWorkout.isWorkoutActive]);
 
-  // Sync local timer display with global rest timer
+  // Sync local timer display with global rest timer - improved sync logic
   useEffect(() => {
     const globalTimer = sessionWorkout.globalRestTimer;
-    if (globalTimer && globalTimer.exerciseId === exerciseId && globalTimer.setIdx === setIdx) {
-      setRestTime(globalTimer.timeRemaining);
-      setRestActive(globalTimer.isActive);
+    if (globalTimer && globalTimer.isActive) {
+      // If this is the most recent completed set (isLastCompleted) and global timer is active
+      if (isLastCompleted) {
+        // Sync local display with global timer state
+        setRestTime(globalTimer.timeRemaining);
+        setRestActive(globalTimer.isActive);
+        setRestStartTime(globalTimer.startTime);
+        setRestLastResumeTime(globalTimer.startTime);
+        
+        // Update local timer to match global timer timestamp
+        if (globalTimer.startTime) {
+          const now = new Date();
+          const elapsed = Math.floor((now.getTime() - globalTimer.startTime.getTime()) / 1000);
+          const remaining = Math.max(0, globalTimer.originalDuration - elapsed);
+          setRestTime(remaining);
+          setRestAccumulatedTime(0); // Reset since we're using global timer's timestamp
+        }
+        
+        console.log('🔄 Local timer synced with global timer:', globalTimer.timeRemaining, 's remaining');
+      }
     }
-  }, [sessionWorkout.globalRestTimer, exerciseId, setIdx]);
+  }, [sessionWorkout.globalRestTimer, isLastCompleted]);
 
   // Cleanup rest timer state when component unmounts or set is no longer completed
   useEffect(() => {

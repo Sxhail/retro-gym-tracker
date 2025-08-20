@@ -102,13 +102,16 @@ export function useBackgroundRestTimerPersistence() {
           // Set restored flag BEFORE setting timer to prevent completion callback
           setIsRestored(true);
           
+          // Calculate the correct start time for continued counting
+          const adjustedStartTime = new Date(now.getTime() - (restTimer.duration - remaining) * 1000);
+          
           session.setGlobalRestTimer({
             isActive: true,
             timeRemaining: remaining,
             originalDuration: restTimer.duration,
             exerciseId: null,
             setIdx: null,
-            startTime: now, // Reset start time for continued counting
+            startTime: adjustedStartTime, // Use calculated start time for accurate countdown
           });
           restSessionIdRef.current = restTimer.session_id;
           console.log('✅ Rest timer restored from background:', remaining, 'seconds remaining');

@@ -91,12 +91,12 @@ export default function HistoryListScreen() {
 
 
   // Calendar view state
-  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'cardio'>('calendar');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
 
-  // Slider state - updated for 3 options
-  const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = calendar, 1 = list, 2 = cardio
+  // Slider state - now only 2 options
+  const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = calendar, 1 = list
   const [activeIndex, setActiveIndex] = useState(0); // Start with calendar (index 0)
 
   // Total stats state
@@ -519,8 +519,6 @@ export default function HistoryListScreen() {
       setViewMode('calendar');
     } else if (index === 1) {
       setViewMode('list');
-    } else {
-      setViewMode('cardio');
     }
   };
 
@@ -652,7 +650,7 @@ export default function HistoryListScreen() {
         </View>
       </View>
 
-      {/* Refined Slider Toggle - Updated for 3 tabs */}
+      {/* Refined Slider Toggle - Now only 2 tabs */}
       <View style={styles.sliderContainer}>
         <View style={styles.sliderTrack}>
           <Animated.View 
@@ -661,8 +659,8 @@ export default function HistoryListScreen() {
               {
                 transform: [{
                   translateX: sliderPosition.interpolate({
-                    inputRange: [0, 1, 2],
-                    outputRange: [0, (width - CARD_MARGIN * 2) / 3, (width - CARD_MARGIN * 2) * 2/3], // 3 equal sections
+                    inputRange: [0, 1],
+                    outputRange: [0, (width - CARD_MARGIN * 2) / 2], // 2 equal sections
                   })
                 }]
               }
@@ -688,17 +686,6 @@ export default function HistoryListScreen() {
               activeIndex === 1 && styles.sliderTextActive
             ]}>
               LIST
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.sliderOption}
-            onPress={() => handleSliderPress(2)}
-          >
-            <Text style={[
-              styles.sliderText,
-              activeIndex === 2 && styles.sliderTextActive
-            ]}>
-              CARDIO
             </Text>
           </TouchableOpacity>
         </View>

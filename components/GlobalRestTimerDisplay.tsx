@@ -14,7 +14,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
  */
 export function GlobalRestTimerDisplay() {
   const pathname = usePathname();
-  const { globalRestTimer, setGlobalRestTimer } = useWorkoutSession();
+  const { globalRestTimer, setGlobalRestTimer, isWorkoutActive } = useWorkoutSession();
   
   // Animation values for dragging
   const translateX = useRef(new Animated.Value(0)).current;
@@ -36,8 +36,8 @@ export function GlobalRestTimerDisplay() {
     }
   }, [globalRestTimer?.isActive, globalRestTimer?.timeRemaining]);
 
-  // Don't show anything if there's no active rest timer
-  if (!globalRestTimer?.isActive || globalRestTimer.timeRemaining <= 0) {
+  // Don't show anything if there's no active rest timer OR no active workout
+  if (!globalRestTimer?.isActive || globalRestTimer.timeRemaining <= 0 || !isWorkoutActive) {
     return null;
   }
 

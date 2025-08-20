@@ -37,7 +37,7 @@ interface WorkoutSessionContextType {
   startWorkout: () => void;
   pauseWorkout: () => void;
   resumeWorkout: () => void;
-  endWorkout: () => void;
+  endWorkout: () => Promise<void>;
   saveWorkout: () => Promise<number | null>;
   resetSession: () => void;
   // Program context
@@ -247,7 +247,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     }
   };
 
-  const endWorkout = () => {
+  const endWorkout = async () => {
     if (isWorkoutActive) {
       // Finalize elapsed time calculation
       if (!isPaused && lastResumeTime) {
@@ -260,7 +260,36 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       setSessionEndTime(new Date());
       setIsWorkoutActive(false);
       setLastResumeTime(null);
-      console.log('Workout session ended with final elapsed time:', elapsedTime);
+      
+      // Clear global rest timer when workout ends
+      setGlobalRestTimer(null);
+      setOnRestTimerComplete(null);
+      
+      // Clear any background rest timer data as well
+      try {
+        const { backgroundSessionService } = await import('../services/backgroundSession');
+        const { db } = await import('../db/client');
+        const { active_session_timers } = await import('../db/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        // Clear all active rest timers from background storage
+        const restTimers = await db
+          .select()
+          .from(active_session_timers)
+          .where(eq(active_session_timers.timer_type, 'rest'));
+        
+        for (const timer of restTimers) {
+          await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+        }
+        
+        if (restTimers.length > 0) {
+          console.log('🧹 Cleared', restTimers.length, 'active rest timers during workout end');
+        }
+      } catch (error) {
+        console.error('Failed to clear rest timer background data during end workout:', error);
+      }
+      
+      console.log('Workout session ended with final elapsed time and rest timers cleared:', elapsedTime);
     }
   };
 
@@ -379,6 +408,34 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   };
 
   const resetSession = async () => {
+    // Clear global rest timer first to stop any active timers
+    setGlobalRestTimer(null);
+    setOnRestTimerComplete(null);
+    
+    // Clear any background rest timer data as well
+    try {
+      const { backgroundSessionService } = await import('../services/backgroundSession');
+      const { db } = await import('../db/client');
+      const { active_session_timers } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      // Clear all active rest timers from background storage
+      const restTimers = await db
+        .select()
+        .from(active_session_timers)
+        .where(eq(active_session_timers.timer_type, 'rest'));
+      
+      for (const timer of restTimers) {
+        await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+      }
+      
+      if (restTimers.length > 0) {
+        console.log('🧹 Cleared', restTimers.length, 'active rest timers during session reset');
+      }
+    } catch (error) {
+      console.error('Failed to clear rest timer background data during reset:', error);
+    }
+    
     setCurrentExercises([]);
     const nextWorkoutName = await getNextWorkoutName();
     setSessionMeta({ 
@@ -399,7 +456,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     setCurrentProgramDayId(null);
     setIsProgramWorkout(false);
     
-    console.log('Workout session reset with timer state cleared');
+    console.log('Workout session reset with timer state and background data cleared');
   };
 
   return (

@@ -953,7 +953,7 @@ export default function NewWorkoutScreen() {
       // Set saving state immediately to prevent double-clicks
       setIsSaving(true);
       
-      endWorkout(); // End the workout session
+      await endWorkout(); // End the workout session
       const workoutId = await saveWorkout(); // Save to database
       
       if (workoutId) {

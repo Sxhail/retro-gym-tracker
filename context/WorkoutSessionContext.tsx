@@ -175,16 +175,23 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
           clearInterval(globalRestTimerRef.current);
           globalRestTimerRef.current = null;
           
-          // Immediately clear timer state to hide display
-          setGlobalRestTimer(null);
+          // Update to show 00:00 first
+          setGlobalRestTimer(prev => prev ? { 
+            ...prev, 
+            timeRemaining: 0 
+          } : null);
           
-          // Trigger completion callback after a brief delay to allow UI update
+          // Show 00:00 briefly, then clear timer and show completion popup
           setTimeout(() => {
+            // Reset timer state - this will hide the timer display
+            setGlobalRestTimer(null);
+            
+            // Trigger completion callback after clearing the timer
             if (onRestTimerComplete) {
               console.log('🔔 Rest timer completed naturally at 00:00');
               onRestTimerComplete();
             }
-          }, 100); // Very brief delay just for UI update
+          }, 300); // Show 00:00 for 300ms before clearing
         }
       }, 1000);
     } else if (!globalRestTimer?.isActive) {

@@ -270,7 +270,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
-  // Show rest timer for the most recently completed set (hide immediately when timer reaches 0)
+  // Show rest timer for the most recently completed set (hide when timer reaches 0)
   const showRestTimer = restActive && restTime > 0 && isLastCompleted;
 
   // Render right action for swipe-to-delete (transparent, allows row to slide left)

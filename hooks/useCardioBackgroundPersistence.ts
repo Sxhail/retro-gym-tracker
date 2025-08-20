@@ -36,27 +36,68 @@ interface CardioSessionState {
 }
 
 class CardioBackgroundService {
-  private static readonly STORAGE_KEY = 'cardio_background_session';
-  
   generateSessionId(): string {
     return `cardio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   async saveCardioSessionState(state: CardioSessionState): Promise<void> {
     try {
-      const stateData = {
-        ...state,
-        startTime: state.startTime.toISOString(),
-        lastResumeTime: state.lastResumeTime?.toISOString() || null,
-        timestamp: new Date().toISOString(),
+      const { db } = await import('../db/client');
+      const { active_workout_sessions, active_session_timers } = await import('../db/schema');
+      const { eq, and } = await import('drizzle-orm');
+
+      const sessionPayload = {
+        session_id: state.sessionId,
+        name: state.name,
+        start_time: state.startTime.toISOString(),
+        elapsed_time: state.elapsedTime, // accumulated only
+        is_paused: state.isPaused ? 1 : 0,
+        current_exercise_index: 0,
+        session_data: JSON.stringify({
+          isCardio: true,
+          type: state.type,
+          cardio: {
+            workTime: state.workTime ?? null,
+            restTime: state.restTime ?? null,
+            rounds: state.rounds ?? null,
+            currentRound: state.currentRound ?? null,
+            isWorkPhase: state.isWorkPhase ?? null,
+            runTime: state.runTime ?? null,
+            walkTime: state.walkTime ?? null,
+            laps: state.laps ?? null,
+            currentLap: state.currentLap ?? null,
+            isRunPhase: state.isRunPhase ?? null,
+            totalLaps: state.totalLaps ?? null,
+            phaseTimeLeft: state.phaseTimeLeft ?? null,
+            lastResumeTime: state.lastResumeTime ? state.lastResumeTime.toISOString() : null,
+          },
+        }),
+        last_updated: new Date().toISOString(),
       };
-      
-      // In a real app, this would save to AsyncStorage or SQLite
-      // For now, we'll use a simple in-memory storage simulation
-      console.log('💾 Saving cardio background state:', stateData);
-      
-      // You would implement actual storage here:
-      // await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(stateData));
+
+      // Upsert by session_id
+      const existing = await db.select().from(active_workout_sessions).where(eq(active_workout_sessions.session_id, state.sessionId)).limit(1);
+      if (existing.length > 0) {
+        await db.update(active_workout_sessions).set(sessionPayload).where(eq(active_workout_sessions.session_id, state.sessionId));
+      } else {
+        await db.insert(active_workout_sessions).values(sessionPayload);
+      }
+
+      // Save a timer state for accurate elapsed when active
+      await db
+        .delete(active_session_timers)
+        .where(and(eq(active_session_timers.session_id, state.sessionId), eq(active_session_timers.timer_type, 'workout')));
+
+      await db.insert(active_session_timers).values({
+        session_id: state.sessionId,
+        timer_type: 'workout',
+        start_time: state.startTime.toISOString(),
+        duration: 0,
+        elapsed_when_paused: state.elapsedTime,
+        is_active: state.isPaused ? 0 : 1,
+      });
+
+      console.log('✅ Saved cardio background state to SQLite');
     } catch (error) {
       console.error('Failed to save cardio background state:', error);
       throw error;
@@ -65,33 +106,68 @@ class CardioBackgroundService {
 
   async restoreCardioSessionState(): Promise<CardioSessionState | null> {
     try {
-      // In a real app, this would restore from AsyncStorage or SQLite
-      // For now, we'll return null (no persisted state)
-      console.log('🔄 Attempting to restore cardio background state');
-      
-      // You would implement actual restore here:
-      // const stored = await AsyncStorage.getItem(this.STORAGE_KEY);
-      // if (stored) {
-      //   const parsed = JSON.parse(stored);
-      //   return {
-      //     ...parsed,
-      //     startTime: new Date(parsed.startTime),
-      //     lastResumeTime: parsed.lastResumeTime ? new Date(parsed.lastResumeTime) : null,
-      //   };
-      // }
-      
-      return null;
+      const { db } = await import('../db/client');
+      const { active_workout_sessions } = await import('../db/schema');
+      // Get most recent session that looks like cardio (session_id prefix or session_data flag)
+      const rows = await db.select().from(active_workout_sessions).limit(10);
+      const cardioRow = rows.find(r => r.session_id.startsWith('cardio_') || (r.session_data && (() => { try { const d = JSON.parse(r.session_data); return d.isCardio; } catch { return false; } })()));
+      if (!cardioRow) return null;
+
+      const parsed = cardioRow.session_data ? JSON.parse(cardioRow.session_data) : {};
+      const cardio = parsed.cardio || {};
+      const startTime = new Date(cardioRow.start_time);
+      const lastResumeTime = cardio.lastResumeTime ? new Date(cardio.lastResumeTime) : null;
+
+      const restored: CardioSessionState = {
+        sessionId: cardioRow.session_id,
+        type: parsed.type,
+        name: cardioRow.name,
+        startTime,
+        elapsedTime: cardioRow.elapsed_time,
+        accumulatedTime: cardioRow.elapsed_time,
+        isPaused: cardioRow.is_paused === 1,
+        lastResumeTime,
+        workTime: cardio.workTime ?? undefined,
+        restTime: cardio.restTime ?? undefined,
+        rounds: cardio.rounds ?? undefined,
+        currentRound: cardio.currentRound ?? undefined,
+        isWorkPhase: cardio.isWorkPhase ?? undefined,
+        runTime: cardio.runTime ?? undefined,
+        walkTime: cardio.walkTime ?? undefined,
+        laps: cardio.laps ?? undefined,
+        currentLap: cardio.currentLap ?? undefined,
+        isRunPhase: cardio.isRunPhase ?? undefined,
+        totalLaps: cardio.totalLaps ?? undefined,
+        phaseTimeLeft: cardio.phaseTimeLeft ?? undefined,
+      };
+
+      console.log('✅ Restored cardio background state from SQLite');
+      return restored;
     } catch (error) {
       console.error('Failed to restore cardio background state:', error);
       return null;
     }
   }
 
-  async clearCardioSessionState(): Promise<void> {
+  async clearCardioSessionState(sessionId?: string): Promise<void> {
     try {
-      console.log('🗑️ Clearing cardio background state');
-      // You would implement actual clearing here:
-      // await AsyncStorage.removeItem(this.STORAGE_KEY);
+      const { db } = await import('../db/client');
+      const { active_workout_sessions, active_session_timers } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+      if (sessionId) {
+        await db.delete(active_session_timers).where(eq(active_session_timers.session_id, sessionId));
+        await db.delete(active_workout_sessions).where(eq(active_workout_sessions.session_id, sessionId));
+      } else {
+        // Clear all cardio_* sessions as a fallback
+        const rows = await db.select().from(active_workout_sessions);
+        for (const r of rows) {
+          if (r.session_id.startsWith('cardio_')) {
+            await db.delete(active_session_timers).where(eq(active_session_timers.session_id, r.session_id));
+            await db.delete(active_workout_sessions).where(eq(active_workout_sessions.session_id, r.session_id));
+          }
+        }
+      }
+      console.log('🗑️ Cleared cardio background state');
     } catch (error) {
       console.error('Failed to clear cardio background state:', error);
     }
@@ -256,29 +332,31 @@ export function useCardioBackgroundPersistence() {
 
       if (restoredElapsedTime === 0) {
         // Session was rejected, clear it
-        await cardioBackgroundService.clearCardioSessionState();
+        await cardioBackgroundService.clearCardioSessionState(restoredState.sessionId);
         return false;
       }
 
-      // Restore cardio session state
-      session.setIsActive(true);
-      session.setIsPaused(restoredState.isPaused);
-      session.setElapsedTime(restoredElapsedTime);
-      session.setAccumulatedTime(restoredState.accumulatedTime);
-      session.setLastResumeTime(restoredState.lastResumeTime);
-      
-      // Start session with restored config
-      const config = {
+      // Restore cardio session state without re-triggering get-ready
+      session.restoreFromPersistence({
+        cardioType: restoredState.type,
+        sessionName: restoredState.name,
+        isPaused: restoredState.isPaused,
+        elapsedTime: restoredElapsedTime,
+        accumulatedTime: restoredState.accumulatedTime,
+        lastResumeTime: restoredState.lastResumeTime,
         workTime: restoredState.workTime,
         restTime: restoredState.restTime,
         rounds: restoredState.rounds,
+        currentRound: restoredState.currentRound,
+        isWorkPhase: restoredState.isWorkPhase,
         runTime: restoredState.runTime,
         walkTime: restoredState.walkTime,
         laps: restoredState.laps,
+        currentLap: restoredState.currentLap,
+        isRunPhase: restoredState.isRunPhase,
         totalLaps: restoredState.totalLaps,
-      };
-      
-      session.startSession(restoredState.type, restoredState.name, config);
+        phaseTimeLeft: restoredState.phaseTimeLeft,
+      } as any);
       
       sessionIdRef.current = restoredState.sessionId;
 

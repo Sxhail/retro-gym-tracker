@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
+import { useCardioSession } from '../../context/CardioSessionContext';
 
 export default function TimeRunScreen() {
   const router = useRouter();
-  const [timeElapsed, setTimeElapsed] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const { 
+    isActive, isPaused, elapsedTime, cardioType,
+    startSession, pauseSession, resumeSession, endSession, resetSession 
+  } = useCardioSession();
+  
   const [distance, setDistance] = useState(0.00);
   const [pace, setPace] = useState('--:--');
   const [speed, setSpeed] = useState(0.0);
@@ -16,51 +19,73 @@ export default function TimeRunScreen() {
   const [walkTime, setWalkTime] = useState(30);
 
   useEffect(() => {
-    let interval: any;
-    
-    if (isRunning) {
-      interval = setInterval(() => {
-        setTimeElapsed(prev => prev + 1);
-        // Calculate pace and speed based on distance and time
-        if (distance > 0) {
-          const paceInSeconds = timeElapsed / distance;
-          const mins = Math.floor(paceInSeconds / 60);
-          const secs = Math.floor(paceInSeconds % 60);
-          setPace(`${mins}:${secs.toString().padStart(2, '0')}`);
-          setSpeed(Number((distance / (timeElapsed / 3600)).toFixed(1)));
-        }
-        // Rough calorie calculation (placeholder)
-        setCalories(Math.floor(timeElapsed * 0.2));
-      }, 1000);
+    if (isActive && elapsedTime > 0) {
+      // Calculate pace and speed based on distance and time
+      if (distance > 0) {
+        const paceInSeconds = elapsedTime / distance;
+        const mins = Math.floor(paceInSeconds / 60);
+        const secs = Math.floor(paceInSeconds % 60);
+        setPace(`${mins}:${secs.toString().padStart(2, '0')}`);
+        setSpeed(Number((distance / (elapsedTime / 3600)).toFixed(1)));
+      }
+      // Rough calorie calculation (placeholder)
+      setCalories(Math.floor(elapsedTime * 0.2));
     }
-
-    return () => clearInterval(interval);
-  }, [isRunning, timeElapsed, distance]);
+  }, [isActive, elapsedTime, distance]);
 
   const handleStart = () => {
-    setIsRunning(true);
-    setIsPaused(false);
+    const config = { runTime, walkTime };
+    startSession('walk_run', 'TIME RUN', config);
   };
 
   const handlePause = () => {
-    setIsRunning(false);
-    setIsPaused(true);
+    pauseSession();
+  };
+
+  const handleResume = () => {
+    resumeSession();
   };
 
   const handleFinish = () => {
-    setIsRunning(false);
-    // Here you could save the workout data
-    router.back();
+    Alert.alert(
+      'Finish Run?',
+      'Are you sure you want to finish this time run? Your progress will be saved.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Finish', 
+          onPress: async () => {
+            try {
+              await endSession();
+              Alert.alert('Run Complete!', 'Your time run session has been saved.', [
+                { text: 'OK', onPress: () => router.back() }
+              ]);
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : 'Failed to save run. Please try again.';
+              Alert.alert('Save Failed', errorMessage);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleReset = () => {
+    resetSession();
+    setDistance(0.00);
+    setPace('--:--');
+    setSpeed(0.0);
+    setCalories(0);
   };
 
   const adjustRunTime = (increment: boolean) => {
-    if (!isRunning) {
+    if (!isActive) {
       setRunTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
     }
   };
 
   const adjustWalkTime = (increment: boolean) => {
-    if (!isRunning) {
+    if (!isActive) {
       setWalkTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
     }
   };
@@ -87,7 +112,7 @@ export default function TimeRunScreen() {
       </View>
 
       {/* Main Timer */}
-      <Text style={styles.mainTimer}>{formatTime(timeElapsed)}</Text>
+      <Text style={styles.mainTimer}>{formatTime(elapsedTime)}</Text>
 
       {/* RUN/WALK Settings */}
       <View style={styles.settingsGrid}>
@@ -99,14 +124,14 @@ export default function TimeRunScreen() {
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRunTime(false)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRunTime(true)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -121,14 +146,14 @@ export default function TimeRunScreen() {
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustWalkTime(false)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustWalkTime(true)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -165,25 +190,40 @@ export default function TimeRunScreen() {
 
       {/* Control Buttons */}
       <View style={styles.controlButtons}>
-        <TouchableOpacity 
-          style={[styles.controlButton, !isRunning && !isPaused && styles.startButton]} 
-          onPress={handleStart}
-          disabled={isRunning}
-        >
-          <Text style={styles.controlButtonText}>START</Text>
-        </TouchableOpacity>
+        {!isActive ? (
+          <TouchableOpacity 
+            style={[styles.controlButton, styles.startButton]} 
+            onPress={handleStart}
+          >
+            <Text style={styles.controlButtonText}>START</Text>
+          </TouchableOpacity>
+        ) : isPaused ? (
+          <TouchableOpacity 
+            style={[styles.controlButton, styles.startButton]} 
+            onPress={handleResume}
+          >
+            <Text style={styles.controlButtonText}>RESUME</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.controlButton]} 
+            onPress={handlePause}
+          >
+            <Text style={styles.controlButtonText}>PAUSE</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity 
           style={[styles.controlButton]} 
-          onPress={handlePause}
-          disabled={!isRunning}
+          onPress={handleReset}
         >
-          <Text style={styles.controlButtonText}>PAUSE</Text>
+          <Text style={styles.controlButtonText}>RESET</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.controlButton, styles.finishButton]} 
           onPress={handleFinish}
+          disabled={!isActive}
         >
           <Text style={styles.controlButtonText}>FINISH</Text>
         </TouchableOpacity>

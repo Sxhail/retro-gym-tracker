@@ -93,13 +93,13 @@ export default function CardioScreen() {
         router.push('/cardio/custom-hiit');
         break;
       case 'walk_run':
-        router.push('/cardio/distance-run');
+        router.push('/cardio/distance-run-new');
         break;
       case 'time_run':
         router.push('/cardio/time-run');
         break;
       case 'casual_walk':
-        router.push('/cardio/casual-walk');
+        router.push('/cardio/casual-walk-new');
         break;
       case 'power_walk':
         router.push('/cardio/power-walk');

@@ -32,14 +32,17 @@ interface CardioSessionContextType {
   
   // Common timer state
   phaseTimeLeft: number;
+  isGetReady: boolean;
+  getReadyTimeLeft: number;
   
   // Methods
-  startSession: (type: CardioType, name: string, config: any) => void;
+  startSession: (type: CardioType, name: string, config: any, options?: { skipGetReady?: boolean }) => void;
   pauseSession: () => void;
   resumeSession: () => void;
   endSession: () => Promise<void>;
   resetSession: () => void;
   nextPhase: () => void;
+  restoreFromPersistence: (restored: Partial<CardioSessionContextType> & { cardioType: CardioType; sessionName: string }) => void;
   
   // Background persistence
   setElapsedTime: (time: number) => void;
@@ -93,13 +96,15 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
   
   // Common timer state
   const [phaseTimeLeft, setPhaseTimeLeft] = useState(10); // Get ready time
+  const [isGetReady, setIsGetReady] = useState(false);
+  const [getReadyTimeLeft, setGetReadyTimeLeft] = useState(10);
   
   // Timer refs
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const accumulatedTimeRef = useRef(0);
 
   // Start a cardio session
-  const startSession = (type: CardioType, name: string, config: any) => {
+  const startSession = (type: CardioType, name: string, config: any, options?: { skipGetReady?: boolean }) => {
     const now = new Date();
     
     setCardioType(type);
@@ -122,16 +127,34 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       setRestTime(config.restTime || 10);
       setRounds(config.rounds || 8);
       setIsWorkPhase(true);
-      setPhaseTimeLeft(config.workTime || 20);
+      const initialWork = config.workTime || 20;
+      setPhaseTimeLeft(initialWork);
+      if (options?.skipGetReady) {
+        setIsGetReady(false);
+        setGetReadyTimeLeft(0);
+      } else {
+        setIsGetReady(true);
+        setGetReadyTimeLeft(10);
+      }
     } else if (type === 'walk_run') {
       setRunTime(config.runTime || 30);
       setWalkTime(config.walkTime || 30);
       setLaps(config.laps || 4);
       setIsRunPhase(true);
-      setPhaseTimeLeft(config.runTime || 30);
+      const initialRun = config.runTime || 30;
+      setPhaseTimeLeft(initialRun);
+      if (options?.skipGetReady) {
+        setIsGetReady(false);
+        setGetReadyTimeLeft(0);
+      } else {
+        setIsGetReady(true);
+        setGetReadyTimeLeft(10);
+      }
     } else if (type === 'casual_walk') {
       setTotalLaps(config.totalLaps || 1);
       setPhaseTimeLeft(0); // Free running timer
+      setIsGetReady(false);
+      setGetReadyTimeLeft(0);
     }
     
     console.log('🚀 Cardio session started:', { type, name, config });
@@ -334,6 +357,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     setIsWorkPhase(true);
     setIsRunPhase(true);
     setPhaseTimeLeft(10);
+    setIsGetReady(false);
+    setGetReadyTimeLeft(10);
     
     console.log('🔄 Cardio session reset');
   };
@@ -354,9 +379,31 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         const currentSegmentTime = Math.floor((Date.now() - lastResumeTime.getTime()) / 1000);
         const totalElapsed = accumulatedTimeRef.current + currentSegmentTime;
         setElapsedTime(totalElapsed);
-        
-        // Handle phase transitions for HIIT and Walk-Run
-        if (cardioType === 'hiit' || cardioType === 'walk_run') {
+        // Handle get-ready countdown for HIIT and Walk-Run
+        if ((cardioType === 'hiit' || cardioType === 'walk_run') && isGetReady) {
+          setGetReadyTimeLeft(prev => {
+            const newTime = prev - 1;
+            if (newTime <= 0) {
+              // End get-ready and start actual phase now
+              setIsGetReady(false);
+              setLastResumeTime(new Date()); // Reset resume time to mark phase start
+              // Ensure phase time starts at full configured duration
+              if (cardioType === 'hiit') {
+                setIsWorkPhase(true);
+                setPhaseTimeLeft(workTime);
+              } else if (cardioType === 'walk_run') {
+                setIsRunPhase(true);
+                setPhaseTimeLeft(runTime);
+              }
+              return 0;
+            }
+            return newTime;
+          });
+          return; // Skip phase timer decrement during get-ready
+        }
+
+        // Handle phase transitions for HIIT and Walk-Run after get-ready
+        if ((cardioType === 'hiit' || cardioType === 'walk_run') && !isGetReady) {
           setPhaseTimeLeft(prev => {
             const newTime = prev - 1;
             console.log(`⏰ Phase time: ${newTime}, Type: ${cardioType}, Phase: ${cardioType === 'hiit' ? (isWorkPhase ? 'WORK' : 'REST') : (isRunPhase ? 'RUN' : 'WALK')}`);
@@ -380,6 +427,41 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       }
     };
   }, [isActive, isPaused, lastResumeTime, cardioType, isWorkPhase, isRunPhase, currentRound, currentLap, workTime, restTime, runTime, walkTime, rounds, laps]);
+
+  const restoreFromPersistence = (restored: Partial<CardioSessionContextType> & { cardioType: CardioType; sessionName: string }) => {
+    // Basic identifiers
+    setIsActive(true);
+    setCardioType(restored.cardioType);
+    setSessionName(restored.sessionName);
+    setIsPaused(!!restored.isPaused);
+    setElapsedTime(restored.elapsedTime ?? 0);
+    setAccumulatedTime(restored.accumulatedTime ?? 0);
+    accumulatedTimeRef.current = restored.accumulatedTime ?? 0;
+    setLastResumeTime(restored.lastResumeTime ?? new Date());
+    setSessionStartTime(restored.sessionStartTime ?? new Date());
+
+    // Type-specific fields
+    if (restored.cardioType === 'hiit') {
+      if (typeof restored.workTime === 'number') setWorkTime(restored.workTime);
+      if (typeof restored.restTime === 'number') setRestTime(restored.restTime);
+      if (typeof restored.rounds === 'number') setRounds(restored.rounds);
+      if (typeof restored.currentRound === 'number') setCurrentRound(restored.currentRound);
+      if (typeof restored.isWorkPhase === 'boolean') setIsWorkPhase(restored.isWorkPhase);
+    } else if (restored.cardioType === 'walk_run') {
+      if (typeof restored.runTime === 'number') setRunTime(restored.runTime);
+      if (typeof restored.walkTime === 'number') setWalkTime(restored.walkTime);
+      if (typeof restored.laps === 'number') setLaps(restored.laps);
+      if (typeof restored.currentLap === 'number') setCurrentLap(restored.currentLap);
+      if (typeof restored.isRunPhase === 'boolean') setIsRunPhase(restored.isRunPhase);
+    } else if (restored.cardioType === 'casual_walk') {
+      if (typeof restored.totalLaps === 'number') setTotalLaps(restored.totalLaps);
+    }
+
+    // Timers
+    if (typeof restored.phaseTimeLeft === 'number') setPhaseTimeLeft(restored.phaseTimeLeft);
+    setIsGetReady(false);
+    setGetReadyTimeLeft(0);
+  };
 
   const contextValue: CardioSessionContextType = {
     // Session state
@@ -411,14 +493,17 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     
     // Common timer state
     phaseTimeLeft,
+  isGetReady,
+  getReadyTimeLeft,
     
     // Methods
-    startSession,
+  startSession,
     pauseSession,
     resumeSession,
     endSession,
     resetSession,
     nextPhase,
+  restoreFromPersistence,
     
     // Background persistence setters
     setElapsedTime,

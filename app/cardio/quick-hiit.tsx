@@ -8,6 +8,7 @@ export default function QuickHiitScreen() {
   const router = useRouter();
   const { 
     isActive, isPaused, elapsedTime, workTime, restTime, rounds, currentRound, isWorkPhase, phaseTimeLeft, cardioType,
+    isGetReady, getReadyTimeLeft,
     startSession, pauseSession, resumeSession, endSession, resetSession 
   } = useCardioSession();
   
@@ -15,43 +16,12 @@ export default function QuickHiitScreen() {
   const [configWorkTime, setConfigWorkTime] = useState(20);
   const [configRestTime, setConfigRestTime] = useState(10);
   const [configRounds, setConfigRounds] = useState(8);
-  const [showGetReady, setShowGetReady] = useState(true);
-  const [getReadyTime, setGetReadyTime] = useState(10);
+  // get-ready is handled in context now
 
   // Initialize or restore session
   useEffect(() => {
-    if (!isActive && !cardioType) {
-      // Session not active, show config screen
-      setShowGetReady(true);
-      setGetReadyTime(10);
-    } else if (cardioType === 'hiit') {
-      // Session already active, hide get ready
-      setShowGetReady(false);
-    }
-  }, [isActive, cardioType]);
-
-  // Get ready countdown
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    
-    if (showGetReady && isActive && getReadyTime > 0) {
-      interval = setInterval(() => {
-        setGetReadyTime(prev => {
-          if (prev <= 1) {
-            setShowGetReady(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [showGetReady, isActive, getReadyTime]);
+    // no-op: context manages get-ready lifecycle
+  }, [isGetReady, cardioType]);
 
   const handleStart = () => {
     const config = {
@@ -60,9 +30,7 @@ export default function QuickHiitScreen() {
       rounds: configRounds,
     };
     
-    startSession('hiit', 'QUICK HIIT', config);
-    setShowGetReady(true);
-    setGetReadyTime(10);
+  startSession('hiit', 'QUICK HIIT', config);
   };
 
   const handlePause = () => {
@@ -74,9 +42,7 @@ export default function QuickHiitScreen() {
   };
 
   const handleReset = () => {
-    resetSession();
-    setShowGetReady(true);
-    setGetReadyTime(10);
+  resetSession();
   };
 
   const handleFinish = () => {
@@ -143,12 +109,12 @@ export default function QuickHiitScreen() {
   };
 
   const getPhaseText = () => {
-    if (showGetReady) return 'GET READY';
+  if (isGetReady) return 'GET READY';
     return isWorkPhase ? 'WORK TIME' : 'REST TIME';
   };
 
   const getCurrentPhaseTime = () => {
-    if (showGetReady) return getReadyTime;
+  if (isGetReady) return getReadyTimeLeft;
     if (cardioType === 'hiit') {
       return phaseTimeLeft;
     }
@@ -181,7 +147,7 @@ export default function QuickHiitScreen() {
             style={[
               styles.progressFill,
               { 
-                width: showGetReady ? '100%' : 
+                width: isGetReady ? '100%' : 
                        isWorkPhase ? `${((displayWorkTime - getCurrentPhaseTime()) / displayWorkTime) * 100}%` :
                        `${((displayRestTime - getCurrentPhaseTime()) / displayRestTime) * 100}%`
               }

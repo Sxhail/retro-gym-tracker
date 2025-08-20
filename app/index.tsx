@@ -48,7 +48,7 @@ export default function HomeScreen() {
   };
   const [programProgress, setProgramProgress] = useState<any>({});
   const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
-  const { isActive: isCardioActive } = useCardioSession();
+  const { isActive: isCardioActive, cardioType } = useCardioSession();
 
   useEffect(() => {
     loadAllProgramsWithProgress();
@@ -209,8 +209,17 @@ export default function HomeScreen() {
             <Text style={styles.startButtonText}>CONTINUE LIFT</Text>
           </TouchableOpacity>
         ) : isCardioActive ? (
-          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/cardio')}>
-            <Text style={styles.startButtonText}>CONTINUE CARDIO</Text>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={() => {
+              // Navigate to the exact cardio screen based on active type
+              if (cardioType === 'hiit') router.push('/cardio/quick-hiit');
+              else if (cardioType === 'walk_run') router.push('/cardio/distance-run-new');
+              else if (cardioType === 'casual_walk') router.push('/cardio/casual-walk-new');
+              else router.push('/cardio');
+            }}
+          >
+            <Text style={styles.startButtonText}>START CARDIO</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>

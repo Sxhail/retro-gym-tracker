@@ -8,6 +8,7 @@ export default function DistanceRunScreen() {
   const router = useRouter();
   const { 
     isActive, isPaused, elapsedTime, runTime, walkTime, laps, currentLap, isRunPhase, phaseTimeLeft, cardioType,
+    isGetReady, getReadyTimeLeft,
     startSession, pauseSession, resumeSession, endSession, resetSession 
   } = useCardioSession();
 
@@ -16,47 +17,14 @@ export default function DistanceRunScreen() {
   const [configWalkTime, setConfigWalkTime] = useState(30);
   const [configLaps, setConfigLaps] = useState(4);
 
-  // Get Ready state
-  const [showGetReady, setShowGetReady] = useState(false);
-  const [getReadyTime, setGetReadyTime] = useState(10);
+  // get-ready handled by context
 
   // Set up initial phase title based on session state
   useEffect(() => {
-    if (!isActive && !cardioType) {
-      setShowGetReady(false);
-    } else if (cardioType === 'walk_run') {
-      // Session is active, show phase status
-      setShowGetReady(false);
-    }
-  }, [isActive, cardioType]);
-
-  // Get Ready countdown effect
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    
-    if (showGetReady && isActive && getReadyTime > 0) {
-      interval = setInterval(() => {
-        setGetReadyTime(prev => {
-          if (prev <= 1) {
-            setShowGetReady(false);
-            return 10; // Reset for next time
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [showGetReady, isActive, getReadyTime]);
+    // no-op
+  }, [isGetReady]);
 
   const handleStart = () => {
-    setShowGetReady(true);
-    setGetReadyTime(10);
-    
     const config = { runTime: configRunTime, walkTime: configWalkTime, laps: configLaps };
     startSession('walk_run', 'WALK-RUN', config);
   };
@@ -70,9 +38,7 @@ export default function DistanceRunScreen() {
   };
 
   const handleReset = () => {
-    resetSession();
-    setShowGetReady(false);
-    setGetReadyTime(10);
+  resetSession();
   };
 
   const handleFinish = () => {
@@ -139,12 +105,12 @@ export default function DistanceRunScreen() {
   };
 
   const getPhaseText = () => {
-    if (showGetReady) return 'GET READY';
+  if (isGetReady) return 'GET READY';
     return isRunPhase ? 'RUN PHASE' : 'WALK PHASE';
   };
 
   const getCurrentPhaseTime = () => {
-    if (showGetReady) return getReadyTime;
+  if (isGetReady) return getReadyTimeLeft;
     if (cardioType === 'walk_run') {
       return phaseTimeLeft;
     }
@@ -177,7 +143,7 @@ export default function DistanceRunScreen() {
             style={[
               styles.progressFill,
               { 
-                width: showGetReady ? '100%' : 
+                width: isGetReady ? '100%' : 
                        isRunPhase ? `${((displayRunTime - getCurrentPhaseTime()) / displayRunTime) * 100}%` :
                        `${((displayWalkTime - getCurrentPhaseTime()) / displayWalkTime) * 100}%`
               }

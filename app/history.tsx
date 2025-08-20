@@ -94,6 +94,7 @@ export default function HistoryListScreen() {
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
 
   // Slider state - now only 2 options
   const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = calendar, 1 = list
@@ -593,7 +594,7 @@ export default function HistoryListScreen() {
   const handleDeleteAllHistory = () => {
     Alert.alert(
       'Delete All History',
-      'Are you sure you want to delete all workout history? This cannot be undone.',
+  'Are you sure you want to delete ALL history? This will delete both lift workouts and cardio sessions. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: async () => {
@@ -601,9 +602,14 @@ export default function HistoryListScreen() {
             await db.delete(schema.sets);
             await db.delete(schema.workout_exercises);
             await db.delete(schema.workouts);
+    await db.delete(schema.cardio_sessions);
             loadWorkoutHistory(true);
             setSuccessMessage('All workout history deleted!');
             loadTotalStats(); // Refresh total stats after deletion
+    // Refresh cardio and calendar
+    await loadCardioHistory(true);
+    await loadCardioStats();
+    setCalendarRefreshKey(prev => prev + 1);
           } catch (err) {
             alert('Failed to delete workout history.');
           }
@@ -717,6 +723,7 @@ export default function HistoryListScreen() {
       {activeIndex === 0 && (
         <View style={styles.calendarContainer}>
           <AttendanceCalendar
+            key={`attendance-${currentYear}-${currentMonth}-${calendarRefreshKey}`}
             year={currentYear}
             month={currentMonth}
             onDatePress={(date) => {

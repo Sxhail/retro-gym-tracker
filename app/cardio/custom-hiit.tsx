@@ -1,88 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
+import { useCardioSession } from '../../context/CardioSessionContext';
 
 export default function CustomHiitScreen() {
   const router = useRouter();
-  const [timeLeft, setTimeLeft] = useState(10); // 10 second get ready
-  const [isGetReady, setIsGetReady] = useState(true);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [workTime, setWorkTime] = useState(20);
-  const [restTime, setRestTime] = useState(10);
-  const [rounds, setRounds] = useState(8);
-  const [currentRound, setCurrentRound] = useState(1);
-  const [isWorkPhase, setIsWorkPhase] = useState(true);
+  const { 
+    isActive, isPaused, elapsedTime, workTime, restTime, rounds, currentRound, isWorkPhase, phaseTimeLeft,
+    isGetReady, getReadyTimeLeft, cardioType,
+    startSession, pauseSession, resumeSession, endSession, resetSession
+  } = useCardioSession();
 
-  useEffect(() => {
-    let interval: any;
-    
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && isRunning) {
-      if (isGetReady) {
-        setIsGetReady(false);
-        setTimeLeft(workTime);
-        setIsWorkPhase(true);
-      } else if (isWorkPhase) {
-        if (currentRound < rounds) {
-          setTimeLeft(restTime);
-          setIsWorkPhase(false);
-        } else {
-          // Workout complete
-          setIsRunning(false);
-        }
-      } else {
-        setTimeLeft(workTime);
-        setIsWorkPhase(true);
-        setCurrentRound(prev => prev + 1);
-      }
-    }
-
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isGetReady, isWorkPhase, currentRound, rounds, workTime, restTime]);
+  // Local config for when session not active
+  const [configWorkTime, setConfigWorkTime] = useState(20);
+  const [configRestTime, setConfigRestTime] = useState(10);
+  const [configRounds, setConfigRounds] = useState(8);
 
   const handleStart = () => {
-    setIsRunning(true);
-    setIsPaused(false);
+    const config = { workTime: configWorkTime, restTime: configRestTime, rounds: configRounds };
+    startSession('hiit', 'CUSTOM HIIT', config);
   };
 
-  const handlePause = () => {
-    setIsRunning(false);
-    setIsPaused(true);
-  };
+  const handlePause = () => pauseSession();
+  const handleResume = () => resumeSession();
+  const handleReset = () => resetSession();
+  const handleStop = () => router.back();
 
-  const handleReset = () => {
-    setIsRunning(false);
-    setIsPaused(false);
-    setIsGetReady(true);
-    setTimeLeft(10);
-    setCurrentRound(1);
-    setIsWorkPhase(true);
-  };
-
-  const handleStop = () => {
-    router.back();
+  const handleFinish = () => {
+    Alert.alert(
+      'Finish Workout?',
+      'Are you sure you want to finish this HIIT workout? Your progress will be saved.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Finish',
+          onPress: async () => {
+            try {
+              await endSession();
+              Alert.alert('Workout Complete!', 'Your HIIT session has been saved.', [
+                { text: 'OK', onPress: () => router.back() }
+              ]);
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : 'Failed to save workout. Please try again.';
+              Alert.alert('Save Failed', errorMessage);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const adjustWorkTime = (increment: boolean) => {
-    if (!isRunning) {
-      setWorkTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    if (!isActive) {
+      setConfigWorkTime(prev => (increment ? prev + 5 : Math.max(5, prev - 5)));
     }
   };
 
   const adjustRestTime = (increment: boolean) => {
-    if (!isRunning) {
-      setRestTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    if (!isActive) {
+      setConfigRestTime(prev => (increment ? prev + 5 : Math.max(5, prev - 5)));
     }
   };
 
   const adjustRounds = (increment: boolean) => {
-    if (!isRunning) {
-      setRounds(prev => increment ? prev + 1 : Math.max(1, prev - 1));
+    if (!isActive) {
+      setConfigRounds(prev => (increment ? prev + 1 : Math.max(1, prev - 1)));
     }
   };
 
@@ -96,6 +79,11 @@ export default function CustomHiitScreen() {
     if (isGetReady) return 'GET READY';
     return isWorkPhase ? 'WORK TIME' : 'REST TIME';
   };
+
+  const displayWork = isActive ? workTime : configWorkTime;
+  const displayRest = isActive ? restTime : configRestTime;
+  const displayRounds = isActive ? rounds : configRounds;
+  const timeLeft = isGetReady ? getReadyTimeLeft : phaseTimeLeft;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -118,9 +106,11 @@ export default function CustomHiitScreen() {
             style={[
               styles.progressFill,
               { 
-                width: isGetReady ? '100%' : 
-                       isWorkPhase ? `${((workTime - timeLeft) / workTime) * 100}%` :
-                       `${((restTime - timeLeft) / restTime) * 100}%`
+                width: isGetReady
+                  ? '100%'
+                  : isWorkPhase
+                    ? `${displayWork > 0 ? ((displayWork - timeLeft) / displayWork) * 100 : 0}%`
+                    : `${displayRest > 0 ? ((displayRest - timeLeft) / displayRest) * 100 : 0}%`
               }
             ]} 
           />
@@ -128,26 +118,26 @@ export default function CustomHiitScreen() {
       </View>
 
       {/* Main Timer */}
-      <Text style={styles.mainTimer}>{formatTime(timeLeft)}</Text>
+  <Text style={styles.mainTimer}>{formatTime(timeLeft)}</Text>
 
       {/* Settings Grid */}
       <View style={styles.settingsGrid}>
         {/* Work Time */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>WORK TIME</Text>
-          <Text style={styles.settingValue}>{workTime}s</Text>
+          <Text style={styles.settingValue}>{displayWork}s</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustWorkTime(false)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustWorkTime(true)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -157,19 +147,19 @@ export default function CustomHiitScreen() {
         {/* Rest Time */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>REST TIME</Text>
-          <Text style={styles.settingValue}>{restTime}s</Text>
+          <Text style={styles.settingValue}>{displayRest}s</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRestTime(false)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRestTime(true)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -179,19 +169,19 @@ export default function CustomHiitScreen() {
         {/* Rounds */}
         <View style={styles.settingCard}>
           <Text style={styles.settingLabel}>ROUNDS</Text>
-          <Text style={styles.settingValue}>{rounds}</Text>
+          <Text style={styles.settingValue}>{displayRounds}</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRounds(false)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.adjustButton} 
               onPress={() => adjustRounds(true)}
-              disabled={isRunning}
+              disabled={isActive}
             >
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
@@ -207,21 +197,28 @@ export default function CustomHiitScreen() {
 
       {/* Control Buttons */}
       <View style={styles.controlButtons}>
-        <TouchableOpacity 
-          style={[styles.controlButton, !isRunning && !isPaused && styles.startButton]} 
-          onPress={handleStart}
-          disabled={isRunning}
-        >
-          <Text style={styles.controlButtonText}>START</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.controlButton]} 
-          onPress={handlePause}
-          disabled={!isRunning}
-        >
-          <Text style={styles.controlButtonText}>PAUSE</Text>
-        </TouchableOpacity>
+        {!isActive ? (
+          <TouchableOpacity 
+            style={[styles.controlButton, styles.startButton]} 
+            onPress={handleStart}
+          >
+            <Text style={styles.controlButtonText}>START</Text>
+          </TouchableOpacity>
+        ) : isPaused ? (
+          <TouchableOpacity 
+            style={[styles.controlButton, styles.startButton]} 
+            onPress={handleResume}
+          >
+            <Text style={styles.controlButtonText}>RESUME</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.controlButton]} 
+            onPress={handlePause}
+          >
+            <Text style={styles.controlButtonText}>PAUSE</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity 
           style={[styles.controlButton]} 
@@ -232,9 +229,10 @@ export default function CustomHiitScreen() {
 
         <TouchableOpacity 
           style={[styles.controlButton, styles.stopButton]} 
-          onPress={handleStop}
+          onPress={handleFinish}
+          disabled={!isActive}
         >
-          <Text style={styles.controlButtonText}>STOP</Text>
+          <Text style={styles.controlButtonText}>FINISH</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

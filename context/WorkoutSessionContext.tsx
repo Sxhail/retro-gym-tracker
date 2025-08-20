@@ -291,6 +291,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
         name: workoutName.trim(),
         startTime: sessionStartTime,
         endTime: sessionEndTime || new Date(), // Use current time if not ended
+        duration: elapsedTime, // Use actual elapsed time accounting for pauses
         exercises: currentExercises.map(exercise => ({
           exerciseId: exercise.id,
           sets: exercise.sets?.map((set, index) => ({

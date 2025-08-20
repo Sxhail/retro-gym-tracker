@@ -7,6 +7,7 @@ export interface WorkoutSessionData {
   name: string;
   startTime: Date;
   endTime: Date;
+  duration?: number; // Optional: actual elapsed time in seconds (overrides endTime - startTime calculation)
   exercises: Array<{
     exerciseId: number;
     distance?: number;
@@ -62,8 +63,10 @@ export async function saveWorkout(sessionData: WorkoutSessionData): Promise<numb
 
   while (retryCount < maxRetries) {
     try {
-      // Calculate total duration in seconds
-      const duration = Math.floor((sessionData.endTime.getTime() - sessionData.startTime.getTime()) / 1000);
+      // Calculate total duration in seconds - use provided duration or calculate from timestamps
+      const duration = sessionData.duration !== undefined 
+        ? sessionData.duration 
+        : Math.floor((sessionData.endTime.getTime() - sessionData.startTime.getTime()) / 1000);
       
       // Validate session data
       if (!sessionData.name || sessionData.name.trim().length === 0) {

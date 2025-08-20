@@ -301,11 +301,17 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     }
   }, [set.completed, canComplete, set.rest]);
 
-  // Format rest timer mm:ss
+  // Format rest timer mm:ss or hh:mm:ss
   function formatRestTimer(seconds: number) {
-    const m = Math.floor(seconds / 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    
+    if (h > 0) {
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    } else {
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
   }
 
   // Show rest timer for the most recently completed set (hide when timer reaches 0)
@@ -803,9 +809,15 @@ export default function NewWorkoutScreen() {
 
   // Format timer mm:ss
   function formatElapsed(seconds: number) {
-    const m = Math.floor(seconds / 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    
+    if (h > 0) {
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    } else {
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
   }
 
   // When modal closes, always clear loading

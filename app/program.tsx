@@ -10,6 +10,7 @@ import { ProgramManager, ProgramData } from '../services/programManager';
 import ExerciseCard from '../components/ExerciseCard';
 import { dbOperations } from '../services/database';
 import { getExerciseMaxWeights } from '../services/workoutHistory';
+import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 
 interface ProgramConfig {
   programName: string;
@@ -247,12 +248,15 @@ export default function ProgramScreen() {
   };
 
   const renderHeader = () => (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => router.back()}>
-        <Text style={styles.backButton}>←</Text>
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>TRAINING PROGRAMS</Text>
-      <View style={{ width: 36 }} />
+    <View>
+      <GlobalRestTimerDisplay />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backButton}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>TRAINING PROGRAMS</Text>
+        <View style={{ width: 36 }} />
+      </View>
     </View>
   );
 

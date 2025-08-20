@@ -102,6 +102,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
   // Timer refs
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const accumulatedTimeRef = useRef(0);
+  const completionAlertShownRef = useRef(false);
 
   // Start a cardio session
   const startSession = (type: CardioType, name: string, config: any, options?: { skipGetReady?: boolean }) => {
@@ -116,6 +117,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     accumulatedTimeRef.current = 0;
     setIsPaused(false);
     setIsActive(true);
+    completionAlertShownRef.current = false; // reset completion guard
     
     // Reset phase state
     setCurrentRound(1);
@@ -204,9 +206,12 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         if (currentRound >= rounds) {
           // All rounds complete
           console.log('🎉 HIIT workout complete!');
-          Alert.alert('Workout Complete!', `You completed ${rounds} rounds of HIIT!`, [
-            { text: 'Finish', onPress: () => endSession() }
-          ]);
+          if (!completionAlertShownRef.current) {
+            completionAlertShownRef.current = true;
+            Alert.alert('Workout Complete!', `You completed ${rounds} rounds of HIIT!`, [
+              { text: 'Finish', onPress: () => endSession() }
+            ]);
+          }
           return;
         } else {
           // Start next work phase
@@ -227,9 +232,12 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         if (currentLap >= laps) {
           // All laps complete
           console.log('🎉 Walk-Run workout complete!');
-          Alert.alert('Workout Complete!', `You completed ${laps} laps of Walk-Run!`, [
-            { text: 'Finish', onPress: () => endSession() }
-          ]);
+          if (!completionAlertShownRef.current) {
+            completionAlertShownRef.current = true;
+            Alert.alert('Workout Complete!', `You completed ${laps} laps of Walk-Run!`, [
+              { text: 'Finish', onPress: () => endSession() }
+            ]);
+          }
           return;
         } else {
           // Start next run phase
@@ -359,6 +367,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     setPhaseTimeLeft(10);
     setIsGetReady(false);
     setGetReadyTimeLeft(10);
+    completionAlertShownRef.current = false; // clear completion guard
     
     console.log('🔄 Cardio session reset');
   };
@@ -409,10 +418,13 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
             console.log(`⏰ Phase time: ${newTime}, Type: ${cardioType}, Phase: ${cardioType === 'hiit' ? (isWorkPhase ? 'WORK' : 'REST') : (isRunPhase ? 'RUN' : 'WALK')}`);
             
             if (newTime <= 0) {
-              console.log('🔄 Phase transition triggered');
-              // Use setTimeout to ensure state updates are processed
-              setTimeout(() => nextPhase(), 100);
-              return 0;
+              // Only trigger transition once when crossing from >0 to <=0
+              if (prev > 0) {
+                console.log('🔄 Phase transition triggered');
+                // Use setTimeout to ensure state updates are processed
+                setTimeout(() => nextPhase(), 100);
+              }
+              return 0; // clamp at 0 to avoid repeated triggers
             }
             return newTime;
           });

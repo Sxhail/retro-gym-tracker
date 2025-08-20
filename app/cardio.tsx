@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Ale
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 import { useCardioSession } from '../context/CardioSessionContext';
+import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 
 export default function CardioScreen() {
   const router = useRouter();
@@ -111,6 +112,7 @@ export default function CardioScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <GlobalRestTimerDisplay />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

@@ -9,8 +9,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <View style={styles.container}>
-      {children}
-      <GlobalRestTimerDisplay />
+  {children}
     </View>
   );
 }

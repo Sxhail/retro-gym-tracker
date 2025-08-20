@@ -4,6 +4,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
+import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 import { useCardioSession } from '../context/CardioSessionContext';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
 import { ProgramManager } from '../services/programManager';
@@ -47,7 +48,7 @@ export default function HomeScreen() {
     }
   };
   const [programProgress, setProgramProgress] = useState<any>({});
-  const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
+  const { isWorkoutActive, startProgramWorkout, globalRestTimer } = useWorkoutSession();
   const { isActive: isCardioActive, cardioType } = useCardioSession();
 
   useEffect(() => {
@@ -150,20 +151,26 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* SYSTEM ONLINE and protocol banner at very top */}
-        <View style={{ width: '100%', marginTop: theme.spacing.xs, marginBottom: 0 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginHorizontal: 16, marginTop: 4 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 10, height: 10, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 6 }} />
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, letterSpacing: 1 }}>
-                SYSTEM ONLINE
-              </Text>
-            </View>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 11, letterSpacing: 1 }}>
-              RETRO FITNESS PROTOCOL
-            </Text>
-          </View>
-          <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
+        {/* Header block: show rest bar here when active, else show protocol text and outline */}
+        <View style={{ width: '100%', marginTop: theme.spacing.xs, marginBottom: 0, minHeight: 24 }}>
+          {/* Only the header-embedded rest timer bar or protocol header is rendered here now */}
+          {(isWorkoutActive && globalRestTimer?.isActive && (globalRestTimer.timeRemaining ?? 0) > 0)
+            ? <GlobalRestTimerDisplay />
+            : <>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginHorizontal: 16, marginTop: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ width: 10, height: 10, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 6 }} />
+                    <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, letterSpacing: 1 }}>
+                      SYSTEM ONLINE
+                    </Text>
+                  </View>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 11, letterSpacing: 1 }}>
+                    RETRO FITNESS PROTOCOL
+                  </Text>
+                </View>
+                <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
+              </>
+          }
         </View>
 
         {/* Program Progress Widgets for all existing programs */}

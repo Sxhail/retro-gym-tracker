@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useFonts as useOrbitron, Orbitron_700Bold } from '@expo-google-fonts/orbitron';
 import { useFonts as usePressStart2P, PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
@@ -63,27 +64,29 @@ export default function Layout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <DatabaseProvider>
-        <WorkoutSessionProvider>
-          <CardioSessionProvider>
-            <BackgroundWorkoutPersistence>
-              <BackgroundRestTimerPersistence>
-                <BackgroundCardioSessionPersistence>
-                  <AppLayout>
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                        animation: 'none',
-                      }}
-                    />
-                    <GlobalRestTimerNotification />
-                  </AppLayout>
-                </BackgroundCardioSessionPersistence>
-              </BackgroundRestTimerPersistence>
-            </BackgroundWorkoutPersistence>
-          </CardioSessionProvider>
-        </WorkoutSessionProvider>
-      </DatabaseProvider>
+      <SafeAreaProvider>
+        <DatabaseProvider>
+          <WorkoutSessionProvider>
+            <CardioSessionProvider>
+              <BackgroundWorkoutPersistence>
+                <BackgroundRestTimerPersistence>
+                  <BackgroundCardioSessionPersistence>
+                    <AppLayout>
+                      <Stack
+                        screenOptions={{
+                          headerShown: false,
+                          animation: 'none',
+                        }}
+                      />
+                      <GlobalRestTimerNotification />
+                    </AppLayout>
+                  </BackgroundCardioSessionPersistence>
+                </BackgroundRestTimerPersistence>
+              </BackgroundWorkoutPersistence>
+            </CardioSessionProvider>
+          </WorkoutSessionProvider>
+        </DatabaseProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 } 

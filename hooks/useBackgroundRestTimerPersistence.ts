@@ -15,17 +15,45 @@ export function useBackgroundRestTimerPersistence() {
   const [isRestored, setIsRestored] = useState(false);
 
   // Generate session ID when rest timer starts
-  const ensureRestSessionId = useCallback(() => {
-    if (!restSessionIdRef.current && session.globalRestTimer?.isActive) {
+  const ensureRestSessionId = useCallback(async () => {
+    if (!session.globalRestTimer?.isActive) {
+      restSessionIdRef.current = null;
+      return null;
+    }
+    
+    if (!restSessionIdRef.current) {
+      // CRITICAL: Clean up any existing rest timer records before creating new session
+      try {
+        const { db } = await import('../db/client');
+        const { active_session_timers } = await import('../db/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        // Clean up all existing rest timers to prevent conflicts
+        const existingRestTimers = await db
+          .select()
+          .from(active_session_timers)
+          .where(eq(active_session_timers.timer_type, 'rest'));
+        
+        for (const timer of existingRestTimers) {
+          await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+        }
+        
+        if (existingRestTimers.length > 0) {
+          console.log('🧹 Cleaned up', existingRestTimers.length, 'existing rest timer records before creating new session');
+        }
+      } catch (error) {
+        console.error('Failed to cleanup existing rest timers in ensureRestSessionId:', error);
+      }
+      
       restSessionIdRef.current = `rest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log('🆔 Generated rest session ID:', restSessionIdRef.current);
+      console.log('🆔 Generated new rest session ID:', restSessionIdRef.current);
     }
     return restSessionIdRef.current;
   }, [session.globalRestTimer?.isActive]);
 
   // Save current rest timer state to background storage
   const saveRestTimerState = useCallback(async () => {
-    const sessionId = ensureRestSessionId();
+    const sessionId = await ensureRestSessionId();
     if (!sessionId || !session.globalRestTimer?.isActive || !session.globalRestTimer.startTime) {
       return;
     }
@@ -92,12 +120,13 @@ export function useBackgroundRestTimerPersistence() {
         const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
         const remaining = Math.max(0, restTimer.duration - elapsed);
         
-        // Check if timer is too old (more than 2 hours) or already finished - clean it up
-        if (elapsed > 2 * 60 * 60 || remaining <= 0) {
+        // ENHANCED: More aggressive cleanup - if timer is more than 10 minutes old or finished
+        if (elapsed > 10 * 60 || remaining <= 0) {
           console.log('🧹 Cleaning up old/finished rest timer:', {
             elapsed: elapsed,
             remaining: remaining,
-            sessionId: restTimer.session_id
+            sessionId: restTimer.session_id,
+            age: `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`
           });
           await backgroundSessionService.clearTimerData(restTimer.session_id, 'rest');
         } else {
@@ -105,7 +134,7 @@ export function useBackgroundRestTimerPersistence() {
         }
       }
       
-      // Only restore if there's exactly one valid timer (prevent multiple timer conflicts)
+      // ENHANCED: Only restore the MOST RECENT timer (prevent conflicts)
       if (validRestTimers.length === 1) {
         const { restTimer, remaining } = validRestTimers[0];
         
@@ -129,11 +158,22 @@ export function useBackgroundRestTimerPersistence() {
         // CRITICAL: Do not trigger completion callback during restoration
         return true;
       } else if (validRestTimers.length > 1) {
-        // Multiple timers found - this is an error state, clean them all up
-        console.warn('🚨 Multiple rest timers found, cleaning all up to prevent conflicts');
+        // ENHANCED: Multiple timers found - this is an error state, clean ALL up to prevent conflicts
+        console.warn('🚨 Multiple rest timers found (' + validRestTimers.length + '), cleaning ALL up to prevent conflicts');
+        
+        // Find most recent timer by start time
+        validRestTimers.sort((a, b) => new Date(b.restTimer.start_time).getTime() - new Date(a.restTimer.start_time).getTime());
+        const mostRecent = validRestTimers[0];
+        
+        // Clean up ALL timers (including the most recent one to avoid conflicts)
         for (const { restTimer } of validRestTimers) {
           await backgroundSessionService.clearTimerData(restTimer.session_id, 'rest');
         }
+        
+        console.log('🧹 All conflicting rest timers cleaned up. Most recent was:', {
+          remaining: mostRecent.remaining,
+          sessionId: mostRecent.restTimer.session_id
+        });
       }
       
       setIsRestored(true);

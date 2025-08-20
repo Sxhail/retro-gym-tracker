@@ -136,12 +136,12 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     restoreRestTimerState();
   }, [sessionWorkout.isWorkoutActive]);
 
-  // Sync local timer display with global rest timer - improved sync logic
+  // Sync local timer display with global rest timer - strict match with exerciseId/setIdx
   useEffect(() => {
     const globalTimer = sessionWorkout.globalRestTimer;
     if (globalTimer && globalTimer.isActive && globalTimer.startTime) {
-      // Check if this is the set that the global timer belongs to (either by isLastCompleted OR by matching exerciseId/setIdx)
-      const isTimerForThisSet = (isLastCompleted) || (globalTimer.exerciseId === exerciseId && globalTimer.setIdx === setIdx);
+      // Only treat this row as the owner if BOTH exerciseId and setIdx match the global timer
+      const isTimerForThisSet = (globalTimer.exerciseId === exerciseId && globalTimer.setIdx === setIdx);
       
       if (isTimerForThisSet && set.completed) {
         console.log('🔄 Attempting to sync local timer with global timer for set', setIdx, 'of exercise', exerciseId);
@@ -160,7 +160,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
         setTimerPaused(false); // Ensure timer is not paused
         
         console.log('🔄 Local timer synced with global timer:', remaining, 's remaining');
-      } else if (restActive && (!isTimerForThisSet || !set.completed)) {
+    } else if (restActive && (!isTimerForThisSet || !set.completed)) {
         // If this set's timer was active but it's not the one the global timer belongs to, stop local timer
         setRestActive(false);
         setRestStartTime(null);
@@ -180,7 +180,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       setTimerPaused(false);
       console.log('� Local timer stopped - no global timer active');
     }
-  }, [sessionWorkout.globalRestTimer, sessionWorkout.globalRestTimer?.timeRemaining, isLastCompleted, exerciseId, setIdx, set.rest, set.completed]);
+  }, [sessionWorkout.globalRestTimer, sessionWorkout.globalRestTimer?.timeRemaining, exerciseId, setIdx, set.rest, set.completed]);
 
   // Cleanup rest timer state when component unmounts or set is no longer completed
   useEffect(() => {
@@ -314,8 +314,14 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     }
   }
 
-  // Show rest timer for the most recently completed set (hide when timer reaches 0)
-  const showRestTimer = restActive && restTime > 0 && isLastCompleted;
+  // Show rest timer ONLY for the set that owns the global timer
+  const showRestTimer = (
+    restActive &&
+    restTime > 0 &&
+    sessionWorkout.globalRestTimer?.isActive &&
+    sessionWorkout.globalRestTimer.exerciseId === exerciseId &&
+    sessionWorkout.globalRestTimer.setIdx === setIdx
+  );
 
   // Render right action for swipe-to-delete (transparent, allows row to slide left)
   const renderRightActions = () => (
@@ -707,7 +713,7 @@ export default function NewWorkoutScreen() {
   };
 
   // Toggle set completion
-  const handleToggleSetComplete = (exerciseId: number, setIdx: number) => {
+  const handleToggleSetComplete = async (exerciseId: number, setIdx: number) => {
     const updatedExercises = sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
         const currentSets = ex.sets || [];
@@ -726,10 +732,41 @@ export default function NewWorkoutScreen() {
     if (targetExercise) {
       const targetSet = targetExercise.sets?.[setIdx];
       if (targetSet && !targetSet.completed) {  // If it's being completed now
+        
+        // CRITICAL FIX: Clean up any existing rest timers before starting new one
+        try {
+          // 1. Clear any existing global rest timer first
+          setGlobalRestTimer(null);
+          
+          // 2. Clean up all existing rest timer background data to prevent conflicts
+          const { db } = await import('../db/client');
+          const { active_session_timers } = await import('../db/schema');
+          const { eq } = await import('drizzle-orm');
+          
+          // Get all existing rest timers
+          const existingRestTimers = await db
+            .select()
+            .from(active_session_timers)
+            .where(eq(active_session_timers.timer_type, 'rest'));
+          
+          // Clean them all up
+          for (const timer of existingRestTimers) {
+            await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+          }
+          
+          console.log('🧹 Cleaned up', existingRestTimers.length, 'existing rest timers before starting new one');
+          
+          // Small delay to ensure cleanup is complete
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+        } catch (error) {
+          console.error('Failed to cleanup existing rest timers:', error);
+        }
+        
+        // 3. Now start the new global rest timer
         const restDuration = targetSet.restDuration || 120;
         const now = new Date();
         
-        // Start global rest timer
         setGlobalRestTimer({
           isActive: true,
           timeRemaining: restDuration,
@@ -739,10 +776,29 @@ export default function NewWorkoutScreen() {
           startTime: now,
         });
         
-        console.log('🏃 Started global rest timer:', restDuration, 'seconds');
+        console.log('🏃 Started new global rest timer:', restDuration, 'seconds for exercise', exerciseId, 'set', setIdx + 1);
       } else if (targetSet && targetSet.completed) {  // If it's being uncompleted
-        // Stop global rest timer
+        // Stop global rest timer and cleanup background data
         setGlobalRestTimer(null);
+        
+        // Also cleanup background data for this specific timer
+        try {
+          const { db } = await import('../db/client');
+          const { active_session_timers } = await import('../db/schema');
+          const { eq } = await import('drizzle-orm');
+          
+          const existingRestTimers = await db
+            .select()
+            .from(active_session_timers)
+            .where(eq(active_session_timers.timer_type, 'rest'));
+          
+          for (const timer of existingRestTimers) {
+            await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+          }
+        } catch (error) {
+          console.error('Failed to cleanup rest timer on uncomplete:', error);
+        }
+        
         console.log('⏹️ Stopped global rest timer');
       }
     }

@@ -4,6 +4,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
+import { useCardioSession } from '../context/CardioSessionContext';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
 import { ProgramManager } from '../services/programManager';
 import { useFocusEffect } from '@react-navigation/native';
@@ -47,6 +48,7 @@ export default function HomeScreen() {
   };
   const [programProgress, setProgramProgress] = useState<any>({});
   const { isWorkoutActive, startProgramWorkout } = useWorkoutSession();
+  const { isActive: isCardioActive } = useCardioSession();
 
   useEffect(() => {
     loadAllProgramsWithProgress();
@@ -204,7 +206,11 @@ export default function HomeScreen() {
       <View style={styles.bottomActionSection}>
         {isWorkoutActive ? (
           <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-            <Text style={styles.startButtonText}>CONTINUE WORKOUT</Text>
+            <Text style={styles.startButtonText}>CONTINUE LIFT</Text>
+          </TouchableOpacity>
+        ) : isCardioActive ? (
+          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/cardio')}>
+            <Text style={styles.startButtonText}>CONTINUE CARDIO</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>

@@ -548,17 +548,40 @@ export default function HistoryListScreen() {
     router.push(`/history/${workoutId}`);
   };
 
-  // Filter workouts based on search query
-  const filteredWorkouts = useMemo(() => {
-    if (!searchQuery.trim()) return workouts;
-    return workouts.filter(workout => 
-      workout.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      formatDate(workout.date).includes(searchQuery)
+  // Merge and filter workouts and cardio sessions
+  const mergedSessions = useMemo(() => {
+    // Normalize cardio sessions to match workout item shape
+    const cardioNormalized = cardioSessions.map(session => ({
+      ...session,
+      isCardio: true,
+      name: session.name || getCardioTypeDisplayName(session.type as any),
+      date: session.date,
+      duration: session.duration,
+      calories_burned: session.calories_burned || 0,
+      type: session.type,
+      exerciseCount: 1,
+      totalSets: session.rounds || session.laps || session.total_laps || 0,
+    }));
+    const allSessions = [
+      ...workouts.map(w => ({
+        ...w,
+        isCardio: false,
+        type: '', // No cardio type
+        calories_burned: 0, // No calories for lift
+      })),
+      ...cardioNormalized
+    ];
+    // Sort by date descending
+    allSessions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    if (!searchQuery.trim()) return allSessions;
+    return allSessions.filter(item =>
+      (item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      formatDate(item.date).includes(searchQuery)
     );
-  }, [workouts, searchQuery]);
+  }, [workouts, cardioSessions, searchQuery]);
 
   // Calculate filtered stats for search
-  const filteredWorkoutsCount = filteredWorkouts.length;
+  const filteredWorkoutsCount = mergedSessions.length;
 
   // After successful import, refresh history and show message
   const showImportSuccess = (msg: string) => {
@@ -781,9 +804,9 @@ export default function HistoryListScreen() {
           </View>
         ) : null}
 
-        {workouts.length === 0 && !loading && !error ? (
+        {mergedSessions.length === 0 && !loading && !error ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>NO WORKOUTS YET</Text>
+            <Text style={styles.emptyTitle}>NO SESSIONS YET</Text>
             <TouchableOpacity 
               style={styles.newWorkoutButton} 
               onPress={() => router.push('/new')}
@@ -791,7 +814,7 @@ export default function HistoryListScreen() {
               <Text style={styles.newWorkoutButtonText}>START WORKOUT</Text>
             </TouchableOpacity>
           </View>
-        ) : searchQuery && filteredWorkouts.length === 0 ? (
+        ) : searchQuery && mergedSessions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>NO MATCHES FOUND</Text>
             <Text style={styles.emptyText}>Try a different search term.</Text>
@@ -803,31 +826,45 @@ export default function HistoryListScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          filteredWorkouts.map((workout, index) => (
+          mergedSessions.map((item, index) => (
             <TouchableOpacity 
-              key={workout.id} 
-              style={styles.workoutCard} 
+              key={item.id || `${item.name}-${item.date}`}
+              style={[styles.workoutCard, item.isCardio && styles.cardioCard]}
               activeOpacity={0.8}
-              onPress={() => handleWorkoutPress(workout.id)}
+              onPress={() => item.isCardio ? router.push(`/cardio/history/${item.id}`) : handleWorkoutPress(item.id)}
             >
               <View style={styles.workoutHeader}>
-                <Text style={styles.workoutTitle}>{workout.name}</Text>
-                <Text style={styles.workoutDate}>{formatDate(workout.date)}</Text>
+                <Text style={styles.workoutTitle}>{item.name}</Text>
+                <Text style={styles.workoutDate}>{formatDate(item.date)}</Text>
               </View>
-              
               <View style={styles.workoutDetails}>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>DURATION</Text>
-                  <Text style={styles.detailValue}>{formatDurationAsHrMin(workout.duration)}</Text>
+                  <Text style={styles.detailValue}>{formatDurationAsHrMin(item.duration)}</Text>
                 </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>EXERCISES</Text>
-                  <Text style={styles.detailValue}>{workout.exerciseCount}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>SETS</Text>
-                  <Text style={styles.detailValue}>{workout.totalSets}</Text>
-                </View>
+                {item.isCardio ? (
+                  <>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>TYPE</Text>
+                      <Text style={styles.detailValue}>{getCardioTypeDisplayName(item.type as any)}</Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>CALORIES</Text>
+                      <Text style={styles.detailValue}>{item.calories_burned}</Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>EXERCISES</Text>
+                      <Text style={styles.detailValue}>{item.exerciseCount}</Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>SETS</Text>
+                      <Text style={styles.detailValue}>{item.totalSets}</Text>
+                    </View>
+                  </>
+                )}
               </View>
             </TouchableOpacity>
           ))

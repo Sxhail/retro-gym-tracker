@@ -9,37 +9,21 @@ export function GlobalRestTimerNotification() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const callbackSetRef = useRef(false);
   const appStartTimeRef = useRef(Date.now());
-  
+
   useEffect(() => {
-    // Only set up callback once and not immediately on mount (to avoid restoration triggers)
     const timer = setTimeout(() => {
       if (!callbackSetRef.current) {
         callbackSetRef.current = true;
-        
         setOnRestTimerComplete(() => {
-          // Additional safety: Don't show notification if app just started (within 5 seconds)
           const timeSinceAppStart = Date.now() - appStartTimeRef.current;
-          if (timeSinceAppStart < 5000) {
-            console.log('🚫 Suppressing rest timer notification - app just started');
-            return;
-          }
-          
-          console.log('🔔 Rest timer completed - showing notification');
-          
-          // Vibrate for tactile feedback
+          if (timeSinceAppStart < 5000) return;
           Vibration.vibrate(500);
-          
-          // Show notification
           setShowNotification(true);
-          
-          // Animate in
           Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 300,
             useNativeDriver: true,
           }).start();
-
-          // Auto-hide after 2 seconds (as requested)
           setTimeout(() => {
             Animated.timing(fadeAnim, {
               toValue: 0,
@@ -48,12 +32,10 @@ export function GlobalRestTimerNotification() {
             }).start(() => {
               setShowNotification(false);
             });
-          }, 2000); // Changed from 2500ms to 2000ms (exactly 2 seconds)
+          }, 2000);
         });
       }
-    }, 2000); // Increased delay from 1 second to 2 seconds
-
-    // Cleanup callback on unmount
+    }, 2000);
     return () => {
       clearTimeout(timer);
       if (callbackSetRef.current) {

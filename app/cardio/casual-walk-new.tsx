@@ -11,47 +11,8 @@ export default function CasualWalkScreen() {
     startSession, pauseSession, resumeSession, endSession, resetSession 
   } = useCardioSession();
 
-  // Local configuration state
-  const [configTotalLaps, setConfigTotalLaps] = useState(1);
-
-  // Calculated values for casual walk
-  const [distance, setDistance] = useState(0.00);
-  const [pace, setPace] = useState('--:--');
-  const [speed, setSpeed] = useState(0.0);
-  const [calories, setCalories] = useState(0);
-  const [currentLap, setCurrentLap] = useState(1);
-
-  // Initialize session state
-  useEffect(() => {
-    if (!isActive && !cardioType) {
-      // Reset local states when no session
-      setDistance(0);
-      setPace('--:--');
-      setSpeed(0);
-      setCalories(0);
-      setCurrentLap(1);
-    }
-  }, [isActive, cardioType]);
-
-  // Update calculated values based on elapsed time
-  useEffect(() => {
-    if (isActive && elapsedTime > 0) {
-      // Calculate pace and speed based on distance and time
-      if (distance > 0) {
-        const paceInSeconds = elapsedTime / distance;
-        const mins = Math.floor(paceInSeconds / 60);
-        const secs = Math.floor(paceInSeconds % 60);
-        setPace(`${mins}:${secs.toString().padStart(2, '0')}`);
-        setSpeed(Number((distance / (elapsedTime / 3600)).toFixed(1)));
-      }
-      // Rough calorie calculation (placeholder)
-      setCalories(Math.floor(elapsedTime * 0.15)); // Lower rate for walking
-    }
-  }, [isActive, elapsedTime, distance]);
-
   const handleStart = () => {
-    const config = { totalLaps: configTotalLaps };
-    startSession('casual_walk', 'CASUAL WALK', config);
+    startSession('casual_walk', 'CASUAL WALK', {});
   };
 
   const handlePause = () => {
@@ -64,11 +25,6 @@ export default function CasualWalkScreen() {
 
   const handleReset = () => {
     resetSession();
-    setDistance(0);
-    setPace('--:--');
-    setSpeed(0);
-    setCalories(0);
-    setCurrentLap(1);
   };
 
   const handleFinish = () => {
@@ -80,40 +36,38 @@ export default function CasualWalkScreen() {
         { 
           text: 'Finish', 
           onPress: async () => {
-            try {
-              await endSession();
-              Alert.alert('Walk Complete!', 'Your casual walk session has been saved.', [
-                { text: 'OK', onPress: () => router.back() }
-              ]);
-            } catch (error) {
-              console.error('Error saving workout:', error);
-              const errorMessage = error instanceof Error ? error.message : 'Failed to save walk. Please try again.';
-              
-              // Handle specific error cases like lift workouts
-              if (errorMessage.includes('Please enter a session name')) {
-                Alert.alert('Invalid Session Name', errorMessage);
-              } else if (errorMessage.includes('Please shorten')) {
-                Alert.alert('Input Too Long', errorMessage);
-              } else if (errorMessage.includes('Please check your')) {
-                Alert.alert('Invalid Values', errorMessage);
-              } else if (errorMessage.includes('Database is busy')) {
-                Alert.alert('Database Busy', errorMessage);
-              } else if (errorMessage.includes('Database error')) {
-                Alert.alert('Database Error', 'Please restart the app and try again.');
-              } else {
-                Alert.alert('Save Failed', errorMessage);
-              }
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const adjustDistance = (increment: boolean) => {
-    if (isActive) {
-      setDistance(prev => increment ? prev + 0.1 : Math.max(0, prev - 0.1));
-    }
+            Alert.alert(
+              'Finish Walk?',
+              'Are you sure you want to finish this casual walk? Your progress will be saved.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Finish', 
+                  onPress: async () => {
+                    try {
+                      await endSession();
+                      router.replace('/history');
+                    } catch (error) {
+                      console.error('Error saving workout:', error);
+                      const errorMessage = error instanceof Error ? error.message : 'Failed to save walk. Please try again.';
+                      if (errorMessage.includes('Please enter a session name')) {
+                        Alert.alert('Invalid Session Name', errorMessage);
+                      } else if (errorMessage.includes('Please shorten')) {
+                        Alert.alert('Input Too Long', errorMessage);
+                      } else if (errorMessage.includes('Please check your')) {
+                        Alert.alert('Invalid Values', errorMessage);
+                      } else if (errorMessage.includes('Database is busy')) {
+                        Alert.alert('Database Busy', errorMessage);
+                      } else if (errorMessage.includes('Database error')) {
+                        Alert.alert('Database Error', 'Please restart the app and try again.');
+                      } else {
+                        Alert.alert('Save Failed', errorMessage);
+                      }
+                    }
+                  }
+                }
+              ]
+            );
   };
 
   const adjustTotalLaps = (increment: boolean) => {
@@ -153,86 +107,9 @@ export default function CasualWalkScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      {/* Main Timer */}
-      <Text style={styles.mainTimer}>{formatTime(elapsedTime)}</Text>
-
-      {/* Stats Grid */}
-      <View style={styles.statsGrid}>
-        {/* Distance */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>DISTANCE</Text>
-          <Text style={styles.statValue}>{distance.toFixed(2)}</Text>
-          <Text style={styles.statUnit}>KM</Text>
-          {isActive && (
-            <View style={styles.buttonRow}>
-              <TouchableOpacity 
-                style={styles.adjustButton} 
-                onPress={() => adjustDistance(false)}
-              >
-                <Text style={styles.adjustButtonText}>-</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.adjustButton} 
-                onPress={() => adjustDistance(true)}
-              >
-                <Text style={styles.adjustButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Pace */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>PACE</Text>
-          <Text style={styles.statValue}>{pace}</Text>
-          <Text style={styles.statUnit}>MIN/KM</Text>
-        </View>
-
-        {/* Speed */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>SPEED</Text>
-          <Text style={styles.statValue}>{speed.toFixed(1)}</Text>
-          <Text style={styles.statUnit}>KM/H</Text>
-        </View>
-
-        {/* Calories */}
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>CALORIES</Text>
-          <Text style={styles.statValue}>{calories}</Text>
-          <Text style={styles.statUnit}>KCAL</Text>
-        </View>
-      </View>
-
-      {/* Lap Section */}
-      <View style={styles.lapSection}>
-        <View style={styles.lapInfo}>
-          <Text style={styles.lapText}>LAP {currentLap} OF {displayTotalLaps}</Text>
-          {!isActive && (
-            <View style={styles.buttonRow}>
-              <TouchableOpacity 
-                style={styles.adjustButton} 
-                onPress={() => adjustTotalLaps(false)}
-              >
-                <Text style={styles.adjustButtonText}>-</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.adjustButton} 
-                onPress={() => adjustTotalLaps(true)}
-              >
-                <Text style={styles.adjustButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {isActive && (
-          <TouchableOpacity 
-            style={styles.lapButton}
-            onPress={markLap}
-          >
-            <Text style={styles.lapButtonText}>MARK LAP</Text>
-          </TouchableOpacity>
-        )}
+      {/* Main Timer Only for Casual Walk */}
+      <View style={{ alignItems: 'center', marginVertical: 32 }}>
+        <Text style={styles.mainTimer}>{formatTime(elapsedTime)}</Text>
       </View>
 
       {/* Control Buttons */}

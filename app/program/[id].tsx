@@ -130,7 +130,9 @@ export default function ProgramDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <GlobalRestTimerDisplay />
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2000 }}>
+        <GlobalRestTimerDisplay />
+      </View>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>

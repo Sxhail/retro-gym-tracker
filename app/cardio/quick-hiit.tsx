@@ -56,14 +56,10 @@ export default function QuickHiitScreen() {
           onPress: async () => {
             try {
               await endSession();
-              Alert.alert('Workout Complete!', 'Your HIIT session has been saved.', [
-                { text: 'OK', onPress: () => router.back() }
-              ]);
+              router.replace('/history');
             } catch (error) {
               console.error('Error saving workout:', error);
               const errorMessage = error instanceof Error ? error.message : 'Failed to save workout. Please try again.';
-              
-              // Handle specific error cases like lift workouts
               if (errorMessage.includes('Please enter a session name')) {
                 Alert.alert('Invalid Session Name', errorMessage);
               } else if (errorMessage.includes('Please shorten')) {

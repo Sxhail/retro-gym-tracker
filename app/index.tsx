@@ -153,9 +153,10 @@ export default function HomeScreen() {
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Header block: show rest bar here when active, else show protocol text and outline */}
         <View style={{ width: '100%', marginTop: theme.spacing.xs, marginBottom: 0, minHeight: 24 }}>
-          {/* Only the header-embedded rest timer bar or protocol header is rendered here now */}
           {(isWorkoutActive && globalRestTimer?.isActive && (globalRestTimer.timeRemaining ?? 0) > 0)
-            ? <GlobalRestTimerDisplay />
+            ? <View style={{ width: '100%', height: 4, marginHorizontal: 16, marginTop: 4, backgroundColor: 'rgba(0, 0, 0, 0.35)', borderRadius: 2, overflow: 'hidden' }}>
+                <View style={{ height: '100%', width: `${globalRestTimer.timeRemaining / Math.max(1, globalRestTimer.originalDuration) * 100}%`, backgroundColor: theme.colors.neon }} />
+              </View>
             : <>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginHorizontal: 16, marginTop: 4 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>

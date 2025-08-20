@@ -78,6 +78,7 @@ export async function initializeDatabase(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_workout_exercises_exercise_id ON workout_exercises(exercise_id);
       CREATE INDEX IF NOT EXISTS idx_sets_workout_exercise_id ON sets(workout_exercise_id);
       CREATE INDEX IF NOT EXISTS idx_sets_set_index ON sets(set_index);
+  CREATE INDEX IF NOT EXISTS idx_cardio_sessions_date ON cardio_sessions(date DESC);
     `);
     
     // Check if exercises table is empty and populate with default exercises

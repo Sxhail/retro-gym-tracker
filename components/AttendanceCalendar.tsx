@@ -28,6 +28,7 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [workoutsForDate, setWorkoutsForDate] = useState<WorkoutHistoryItem[]>([]);
+  const [cardioForDate, setCardioForDate] = useState<any[]>([]);
   const [loadingWorkouts, setLoadingWorkouts] = useState(false);
 
   // Generate calendar grid
@@ -101,6 +102,11 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
 
   // Handle date selection
   const handleDatePress = async (date: string) => {
+    // If consumer provided a handler, delegate to it (used by History screen to filter list)
+    if (onDatePress) {
+      onDatePress(date);
+      return;
+    }
     setSelectedDate(date);
     setLoadingWorkouts(true);
     setShowWorkoutModal(true);
@@ -116,9 +122,22 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
         return workoutDateString === date;
       });
       setWorkoutsForDate(dateWorkouts);
+
+      // Load cardio sessions for this date (inclusive)
+      const startIso = new Date(date + 'T00:00:00.000Z').toISOString();
+      const endIso = new Date(date + 'T23:59:59.999Z').toISOString();
+      try {
+        // Lazy import to avoid circular deps in some bundlers
+        const cardio = await (await import('../services/cardioTracking')).getCardioSessionsForDateRange(startIso, endIso);
+        setCardioForDate(cardio);
+      } catch (err) {
+        console.error('Error loading cardio for date:', err);
+        setCardioForDate([]);
+      }
     } catch (err) {
       console.error('Error loading workouts for date:', err);
       setWorkoutsForDate([]);
+      setCardioForDate([]);
     } finally {
       setLoadingWorkouts(false);
     }
@@ -293,7 +312,7 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
                 <ActivityIndicator size="large" color={theme.colors.neon} />
                 <Text style={styles.loadingText}>LOADING WORKOUTS...</Text>
               </View>
-            ) : workoutsForDate.length > 0 ? (
+            ) : (workoutsForDate.length > 0 || cardioForDate.length > 0) ? (
               <ScrollView style={styles.workoutList}>
                 {workoutsForDate.map((workout, index) => (
                   <TouchableOpacity 
@@ -319,10 +338,35 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
                     </View>
                   </TouchableOpacity>
                 ))}
+
+                {cardioForDate.map((session: any) => (
+                  <TouchableOpacity
+                    key={`cardio-${session.id}`}
+                    style={[styles.workoutItem, { borderColor: '#FF4444' }]}
+                    onPress={() => router.push(`/cardio/history/${session.id}`)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.workoutHeader}>
+                      <Text style={styles.workoutName}>{session.name}</Text>
+                      <Text style={styles.workoutTime}>{new Date(session.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    </View>
+                    <View style={styles.workoutDetails}>
+                      <Text style={styles.workoutDetail}>
+                        Duration: {formatDuration(session.duration)}
+                      </Text>
+                      <Text style={styles.workoutDetail}>
+                        Type: {session.type?.toUpperCase()}
+                      </Text>
+                      <Text style={styles.workoutDetail}>
+                        Calories: {session.calories_burned || 0}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
               </ScrollView>
             ) : (
               <View style={styles.noWorkoutContainer}>
-                <Text style={styles.noWorkoutText}>NO WORKOUTS DONE THIS DAY</Text>
+                <Text style={styles.noWorkoutText}>NO SESSIONS THIS DAY</Text>
                 <Text style={styles.noWorkoutSubtext}>Time to hit the gym!</Text>
               </View>
             )}

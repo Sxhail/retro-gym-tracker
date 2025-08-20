@@ -292,6 +292,23 @@ export async function deleteCardioSession(sessionId: number): Promise<boolean> {
 }
 
 /**
+ * Get a single cardio session by id
+ */
+export async function getCardioSessionById(id: number): Promise<schema.CardioSession | null> {
+  try {
+    const rows = await db
+      .select()
+      .from(schema.cardio_sessions)
+      .where(eq(schema.cardio_sessions.id, id))
+      .limit(1);
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Error getting cardio session by id:', error);
+    return null;
+  }
+}
+
+/**
  * Calculate estimated calories burned for a cardio session
  */
 function calculateEstimatedCalories(session: Partial<CardioSessionData>): number {

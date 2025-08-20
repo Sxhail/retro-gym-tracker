@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
+import { useCardioSession } from '../context/CardioSessionContext';
 
 export default function CardioScreen() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState('HIIT');
+  const { isActive: isCardioActive, cardioType: activeCardioType, resetSession } = useCardioSession();
 
   const cardioTypes = ['HIIT', 'RUN', 'STEADY'];
 
@@ -37,6 +39,51 @@ export default function CardioScreen() {
   };
 
   const handleCardioSelection = (option: any) => {
+    // Check if there's an active cardio session and if it's different from the selected option
+    if (isCardioActive && activeCardioType) {
+      const currentSessionType = getSessionTypeFromCardioType(activeCardioType);
+      const newSessionType = option.type;
+      
+      // If trying to start a different session type, show confirmation dialog
+      if (currentSessionType !== newSessionType) {
+        Alert.alert(
+          'Active Cardio Session',
+          `You have an active ${activeCardioType.toUpperCase()} session running. Would you like to stop it and start a new ${option.title} session?`,
+          [
+            { 
+              text: 'No', 
+              style: 'cancel' 
+            },
+            { 
+              text: 'Yes', 
+              onPress: () => {
+                resetSession();
+                navigateToCardioWorkout(option);
+              }
+            }
+          ]
+        );
+        return;
+      }
+    }
+    
+    navigateToCardioWorkout(option);
+  };
+
+  const getSessionTypeFromCardioType = (cardioType: string): string => {
+    switch (cardioType) {
+      case 'hiit':
+        return 'quick_hiit';
+      case 'walk_run':
+        return 'walk_run';
+      case 'casual_walk':
+        return 'casual_walk';
+      default:
+        return cardioType;
+    }
+  };
+
+  const navigateToCardioWorkout = (option: any) => {
     // Navigate to specific cardio workout screens
     switch (option.type) {
       case 'quick_hiit':

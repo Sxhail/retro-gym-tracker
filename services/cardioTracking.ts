@@ -39,6 +39,17 @@ export interface CardioSessionWithStats extends schema.CardioSession {
  */
 export async function saveCardioSession(sessionData: CardioSessionData): Promise<number> {
   try {
+    console.log('📝 Saving cardio session to database:', sessionData);
+    
+    // Validate required fields
+    if (!sessionData.type || !sessionData.name || !sessionData.duration) {
+      throw new Error('Missing required session data: type, name, or duration');
+    }
+    
+    if (sessionData.duration <= 0) {
+      throw new Error('Session duration must be greater than 0');
+    }
+    
     const result = await db.insert(schema.cardio_sessions).values({
       type: sessionData.type,
       name: sessionData.name,
@@ -57,10 +68,12 @@ export async function saveCardioSession(sessionData: CardioSessionData): Promise
       notes: sessionData.notes,
     }).returning({ id: schema.cardio_sessions.id });
 
+    console.log('✅ Cardio session saved successfully with ID:', result[0].id);
     return result[0].id;
   } catch (error) {
-    console.error('Error saving cardio session:', error);
-    throw error;
+    console.error('❌ Error saving cardio session:', error);
+    // Re-throw with more context
+    throw new Error(`Database error: ${error instanceof Error ? error.message : 'Unknown database error'}`);
   }
 }
 

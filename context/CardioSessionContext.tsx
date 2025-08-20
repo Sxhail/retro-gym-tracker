@@ -213,6 +213,13 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       finalElapsedTime += Math.floor((Date.now() - lastResumeTime.getTime()) / 1000);
     }
     
+    console.log('💾 Attempting to save cardio session:', {
+      cardioType,
+      sessionName,
+      finalElapsedTime,
+      isActive
+    });
+    
     if (finalElapsedTime > 0 && cardioType && sessionName) {
       const sessionData: CardioSessionData = {
         type: cardioType,
@@ -227,13 +234,23 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         total_laps: cardioType === 'casual_walk' ? totalLaps : undefined,
       };
       
+      console.log('💾 Session data prepared:', sessionData);
+      
       try {
         await saveCardioSession(sessionData);
-        console.log('💾 Cardio session saved:', sessionData);
+        console.log('💾 Cardio session saved successfully:', sessionData);
       } catch (error) {
         console.error('❌ Failed to save cardio session:', error);
-        throw error;
+        // Provide more specific error information
+        throw new Error(`Failed to save workout: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+    } else {
+      console.warn('⚠️ Cardio session not saved - missing required data:', {
+        finalElapsedTime,
+        cardioType,
+        sessionName
+      });
+      throw new Error('Failed to save workout: Invalid session data');
     }
     
     resetSession();

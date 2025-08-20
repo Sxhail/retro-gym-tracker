@@ -1473,7 +1473,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: '33.33%', // One third for 3 tabs
+    width: '50%', // Half width for 2 tabs - same highlight area for both calendar and list
     height: '100%', // Full height of container
     backgroundColor: 'rgba(0, 255, 0, 0.2)',
     borderRadius: 8,

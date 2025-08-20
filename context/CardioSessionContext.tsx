@@ -236,18 +236,25 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       console.log(`📊 Adding current segment: ${currentSegmentTime}s, total: ${finalElapsedTime}s`);
     }
     
+    // If no accumulated time, use elapsed time as fallback
+    if (finalElapsedTime === 0 && elapsedTime > 0) {
+      finalElapsedTime = elapsedTime;
+      console.log(`📊 Using elapsedTime as fallback: ${finalElapsedTime}s`);
+    }
+    
     console.log('💾 Attempting to save cardio session:', {
       cardioType,
       sessionName,
       finalElapsedTime,
       isActive,
-      accumulatedTime: accumulatedTimeRef.current
+      accumulatedTime: accumulatedTimeRef.current,
+      elapsedTime
     });
     
-    // Ensure minimum session duration (at least 1 second)
-    if (finalElapsedTime < 1) {
-      finalElapsedTime = 1;
-      console.log('⚠️ Minimum session time applied: 1 second');
+    // Ensure minimum session duration (at least 5 seconds for a meaningful workout)
+    if (finalElapsedTime < 5) {
+      finalElapsedTime = 5;
+      console.log('⚠️ Minimum session time applied: 5 seconds');
     }
     
     if (cardioType && sessionName) {

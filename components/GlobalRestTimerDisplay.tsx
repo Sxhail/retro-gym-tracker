@@ -65,9 +65,9 @@ export function GlobalRestTimerDisplay() {
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     
-    // Animate scale change
+    // Animate scale change - keep collapsed state more visible
     Animated.spring(scaleAnim, {
-      toValue: newCollapsed ? 0.1 : 1, // Small scale when collapsed
+      toValue: newCollapsed ? 0.6 : 1, // Changed from 0.1 to 0.6 for better visibility
       useNativeDriver: true,
       tension: 100,
       friction: 8,
@@ -174,11 +174,12 @@ export function GlobalRestTimerDisplay() {
               height: COLLAPSED_SIZE,
               justifyContent: 'center',
               alignItems: 'center',
+              backgroundColor: 'rgba(0, 255, 0, 0.1)', // Add subtle background for visibility
             }}
           >
             <Text style={{
               color: theme.colors.neon,
-              fontSize: 20,
+              fontSize: 24, // Increased from 20 to 24 for better visibility
               fontWeight: 'bold',
             }}>
               −
@@ -195,9 +196,9 @@ export function GlobalRestTimerDisplay() {
                 position: 'absolute',
                 top: 2,
                 left: '50%',
-                marginLeft: -12,
-                width: 24,
-                height: 16,
+                marginLeft: -15, // Increased touch area
+                width: 30, // Increased from 24 to 30 for better touch target
+                height: 20, // Increased from 16 to 20
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: 1001,
@@ -205,26 +206,15 @@ export function GlobalRestTimerDisplay() {
             >
               <Text style={{
                 color: theme.colors.neon,
-                fontSize: 16,
+                fontSize: 18, // Increased from 16 to 18
                 fontWeight: 'bold',
-                opacity: 0.8,
+                opacity: 0.9, // Increased from 0.8 for better visibility
               }}>
                 −
               </Text>
             </TouchableOpacity>
 
-            {/* Drag indicator (moved lower to avoid conflict with minus button) */}
-            <View style={{
-              position: 'absolute',
-              top: 20,
-              left: '50%',
-              marginLeft: -12,
-              width: 24,
-              height: 3,
-              backgroundColor: theme.colors.neon,
-              opacity: 0.3,
-              borderRadius: 2,
-            }} />
+            {/* Removed drag indicator to eliminate the other highlight */}
 
             {/* Timer info */}
             <View style={{ flex: 1, marginTop: 8 }}>

@@ -39,34 +39,47 @@ export interface CardioSessionWithStats extends schema.CardioSession {
  */
 export async function saveCardioSession(sessionData: CardioSessionData): Promise<number> {
   try {
-    console.log('📝 Saving cardio session to database:', sessionData);
+    console.log('📝 Saving cardio session to database:', JSON.stringify(sessionData, null, 2));
     
     // Validate required fields
-    if (!sessionData.type || !sessionData.name || !sessionData.duration) {
-      throw new Error('Missing required session data: type, name, or duration');
+    if (!sessionData.type) {
+      throw new Error('Missing session type');
     }
     
-    if (sessionData.duration <= 0) {
-      throw new Error('Session duration must be greater than 0');
+    if (!sessionData.name) {
+      throw new Error('Missing session name');
     }
     
-    const result = await db.insert(schema.cardio_sessions).values({
+    if (!sessionData.duration || sessionData.duration <= 0) {
+      throw new Error('Invalid session duration: ' + sessionData.duration);
+    }
+    
+    // Prepare insert data with proper handling of undefined values
+    const insertData = {
       type: sessionData.type,
       name: sessionData.name,
       date: new Date().toISOString(),
       duration: sessionData.duration,
       calories_burned: sessionData.calories_burned || calculateEstimatedCalories(sessionData),
-      work_time: sessionData.work_time,
-      rest_time: sessionData.rest_time,
-      rounds: sessionData.rounds,
-      run_time: sessionData.run_time,
-      walk_time: sessionData.walk_time,
-      laps: sessionData.laps,
-      total_laps: sessionData.total_laps,
-      distance: sessionData.distance,
-      average_heart_rate: sessionData.average_heart_rate,
-      notes: sessionData.notes,
-    }).returning({ id: schema.cardio_sessions.id });
+      work_time: sessionData.work_time || null,
+      rest_time: sessionData.rest_time || null,
+      rounds: sessionData.rounds || null,
+      run_time: sessionData.run_time || null,
+      walk_time: sessionData.walk_time || null,
+      laps: sessionData.laps || null,
+      total_laps: sessionData.total_laps || null,
+      distance: sessionData.distance || null,
+      average_heart_rate: sessionData.average_heart_rate || null,
+      notes: sessionData.notes || null,
+    };
+    
+    console.log('📝 Insert data prepared:', JSON.stringify(insertData, null, 2));
+
+    const result = await db.insert(schema.cardio_sessions).values(insertData).returning({ id: schema.cardio_sessions.id });
+
+    if (!result || result.length === 0) {
+      throw new Error('Database insert returned no results');
+    }
 
     console.log('✅ Cardio session saved successfully with ID:', result[0].id);
     return result[0].id;

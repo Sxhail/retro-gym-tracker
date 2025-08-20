@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import { Alert } from 'react-native';
 import { saveCardioSession, type CardioSessionData, type CardioType } from '../services/cardioTracking';
 
 interface CardioSessionContextType {
@@ -167,41 +168,61 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
 
   // Move to next phase (for HIIT and Walk-Run)
   const nextPhase = () => {
+    console.log('🔄 nextPhase called:', { cardioType, isWorkPhase, currentRound, rounds, isRunPhase, currentLap, laps });
+    
     if (cardioType === 'hiit') {
       if (isWorkPhase) {
-        if (currentRound < rounds) {
-          setIsWorkPhase(false);
-          setPhaseTimeLeft(restTime);
-        } else {
-          // Workout complete
-          endSession();
-          return;
-        }
+        // Work phase finished, go to rest
+        setIsWorkPhase(false);
+        setPhaseTimeLeft(restTime);
+        console.log(`✅ Work phase ${currentRound}/${rounds} complete, starting rest (${restTime}s)`);
       } else {
-        setIsWorkPhase(true);
-        setCurrentRound(prev => prev + 1);
-        setPhaseTimeLeft(workTime);
+        // Rest phase finished
+        if (currentRound >= rounds) {
+          // All rounds complete
+          console.log('🎉 HIIT workout complete!');
+          Alert.alert('Workout Complete!', `You completed ${rounds} rounds of HIIT!`, [
+            { text: 'Finish', onPress: () => endSession() }
+          ]);
+          return;
+        } else {
+          // Start next work phase
+          setIsWorkPhase(true);
+          setCurrentRound(prev => prev + 1);
+          setPhaseTimeLeft(workTime);
+          console.log(`✅ Rest complete, starting work phase ${currentRound + 1}/${rounds} (${workTime}s)`);
+        }
       }
     } else if (cardioType === 'walk_run') {
       if (isRunPhase) {
-        if (currentLap < laps) {
-          setIsRunPhase(false);
-          setPhaseTimeLeft(walkTime);
-        } else {
-          // Workout complete
-          endSession();
-          return;
-        }
+        // Run phase finished, go to walk
+        setIsRunPhase(false);
+        setPhaseTimeLeft(walkTime);
+        console.log(`✅ Run phase ${currentLap}/${laps} complete, starting walk (${walkTime}s)`);
       } else {
-        setIsRunPhase(true);
-        setCurrentLap(prev => prev + 1);
-        setPhaseTimeLeft(runTime);
+        // Walk phase finished
+        if (currentLap >= laps) {
+          // All laps complete
+          console.log('🎉 Walk-Run workout complete!');
+          Alert.alert('Workout Complete!', `You completed ${laps} laps of Walk-Run!`, [
+            { text: 'Finish', onPress: () => endSession() }
+          ]);
+          return;
+        } else {
+          // Start next run phase
+          setIsRunPhase(true);
+          setCurrentLap(prev => prev + 1);
+          setPhaseTimeLeft(runTime);
+          console.log(`✅ Walk complete, starting run phase ${currentLap + 1}/${laps} (${runTime}s)`);
+        }
       }
     }
   };
 
   // End session and save to database
   const endSession = async () => {
+    console.log('🏁 endSession called');
+    
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -210,17 +231,26 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     // Calculate final elapsed time
     let finalElapsedTime = accumulatedTimeRef.current;
     if (lastResumeTime && !isPaused) {
-      finalElapsedTime += Math.floor((Date.now() - lastResumeTime.getTime()) / 1000);
+      const currentSegmentTime = Math.floor((Date.now() - lastResumeTime.getTime()) / 1000);
+      finalElapsedTime += currentSegmentTime;
+      console.log(`📊 Adding current segment: ${currentSegmentTime}s, total: ${finalElapsedTime}s`);
     }
     
     console.log('💾 Attempting to save cardio session:', {
       cardioType,
       sessionName,
       finalElapsedTime,
-      isActive
+      isActive,
+      accumulatedTime: accumulatedTimeRef.current
     });
     
-    if (finalElapsedTime > 0 && cardioType && sessionName) {
+    // Ensure minimum session duration (at least 1 second)
+    if (finalElapsedTime < 1) {
+      finalElapsedTime = 1;
+      console.log('⚠️ Minimum session time applied: 1 second');
+    }
+    
+    if (cardioType && sessionName) {
       const sessionData: CardioSessionData = {
         type: cardioType,
         name: sessionName,
@@ -237,20 +267,21 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       console.log('💾 Session data prepared:', sessionData);
       
       try {
-        await saveCardioSession(sessionData);
-        console.log('💾 Cardio session saved successfully:', sessionData);
+        const savedId = await saveCardioSession(sessionData);
+        console.log('✅ Cardio session saved successfully with ID:', savedId);
       } catch (error) {
         console.error('❌ Failed to save cardio session:', error);
         // Provide more specific error information
-        throw new Error(`Failed to save workout: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        throw new Error(`Failed to save workout: ${errorMessage}`);
       }
     } else {
       console.warn('⚠️ Cardio session not saved - missing required data:', {
-        finalElapsedTime,
         cardioType,
-        sessionName
+        sessionName,
+        finalElapsedTime
       });
-      throw new Error('Failed to save workout: Invalid session data');
+      throw new Error('Failed to save workout: Missing session data (type or name)');
     }
     
     resetSession();
@@ -303,11 +334,16 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         // Handle phase transitions for HIIT and Walk-Run
         if (cardioType === 'hiit' || cardioType === 'walk_run') {
           setPhaseTimeLeft(prev => {
-            if (prev <= 1) {
-              nextPhase();
+            const newTime = prev - 1;
+            console.log(`⏰ Phase time: ${newTime}, Type: ${cardioType}, Phase: ${cardioType === 'hiit' ? (isWorkPhase ? 'WORK' : 'REST') : (isRunPhase ? 'RUN' : 'WALK')}`);
+            
+            if (newTime <= 0) {
+              console.log('🔄 Phase transition triggered');
+              // Use setTimeout to ensure state updates are processed
+              setTimeout(() => nextPhase(), 100);
               return 0;
             }
-            return prev - 1;
+            return newTime;
           });
         }
       }
@@ -319,7 +355,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         timerRef.current = null;
       }
     };
-  }, [isActive, isPaused, lastResumeTime, cardioType, accumulatedTime]);
+  }, [isActive, isPaused, lastResumeTime, cardioType, isWorkPhase, isRunPhase, currentRound, currentLap, workTime, restTime, runTime, walkTime, rounds, laps]);
 
   const contextValue: CardioSessionContextType = {
     // Session state

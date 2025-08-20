@@ -609,6 +609,39 @@ export default function NewWorkoutScreen() {
     setPickerLoading(true);
     try {
       if (!sessionExercises.some(e => e.id === ex.id)) {
+        // CRITICAL: Clear any existing rest timer when adding a new exercise
+        // This prevents old rest timers from interfering with the new exercise
+        if (globalRestTimer?.isActive) {
+          console.log('🧹 Clearing existing rest timer when adding new exercise');
+          setGlobalRestTimer(null);
+          
+          // Also clear background storage immediately
+          setTimeout(async () => {
+            try {
+              const { backgroundSessionService } = await import('../services/backgroundSession');
+              const { db } = await import('../db/client');
+              const { active_session_timers } = await import('../db/schema');
+              const { eq } = await import('drizzle-orm');
+              
+              // Clear all active rest timers from background storage
+              const restTimers = await db
+                .select()
+                .from(active_session_timers)
+                .where(eq(active_session_timers.timer_type, 'rest'));
+              
+              for (const timer of restTimers) {
+                await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+              }
+              
+              if (restTimers.length > 0) {
+                console.log('🧹 Cleared', restTimers.length, 'rest timers from background when adding new exercise');
+              }
+            } catch (error) {
+              console.error('Failed to clear rest timer background data when adding exercise:', error);
+            }
+          }, 100);
+        }
+        
         setCurrentExercises([
           ...sessionExercises,
           { 

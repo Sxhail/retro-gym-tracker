@@ -83,48 +83,56 @@ export function useBackgroundRestTimerPersistence() {
           eq(active_session_timers.timer_type, 'rest')
         );
       
-      if (activeRestTimers.length > 0) {
-        const restTimer = activeRestTimers[0];
+      // CRITICAL: Clean up all old rest timers before restoring any
+      const now = new Date();
+      let validRestTimers = [];
+      
+      for (const restTimer of activeRestTimers) {
         const startTime = new Date(restTimer.start_time);
-        const now = new Date();
         const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
         const remaining = Math.max(0, restTimer.duration - elapsed);
         
-        // Check if timer is too old (more than 24 hours) - clean it up
-        if (elapsed > 24 * 60 * 60) {
-          console.log('🧹 Cleaning up old rest timer (> 24 hours)');
-          await backgroundSessionService.clearTimerData(restTimer.session_id, 'rest');
-          setIsRestored(true);
-          return false;
-        }
-        
-        if (remaining > 0) {
-          // Set restored flag BEFORE setting timer to prevent completion callback
-          setIsRestored(true);
-          
-          // Calculate the correct start time for continued counting
-          const adjustedStartTime = new Date(now.getTime() - (restTimer.duration - remaining) * 1000);
-          
-          session.setGlobalRestTimer({
-            isActive: true,
-            timeRemaining: remaining,
-            originalDuration: restTimer.duration,
-            exerciseId: null,
-            setIdx: null,
-            startTime: adjustedStartTime, // Use calculated start time for accurate countdown
+        // Check if timer is too old (more than 2 hours) or already finished - clean it up
+        if (elapsed > 2 * 60 * 60 || remaining <= 0) {
+          console.log('🧹 Cleaning up old/finished rest timer:', {
+            elapsed: elapsed,
+            remaining: remaining,
+            sessionId: restTimer.session_id
           });
-          restSessionIdRef.current = restTimer.session_id;
-          console.log('✅ Rest timer restored from background:', remaining, 'seconds remaining');
-          
-          // CRITICAL: Do not trigger completion callback during restoration
-          return true;
-        } else {
-          // Timer finished while app was closed, clean up silently WITHOUT triggering callback
           await backgroundSessionService.clearTimerData(restTimer.session_id, 'rest');
-          console.log('🔄 Rest timer finished while app was closed, cleaned up silently');
-          
-          // CRITICAL: Set restored flag to prevent any completion callbacks
-          setIsRestored(true);
+        } else {
+          validRestTimers.push({ restTimer, remaining, elapsed });
+        }
+      }
+      
+      // Only restore if there's exactly one valid timer (prevent multiple timer conflicts)
+      if (validRestTimers.length === 1) {
+        const { restTimer, remaining } = validRestTimers[0];
+        
+        // Set restored flag BEFORE setting timer to prevent completion callback
+        setIsRestored(true);
+        
+        // Calculate the correct start time for continued counting
+        const adjustedStartTime = new Date(now.getTime() - (restTimer.duration - remaining) * 1000);
+        
+        session.setGlobalRestTimer({
+          isActive: true,
+          timeRemaining: remaining,
+          originalDuration: restTimer.duration,
+          exerciseId: null,
+          setIdx: null,
+          startTime: adjustedStartTime, // Use calculated start time for accurate countdown
+        });
+        restSessionIdRef.current = restTimer.session_id;
+        console.log('✅ Rest timer restored from background:', remaining, 'seconds remaining');
+        
+        // CRITICAL: Do not trigger completion callback during restoration
+        return true;
+      } else if (validRestTimers.length > 1) {
+        // Multiple timers found - this is an error state, clean them all up
+        console.warn('🚨 Multiple rest timers found, cleaning all up to prevent conflicts');
+        for (const { restTimer } of validRestTimers) {
+          await backgroundSessionService.clearTimerData(restTimer.session_id, 'rest');
         }
       }
       
@@ -173,10 +181,15 @@ export function useBackgroundRestTimerPersistence() {
           saveRestTimerState();
         }
       } else if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App coming to foreground - restore if needed
+        // App coming to foreground - restore if needed, but only if timer isn't already active
         console.log('🔄 App foregrounding - checking for active rest timers...');
         if (!session.globalRestTimer?.isActive && !isRestored) {
-          restoreRestTimerState();
+          // Add a small delay to ensure app state is stable before restoration
+          setTimeout(() => {
+            if (!session.globalRestTimer?.isActive && !isRestored) {
+              restoreRestTimerState();
+            }
+          }, 1000);
         }
       }
       

@@ -100,45 +100,40 @@ export function GlobalRestTimerDisplay() {
   // Handle pan gesture with boundary constraints
   const onGestureEvent = Animated.event(
     [{ nativeEvent: { translationX: translateX, translationY: translateY } }],
-    { 
-      useNativeDriver: true,
-      listener: (event: any) => {
-        // Apply constraints during drag
-        const { translationX, translationY } = event.nativeEvent;
-        const constrained = constrainPosition(translationX, translationY);
-        
-        // Update the animated values with constrained positions
-        translateX.setValue(constrained.x);
-        translateY.setValue(constrained.y);
-      }
-    }
+    { useNativeDriver: true }
   );
 
   const onHandlerStateChange = (event: any) => {
     const { oldState, translationX, translationY } = event.nativeEvent;
     if (oldState === 4) { // State.ACTIVE ended
-      // Apply final constraint and keep the position where user released it
+      // Apply constraints only after drag ends
       const constrained = constrainPosition(translationX, translationY);
       
-      // Animate to constrained position
-      Animated.parallel([
-        Animated.spring(translateX, {
-          toValue: constrained.x,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        }),
-        Animated.spring(translateY, {
-          toValue: constrained.y,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        })
-      ]).start(() => {
-        // Extract offset after animation completes
+      // Smoothly animate to constrained position if needed
+      if (constrained.x !== translationX || constrained.y !== translationY) {
+        Animated.parallel([
+          Animated.spring(translateX, {
+            toValue: constrained.x,
+            useNativeDriver: true,
+            tension: 150,
+            friction: 7,
+          }),
+          Animated.spring(translateY, {
+            toValue: constrained.y,
+            useNativeDriver: true,
+            tension: 150,
+            friction: 7,
+          })
+        ]).start(() => {
+          // Extract offset to reset translation values to 0
+          translateX.extractOffset();
+          translateY.extractOffset();
+        });
+      } else {
+        // No constraint needed, just extract offset
         translateX.extractOffset();
         translateY.extractOffset();
-      });
+      }
     }
   };
 
@@ -146,6 +141,9 @@ export function GlobalRestTimerDisplay() {
     <PanGestureHandler
       onGestureEvent={onGestureEvent}
       onHandlerStateChange={onHandlerStateChange}
+      shouldCancelWhenOutside={false}
+      activeOffsetX={[-10, 10]}
+      activeOffsetY={[-10, 10]}
     >
       <Animated.View style={{
         position: 'absolute',

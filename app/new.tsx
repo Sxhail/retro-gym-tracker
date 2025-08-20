@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Modal, ActivityIndicator, PanResponder, Animated, SafeAreaView, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import theme from '../styles/theme';
 import { dbOperations } from '../services/database';
 import * as schema from '../db/schema';
@@ -138,28 +139,48 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
   // Sync local timer display with global rest timer - improved sync logic
   useEffect(() => {
     const globalTimer = sessionWorkout.globalRestTimer;
-    if (globalTimer && globalTimer.isActive) {
-      // If this is the most recent completed set (isLastCompleted) and global timer is active
-      if (isLastCompleted) {
-        // Sync local display with global timer state
-        setRestTime(globalTimer.timeRemaining);
-        setRestActive(globalTimer.isActive);
+    if (globalTimer && globalTimer.isActive && globalTimer.startTime) {
+      // Check if this is the set that the global timer belongs to (either by isLastCompleted OR by matching exerciseId/setIdx)
+      const isTimerForThisSet = (isLastCompleted) || (globalTimer.exerciseId === exerciseId && globalTimer.setIdx === setIdx);
+      
+      if (isTimerForThisSet && set.completed) {
+        console.log('🔄 Attempting to sync local timer with global timer for set', setIdx, 'of exercise', exerciseId);
+        
+        // Calculate current remaining time based on global timer's start time
+        const now = new Date();
+        const elapsed = Math.floor((now.getTime() - globalTimer.startTime.getTime()) / 1000);
+        const remaining = Math.max(0, globalTimer.originalDuration - elapsed);
+        
+        // Sync all local timer state to match global timer
+        setRestTime(remaining);
+        setRestActive(true);  // Ensure local timer shows as active
         setRestStartTime(globalTimer.startTime);
         setRestLastResumeTime(globalTimer.startTime);
+        setRestAccumulatedTime(0); // Reset since we're using global timer's timestamp
+        setTimerPaused(false); // Ensure timer is not paused
         
-        // Update local timer to match global timer timestamp
-        if (globalTimer.startTime) {
-          const now = new Date();
-          const elapsed = Math.floor((now.getTime() - globalTimer.startTime.getTime()) / 1000);
-          const remaining = Math.max(0, globalTimer.originalDuration - elapsed);
-          setRestTime(remaining);
-          setRestAccumulatedTime(0); // Reset since we're using global timer's timestamp
-        }
-        
-        console.log('🔄 Local timer synced with global timer:', globalTimer.timeRemaining, 's remaining');
+        console.log('🔄 Local timer synced with global timer:', remaining, 's remaining');
+      } else if (restActive && (!isTimerForThisSet || !set.completed)) {
+        // If this set's timer was active but it's not the one the global timer belongs to, stop local timer
+        setRestActive(false);
+        setRestStartTime(null);
+        setRestLastResumeTime(null);
+        setRestAccumulatedTime(0);
+        setRestTime(Number(set.rest ?? 120));
+        setTimerPaused(false);
+        console.log('🛑 Local timer stopped - global timer belongs to different set');
       }
+    } else if (restActive && (!globalTimer || !globalTimer.isActive)) {
+      // No global timer active but local timer is - stop local timer
+      setRestActive(false);
+      setRestStartTime(null);
+      setRestLastResumeTime(null);
+      setRestAccumulatedTime(0);
+      setRestTime(Number(set.rest ?? 120));
+      setTimerPaused(false);
+      console.log('� Local timer stopped - no global timer active');
     }
-  }, [sessionWorkout.globalRestTimer, isLastCompleted]);
+  }, [sessionWorkout.globalRestTimer, sessionWorkout.globalRestTimer?.timeRemaining, isLastCompleted, exerciseId, setIdx, set.rest, set.completed]);
 
   // Cleanup rest timer state when component unmounts or set is no longer completed
   useEffect(() => {
@@ -499,6 +520,28 @@ export default function NewWorkoutScreen() {
   useEffect(() => {
     getExerciseMaxWeights().then(setMaxWeights);
   }, []);
+
+  // Focus effect to sync rest timer when user returns to workout screen
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 Workout screen focused - syncing rest timer state...');
+      
+      // If there's a global rest timer active, ensure local timer state syncs
+      if (globalRestTimer?.isActive && globalRestTimer.startTime) {
+        const now = new Date();
+        const elapsed = Math.floor((now.getTime() - globalRestTimer.startTime.getTime()) / 1000);
+        const remaining = Math.max(0, globalRestTimer.originalDuration - elapsed);
+        
+        // Update global rest timer's timeRemaining to current calculated value
+        setGlobalRestTimer({
+          ...globalRestTimer,
+          timeRemaining: remaining
+        });
+        
+        console.log('🔄 Global rest timer synced on screen focus:', remaining, 's remaining');
+      }
+    }, [globalRestTimer?.isActive, globalRestTimer?.startTime, globalRestTimer?.originalDuration, globalRestTimer?.exerciseId, globalRestTimer?.setIdx, setGlobalRestTimer])
+  );
 
   // Load exercises for modal (search-aware with filters)
   useEffect(() => {

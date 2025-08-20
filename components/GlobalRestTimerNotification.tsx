@@ -39,7 +39,7 @@ export function GlobalRestTimerNotification() {
             useNativeDriver: true,
           }).start();
 
-          // Auto-hide after 2.5 seconds
+          // Auto-hide after 2 seconds (as requested)
           setTimeout(() => {
             Animated.timing(fadeAnim, {
               toValue: 0,
@@ -48,7 +48,7 @@ export function GlobalRestTimerNotification() {
             }).start(() => {
               setShowNotification(false);
             });
-          }, 2500);
+          }, 2000); // Changed from 2500ms to 2000ms (exactly 2 seconds)
         });
       }
     }, 2000); // Increased delay from 1 second to 2 seconds

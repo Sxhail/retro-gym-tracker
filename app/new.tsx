@@ -1159,16 +1159,13 @@ export default function NewWorkoutScreen() {
             </View>
             <View style={{ flexDirection: 'row', width: '100%', marginBottom: 18 }}>
               <TextInput
-                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8, borderWidth: 0 }}
+                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4 }}
                 placeholder="ADD EXERCISE"
                 placeholderTextColor={theme.colors.neon}
                 value={search}
                 onChangeText={setSearch}
                 onFocus={() => setModalVisible(true)}
               />
-              <TouchableOpacity style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', borderWidth: 0 }} onPress={() => setModalVisible(true)}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, fontWeight: 'bold', marginTop: 0 }}>Add</Text>
-              </TouchableOpacity>
             </View>
 
           </View>

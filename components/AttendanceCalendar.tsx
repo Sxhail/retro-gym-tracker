@@ -123,9 +123,10 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
       });
       setWorkoutsForDate(dateWorkouts);
 
-      // Load cardio sessions for this date (inclusive)
-      const startIso = new Date(date + 'T00:00:00.000Z').toISOString();
-      const endIso = new Date(date + 'T23:59:59.999Z').toISOString();
+  // Load cardio sessions for this date (inclusive) using local timezone boundaries
+  const [y, m, d] = date.split('-').map(n => parseInt(n, 10));
+  const startIso = new Date(y, m - 1, d, 0, 0, 0, 0).toISOString();
+  const endIso = new Date(y, m - 1, d, 23, 59, 59, 999).toISOString();
       try {
         // Lazy import to avoid circular deps in some bundlers
         const cardio = await (await import('../services/cardioTracking')).getCardioSessionsForDateRange(startIso, endIso);

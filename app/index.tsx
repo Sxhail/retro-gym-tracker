@@ -141,6 +141,12 @@ export default function HomeScreen() {
       const progress = programProgress[program.id];
       if (!program.is_active || !progress || progress.nextWorkout === 'Program Complete' || progress.nextWorkout === 'Rest Day') return;
       // Use the actual day name for the session loader
+      const template = await ProgramManager.getProgramWorkoutTemplate(program.id, progress.nextWorkoutDayName);
+      // If the next day is a cardio day (category marked as 'cardio'), route to cardio
+      if (template?.template?.category && template.template.category.toLowerCase() === 'cardio') {
+        router.push('/cardio');
+        return;
+      }
       await startProgramWorkout(program.id, progress.nextWorkoutDayName);
       router.push('/new');
     } catch (error) {
@@ -227,7 +233,7 @@ export default function HomeScreen() {
               else router.push('/cardio');
             }}
           >
-            <Text style={styles.startButtonText}>START CARDIO</Text>
+            <Text style={styles.startButtonText}>CONTINUE CARDIO</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>

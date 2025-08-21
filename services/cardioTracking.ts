@@ -224,20 +224,29 @@ export async function getCardioSessionsForDateRange(startDate: string, endDate: 
  */
 export async function getCardioSessionDates(year: number, month: number): Promise<string[]> {
   try {
-    const startDate = new Date(year, month - 1, 1).toISOString();
-    const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+    const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const end = new Date(year, month, 0, 23, 59, 59, 999);
 
     const sessions = await db
       .select({ date: schema.cardio_sessions.date })
       .from(schema.cardio_sessions)
       .where(
         and(
-          gte(schema.cardio_sessions.date, startDate),
-          lte(schema.cardio_sessions.date, endDate)
+          gte(schema.cardio_sessions.date, start.toISOString()),
+          lte(schema.cardio_sessions.date, end.toISOString())
         )
       );
 
-    return sessions.map(session => session.date.split('T')[0]); // Return just the date part
+    // Map to local YYYY-MM-DD to match AttendanceCalendar local date strings
+    const toLocalDateString = (iso: string) => {
+      const d = new Date(iso);
+      const y = d.getFullYear();
+      const m = (d.getMonth() + 1).toString().padStart(2, '0');
+      const dd = d.getDate().toString().padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    };
+
+    return sessions.map(s => toLocalDateString(s.date));
   } catch (error) {
     console.error('Error getting cardio session dates:', error);
     return [];

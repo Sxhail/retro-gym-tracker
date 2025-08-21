@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, SafeAreaView, TextInput, Modal, FlatList, Alert, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import theme from '../styles/theme';
 import { getWorkoutHistory, getTotalWorkoutStats, formatDuration, formatDate, type WorkoutHistoryItem } from '../services/workoutHistory';
 import { getCardioHistory, getTotalCardioStats, formatCardioDate, getCardioTypeDisplayName, type CardioSessionWithStats } from '../services/cardioTracking';
@@ -535,6 +536,16 @@ export default function HistoryListScreen() {
     loadCardioHistory(true);
     loadCardioStats();
   }, []);
+
+  // Refresh when screen gains focus so new sessions appear instantly
+  useFocusEffect(
+    React.useCallback(() => {
+      loadWorkoutHistory(true);
+      loadTotalStats();
+      loadCardioHistory(true);
+      loadCardioStats();
+    }, [])
+  );
 
   // Load more when page changes
   useEffect(() => {

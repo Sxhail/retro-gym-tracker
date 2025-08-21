@@ -45,12 +45,12 @@ export class ProgramManager {
             is_rest_day: 1,
             template_id: null,
           });
-        } else {
+    } else {
           // Create a workout template for this day
           const [template] = await db.insert(schema.workout_templates).values({
-            name: `${programData.name} - ${day.workoutType}`,
-            description: `${day.workoutType} workout for ${programData.name} program`,
-            category: 'strength',
+      name: `${programData.name} - ${day.workoutType}`,
+      description: `${day.workoutType} workout for ${programData.name} program`,
+      category: (day.workoutType || '').toLowerCase() === 'cardio' ? 'cardio' : 'strength',
             estimated_duration: 60,
             created_at: new Date().toISOString(),
           }).returning();

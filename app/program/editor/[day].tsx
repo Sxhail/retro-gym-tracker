@@ -26,6 +26,7 @@ export default function WorkoutEditorScreen() {
   }>();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [workoutType, setWorkoutType] = useState('');
+  const isCardioDay = workoutType.trim().toLowerCase() === 'cardio';
   const [loading, setLoading] = useState(false);
   
   // Exercise picker modal states (same as new.tsx)
@@ -222,8 +223,8 @@ export default function WorkoutEditorScreen() {
       alert('Please enter a workout type before saving.');
       return;
     }
-    
-    if (exercises.length === 0) {
+    // For Lift: require exercises; for Cardio: allow none
+    if (!isCardioDay && exercises.length === 0) {
       alert('Please add at least one exercise before saving.');
       return;
     }
@@ -248,7 +249,7 @@ export default function WorkoutEditorScreen() {
     const workoutData = {
       day_name: (day as string).toUpperCase(),
       workout_type: workoutType,
-      exercises_json: JSON.stringify(exercises)
+      exercises_json: JSON.stringify(isCardioDay ? [] : exercises)
     };
 
     // First, delete any existing temp data for this day
@@ -277,24 +278,25 @@ export default function WorkoutEditorScreen() {
     const currentDay = existingDay[0];
     let templateId = currentDay.template_id;
 
-    if (templateId) {
+  if (templateId) {
       // Update existing template
       await db.update(schema.workout_templates)
         .set({
-          name: workoutType.trim(),
+      name: workoutType.trim(),
+      category: workoutType.trim().toLowerCase() === 'cardio' ? 'cardio' : 'Custom',
         })
         .where(eq(schema.workout_templates.id, templateId));
 
       // Clear existing template exercises and sets
       await db.delete(schema.template_exercises)
         .where(eq(schema.template_exercises.template_id, templateId));
-    } else {
+  } else {
       // Create new template
       const newTemplate = await db.insert(schema.workout_templates)
         .values({
           name: workoutType.trim(),
           description: `Template for ${day?.toUpperCase()}`,
-          category: 'Custom',
+      category: workoutType.trim().toLowerCase() === 'cardio' ? 'cardio' : 'Custom',
           difficulty: 'intermediate',
           estimated_duration: 60,
         })
@@ -308,8 +310,8 @@ export default function WorkoutEditorScreen() {
         .where(eq(schema.program_days.id, dayIdNum));
     }
 
-    // Insert exercises and sets
-    for (let i = 0; i < exercises.length; i++) {
+  // Insert exercises and sets (skip if cardio day)
+  for (let i = 0; i < (isCardioDay ? 0 : exercises.length); i++) {
       const exercise = exercises[i];
       
       const newTemplateExercise = await db.insert(schema.template_exercises)
@@ -342,7 +344,7 @@ export default function WorkoutEditorScreen() {
   };
 
   // Check if save button should be enabled
-  const canSave = workoutType.trim().length > 0 && exercises.length > 0;
+  const canSave = workoutType.trim().length > 0 && (isCardioDay || exercises.length > 0);
 
   const handleCancel = () => {
     router.back();
@@ -372,77 +374,94 @@ export default function WorkoutEditorScreen() {
           placeholder=""
           placeholderTextColor="rgba(0, 255, 0, 0.5)"
         />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <TouchableOpacity onPress={() => setWorkoutType('Lift')} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body }}>LIFT</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setWorkoutType('Cardio')} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body }}>CARDIO</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setWorkoutType('Rest Day')} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body }}>REST</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Exercise List */}
       <View style={styles.exerciseListSection}>
-        <Text style={styles.exerciseListTitle}>
-          EXERCISE LIST:
-          {exercises.length > 0 && <Text style={styles.countIndicator}>({exercises.length})</Text>}
-        </Text>
-        
-        {exercises.length === 0 ? (
+        {isCardioDay ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>NO EXERCISES YET</Text>
+            <Text style={styles.emptyStateText}>CARDIO DAY - NO EXERCISES REQUIRED</Text>
           </View>
         ) : (
-          <ScrollView style={styles.exerciseList} showsVerticalScrollIndicator={false}>
-            {exercises.map((exercise) => (
-              <View key={exercise.id} style={styles.exerciseItem}>
-                <View style={styles.exerciseContent}>
-                  <View style={styles.exerciseHeader}>
-                    <Text style={styles.exerciseNameDisplay}>{exercise.name.toUpperCase()}</Text>
-                  </View>
-                  <View style={styles.exerciseInputs}>
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.inputLabel}>SETS:</Text>
-                      <TextInput
-                        style={styles.inputBox}
-                        value={exercise.sets.toString()}
-                        onChangeText={(text) => {
-                          const numericText = text.replace(/[^0-9]/g, '');
-                          const updatedExercises = exercises.map(ex => 
-                            ex.id === exercise.id ? { ...ex, sets: parseInt(numericText) || 0 } : ex
-                          );
-                          setExercises(updatedExercises);
-                        }}
-                        keyboardType="numeric"
-                        placeholder="3"
-                        placeholderTextColor="rgba(0, 255, 0, 0.5)"
-                      />
-                    </View>
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.inputLabel}>REPS:</Text>
-                      <TextInput
-                        style={styles.inputBox}
-                        value={exercise.reps}
-                        onChangeText={(text) => {
-                          const updatedExercises = exercises.map(ex => 
-                            ex.id === exercise.id ? { ...ex, reps: text } : ex
-                          );
-                          setExercises(updatedExercises);
-                        }}
-                        placeholder="8-12"
-                        placeholderTextColor="rgba(0, 255, 0, 0.5)"
-                      />
-                    </View>
-                  </View>
-                </View>
-                <TouchableOpacity 
-                  style={styles.deleteButton}
-                  onPress={() => handleRemoveExercise(exercise.id)}
-                >
-                  <Text style={styles.deleteButtonText}>−</Text>
-                </TouchableOpacity>
+          <>
+            <Text style={styles.exerciseListTitle}>
+              EXERCISE LIST:
+              {exercises.length > 0 && <Text style={styles.countIndicator}>({exercises.length})</Text>}
+            </Text>
+            {exercises.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>NO EXERCISES YET</Text>
               </View>
-            ))}
-          </ScrollView>
+            ) : (
+              <ScrollView style={styles.exerciseList} showsVerticalScrollIndicator={false}>
+                {exercises.map((exercise) => (
+                  <View key={exercise.id} style={styles.exerciseItem}>
+                    <View style={styles.exerciseContent}>
+                      <View style={styles.exerciseHeader}>
+                        <Text style={styles.exerciseNameDisplay}>{exercise.name.toUpperCase()}</Text>
+                      </View>
+                      <View style={styles.exerciseInputs}>
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>SETS:</Text>
+                          <TextInput
+                            style={styles.inputBox}
+                            value={exercise.sets.toString()}
+                            onChangeText={(text) => {
+                              const numericText = text.replace(/[^0-9]/g, '');
+                              const updatedExercises = exercises.map(ex => 
+                                ex.id === exercise.id ? { ...ex, sets: parseInt(numericText) || 0 } : ex
+                              );
+                              setExercises(updatedExercises);
+                            }}
+                            keyboardType="numeric"
+                            placeholder="3"
+                            placeholderTextColor="rgba(0, 255, 0, 0.5)"
+                          />
+                        </View>
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>REPS:</Text>
+                          <TextInput
+                            style={styles.inputBox}
+                            value={exercise.reps}
+                            onChangeText={(text) => {
+                              const updatedExercises = exercises.map(ex => 
+                                ex.id === exercise.id ? { ...ex, reps: text } : ex
+                              );
+                              setExercises(updatedExercises);
+                            }}
+                            placeholder="8-12"
+                            placeholderTextColor="rgba(0, 255, 0, 0.5)"
+                          />
+                        </View>
+                      </View>
+                    </View>
+                    <TouchableOpacity 
+                      style={styles.deleteButton}
+                      onPress={() => handleRemoveExercise(exercise.id)}
+                    >
+                      <Text style={styles.deleteButtonText}>−</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            {/* Add Exercise Button */}
+            <TouchableOpacity style={styles.addExerciseButton} onPress={() => setModalVisible(true)}>
+              <Text style={styles.addExerciseText}>+ ADD EXERCISE</Text>
+            </TouchableOpacity>
+          </>
         )}
-
-        {/* Add Exercise Button */}
-        <TouchableOpacity style={styles.addExerciseButton} onPress={() => setModalVisible(true)}>
-          <Text style={styles.addExerciseText}>+ ADD EXERCISE</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Action Buttons */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
@@ -11,8 +11,11 @@ export default function CasualWalkScreen() {
     startSession, pauseSession, resumeSession, endSession, resetSession 
   } = useCardioSession();
 
+  // Local configuration for total laps when not active
+  const [configTotalLaps, setConfigTotalLaps] = useState(1);
+
   const handleStart = () => {
-    startSession('casual_walk', 'CASUAL WALK', {});
+    startSession('casual_walk', 'CASUAL WALK', { totalLaps: configTotalLaps });
   };
 
   const handlePause = () => {
@@ -36,49 +39,35 @@ export default function CasualWalkScreen() {
         { 
           text: 'Finish', 
           onPress: async () => {
-            Alert.alert(
-              'Finish Walk?',
-              'Are you sure you want to finish this casual walk? Your progress will be saved.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { 
-                  text: 'Finish', 
-                  onPress: async () => {
-                    try {
-                      await endSession();
-                      router.replace('/history');
-                    } catch (error) {
-                      console.error('Error saving workout:', error);
-                      const errorMessage = error instanceof Error ? error.message : 'Failed to save walk. Please try again.';
-                      if (errorMessage.includes('Please enter a session name')) {
-                        Alert.alert('Invalid Session Name', errorMessage);
-                      } else if (errorMessage.includes('Please shorten')) {
-                        Alert.alert('Input Too Long', errorMessage);
-                      } else if (errorMessage.includes('Please check your')) {
-                        Alert.alert('Invalid Values', errorMessage);
-                      } else if (errorMessage.includes('Database is busy')) {
-                        Alert.alert('Database Busy', errorMessage);
-                      } else if (errorMessage.includes('Database error')) {
-                        Alert.alert('Database Error', 'Please restart the app and try again.');
-                      } else {
-                        Alert.alert('Save Failed', errorMessage);
-                      }
-                    }
-                  }
-                }
-              ]
-            );
+            try {
+              await endSession();
+              router.replace('/history');
+            } catch (error) {
+              console.error('Error saving workout:', error);
+              const errorMessage = error instanceof Error ? error.message : 'Failed to save walk. Please try again.';
+              if (errorMessage.includes('Please enter a session name')) {
+                Alert.alert('Invalid Session Name', errorMessage);
+              } else if (errorMessage.includes('Please shorten')) {
+                Alert.alert('Input Too Long', errorMessage);
+              } else if (errorMessage.includes('Please check your')) {
+                Alert.alert('Invalid Values', errorMessage);
+              } else if (errorMessage.includes('Database is busy')) {
+                Alert.alert('Database Busy', errorMessage);
+              } else if (errorMessage.includes('Database error')) {
+                Alert.alert('Database Error', 'Please restart the app and try again.');
+              } else {
+                Alert.alert('Save Failed', errorMessage);
+              }
+            }
+          }
+        }
+      ]
+    );
   };
 
   const adjustTotalLaps = (increment: boolean) => {
     if (!isActive) {
-      setConfigTotalLaps(prev => increment ? prev + 1 : Math.max(1, prev - 1));
-    }
-  };
-
-  const markLap = () => {
-    if (isActive) {
-      setCurrentLap(prev => prev + 1);
+      setConfigTotalLaps(prev => (increment ? prev + 1 : Math.max(1, prev - 1)));
     }
   };
 

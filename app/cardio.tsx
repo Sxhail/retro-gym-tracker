@@ -102,9 +102,6 @@ export default function CardioScreen() {
       case 'casual_walk':
         router.push('/cardio/casual-walk-new');
         break;
-      case 'power_walk':
-        router.push('/cardio/power-walk');
-        break;
       default:
         console.log('Unknown cardio type:', option.type);
     }

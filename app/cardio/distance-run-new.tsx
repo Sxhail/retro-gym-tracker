@@ -42,46 +42,45 @@ export default function DistanceRunScreen() {
       'Are you sure you want to finish this Walk-Run workout? Your progress will be saved.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Finish', 
+        {
+          text: 'Finish',
           onPress: async () => {
-            Alert.alert(
-              'Finish Workout?',
-              'Are you sure you want to finish this Walk-Run workout? Your progress will be saved.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { 
-                  text: 'Finish', 
-                  onPress: async () => {
-                    try {
-                      await endSession();
-                      router.replace('/history');
-                    } catch (error) {
-                      console.error('Error saving workout:', error);
-                      const errorMessage = error instanceof Error ? error.message : 'Failed to save workout. Please try again.';
-                      if (errorMessage.includes('Please enter a session name')) {
-                        Alert.alert('Invalid Session Name', errorMessage);
-                      } else if (errorMessage.includes('Please shorten')) {
-                        Alert.alert('Input Too Long', errorMessage);
-                      } else if (errorMessage.includes('Please check your')) {
-                        Alert.alert('Invalid Values', errorMessage);
-                      } else if (errorMessage.includes('Database is busy')) {
-                        Alert.alert('Database Busy', errorMessage);
-                      } else if (errorMessage.includes('Database error')) {
-                        Alert.alert('Database Error', 'Please restart the app and try again.');
-                      } else {
-                        Alert.alert('Save Failed', errorMessage);
-                      }
-                    }
-                  }
-                }
-              ]
-            );
+            try {
+              await endSession();
+              router.replace('/history');
+            } catch (error) {
+              console.error('Error saving workout:', error);
+              const errorMessage = error instanceof Error ? error.message : 'Failed to save workout. Please try again.';
+              if (errorMessage.includes('Please enter a session name')) {
+                Alert.alert('Invalid Session Name', errorMessage);
+              } else if (errorMessage.includes('Please shorten')) {
+                Alert.alert('Input Too Long', errorMessage);
+              } else if (errorMessage.includes('Please check your')) {
+                Alert.alert('Invalid Values', errorMessage);
+              } else if (errorMessage.includes('Database is busy')) {
+                Alert.alert('Database Busy', errorMessage);
+              } else if (errorMessage.includes('Database error')) {
+                Alert.alert('Database Error', 'Please restart the app and try again.');
+              } else {
+                Alert.alert('Save Failed', errorMessage);
+              }
+            }
+          }
+        }
+      ]
+    );
   };
 
   const adjustWalkTime = (increment: boolean) => {
     if (!isActive) {
       setConfigWalkTime(prev => increment ? prev + 5 : Math.max(5, prev - 5));
+    }
+  };
+
+  // Add missing adjustRunTime to match UI buttons
+  const adjustRunTime = (increment: boolean) => {
+    if (!isActive) {
+      setConfigRunTime(prev => (increment ? prev + 5 : Math.max(5, prev - 5)));
     }
   };
 

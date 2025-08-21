@@ -10,44 +10,65 @@ export function GlobalRestTimerNotification() {
   const callbackSetRef = useRef(false);
   const appStartTimeRef = useRef(Date.now());
 
+  console.log('🎬 GlobalRestTimerNotification mounted');
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!callbackSetRef.current) {
-        callbackSetRef.current = true;
-        setOnRestTimerComplete(() => {
-          const timeSinceAppStart = Date.now() - appStartTimeRef.current;
-          if (timeSinceAppStart < 5000) return;
-          Vibration.vibrate(500);
-          setShowNotification(true);
+    if (!callbackSetRef.current) {
+      callbackSetRef.current = true;
+  // IMPORTANT: When storing a function in state, wrap it in another function
+  // so React doesn't treat it as a state updater. This ensures our callback
+  // is actually saved and invoked later by the context.
+  setOnRestTimerComplete(() => () => {
+        console.log('🔔 GlobalRestTimerNotification: Rest timer completed callback triggered');
+        const timeSinceAppStart = Date.now() - appStartTimeRef.current;
+        console.log('⏱️ Time since app start:', timeSinceAppStart, 'ms');
+        
+        if (timeSinceAppStart < 2000) {
+          console.log('⚠️ Skipping notification - too soon after app start');
+          return;
+        }
+        
+        console.log('✨ Showing rest timer completion notification');
+        Vibration.vibrate(500);
+        
+        // Reset animation value before showing
+        fadeAnim.setValue(0);
+        setShowNotification(true);
+        
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          console.log('📱 Rest notification fade-in complete');
+        });
+        
+        setTimeout(() => {
           Animated.timing(fadeAnim, {
-            toValue: 1,
+            toValue: 0,
             duration: 300,
             useNativeDriver: true,
-          }).start();
-          setTimeout(() => {
-            Animated.timing(fadeAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }).start(() => {
-              setShowNotification(false);
-            });
-          }, 2000);
-        });
-      }
-    }, 2000);
+          }).start(() => {
+            setShowNotification(false);
+            console.log('✅ Rest timer notification hidden');
+          });
+        }, 2000);
+      });
+    }
+    
     return () => {
-      clearTimeout(timer);
       if (callbackSetRef.current) {
         setOnRestTimerComplete(null);
         callbackSetRef.current = false;
       }
     };
-  }, []);
+  }, [setOnRestTimerComplete, fadeAnim]);
 
   if (!showNotification) {
     return null;
   }
+
+  console.log('📱 Rendering GlobalRestTimerNotification modal');
 
   return (
     <Modal
@@ -56,12 +77,14 @@ export function GlobalRestTimerNotification() {
       animationType="none"
       pointerEvents="none"
       statusBarTranslucent={true}
+      hardwareAccelerated={true}
     >
       <View style={{
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 9999,
       }}>
         <Animated.View style={{
           opacity: fadeAnim,
@@ -72,6 +95,11 @@ export function GlobalRestTimerNotification() {
           paddingVertical: 16,
           paddingHorizontal: 24,
           alignItems: 'center',
+          elevation: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
         }}>
           <Text style={{
             color: theme.colors.neon,

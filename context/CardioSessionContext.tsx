@@ -43,6 +43,9 @@ interface CardioSessionContextType {
   resetSession: () => void;
   nextPhase: () => void;
   restoreFromPersistence: (restored: Partial<CardioSessionContextType> & { cardioType: CardioType; sessionName: string }) => void;
+  // Phase completion callback (for global notifications)
+  onPhaseComplete: ((event: 'hiit_work_complete' | 'hiit_rest_complete' | 'walk_run_run_complete' | 'walk_run_walk_complete') => void) | null;
+  setOnPhaseComplete: (cb: ((event: 'hiit_work_complete' | 'hiit_rest_complete' | 'walk_run_run_complete' | 'walk_run_walk_complete') => void) | null) => void;
   
   // Background persistence
   setElapsedTime: (time: number) => void;
@@ -103,6 +106,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const accumulatedTimeRef = useRef(0);
   const completionAlertShownRef = useRef(false);
+  const [onPhaseComplete, setOnPhaseComplete] = useState<((event: 'hiit_work_complete' | 'hiit_rest_complete' | 'walk_run_run_complete' | 'walk_run_walk_complete') => void) | null>(null);
 
   // Start a cardio session
   const startSession = (type: CardioType, name: string, config: any, options?: { skipGetReady?: boolean }) => {
@@ -198,6 +202,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     if (cardioType === 'hiit') {
       if (isWorkPhase) {
         // Work phase finished, go to rest
+        if (onPhaseComplete) onPhaseComplete('hiit_work_complete');
         setIsWorkPhase(false);
         setPhaseTimeLeft(restTime);
         console.log(`✅ Work phase ${currentRound}/${rounds} complete, starting rest (${restTime}s)`);
@@ -214,6 +219,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
           }
           return;
         } else {
+          if (onPhaseComplete) onPhaseComplete('hiit_rest_complete');
           // Start next work phase
           setIsWorkPhase(true);
           setCurrentRound(prev => prev + 1);
@@ -224,6 +230,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     } else if (cardioType === 'walk_run') {
       if (isRunPhase) {
         // Run phase finished, go to walk
+        if (onPhaseComplete) onPhaseComplete('walk_run_run_complete');
         setIsRunPhase(false);
         setPhaseTimeLeft(walkTime);
         console.log(`✅ Run phase ${currentLap}/${laps} complete, starting walk (${walkTime}s)`);
@@ -240,6 +247,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
           }
           return;
         } else {
+          if (onPhaseComplete) onPhaseComplete('walk_run_walk_complete');
           // Start next run phase
           setIsRunPhase(true);
           setCurrentLap(prev => prev + 1);
@@ -516,6 +524,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     resetSession,
     nextPhase,
   restoreFromPersistence,
+  onPhaseComplete,
+  setOnPhaseComplete,
     
     // Background persistence setters
     setElapsedTime,

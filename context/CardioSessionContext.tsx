@@ -268,6 +268,13 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     setLastResumeTime(null);
     
     console.log('⏸️ Cardio session paused - accumulated:', accumulatedTimeRef.current);
+    // Persist on pause
+    (async () => {
+      try {
+        const hook = await import('../hooks/useCardioBackgroundPersistence');
+        (hook as any)?.saveCurrentState?.();
+      } catch {}
+    })();
   };
 
   // Resume session
@@ -277,6 +284,13 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     setIsPaused(false);
     
     console.log('▶️ Cardio session resumed at:', now.toISOString());
+    // Persist on resume
+    (async () => {
+      try {
+        const hook = await import('../hooks/useCardioBackgroundPersistence');
+        (hook as any)?.saveCurrentState?.();
+      } catch {}
+    })();
   };
 
   // Move to next phase (for HIIT and Walk-Run)
@@ -476,6 +490,13 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     })();
 
     console.log('🔄 Cardio session reset');
+    // Clear persisted state
+    (async () => {
+      try {
+        const { cardioBackgroundService } = await import('../hooks/useCardioBackgroundPersistence');
+        await cardioBackgroundService.clearCardioSessionState();
+      } catch {}
+    })();
   };
 
   // Timer effect - similar to lift workout timer
@@ -510,6 +531,11 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
                 setIsRunPhase(true);
                 setPhaseTimeLeft(runTime);
               }
+              // Persist immediately when phase starts
+              try {
+                const { saveCurrentState } = (require('../hooks/useCardioBackgroundPersistence') as any);
+                if (typeof saveCurrentState === 'function') saveCurrentState();
+              } catch {}
               return 0;
             }
             return newTime;
@@ -529,6 +555,11 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
                 console.log('🔄 Phase transition triggered');
                 // Use setTimeout to ensure state updates are processed
                 setTimeout(() => nextPhase(), 100);
+                // Persist immediately on phase transition
+                try {
+                  const { saveCurrentState } = (require('../hooks/useCardioBackgroundPersistence') as any);
+                  if (typeof saveCurrentState === 'function') saveCurrentState();
+                } catch {}
               }
               return 0; // clamp at 0 to avoid repeated triggers
             }

@@ -323,7 +323,7 @@ export function useCardioBackgroundPersistence() {
       console.log('🔄 Restoring cardio session:', restoredState);
 
       // Calculate accurate elapsed time with safety checks
-      const restoredElapsedTime = cardioBackgroundService.calculateRestoredElapsedTime(
+  const restoredElapsedTime = cardioBackgroundService.calculateRestoredElapsedTime(
         restoredState.startTime,
         restoredState.lastResumeTime,
         restoredState.accumulatedTime,
@@ -336,7 +336,105 @@ export function useCardioBackgroundPersistence() {
         return false;
       }
 
-      // Restore cardio session state without re-triggering get-ready
+      // Calculate gap since last resume (for active sessions)
+      const gapSeconds = restoredState.isPaused || !restoredState.lastResumeTime
+        ? 0
+        : Math.max(0, Math.floor((Date.now() - restoredState.lastResumeTime.getTime()) / 1000));
+
+      // Advance phase timers based on gap
+      let nextCurrentRound = restoredState.currentRound ?? 1;
+      let nextIsWork = restoredState.isWorkPhase ?? true;
+      let nextCurrentLap = restoredState.currentLap ?? 1;
+      let nextIsRun = restoredState.isRunPhase ?? true;
+      let nextPhaseLeft = restoredState.phaseTimeLeft ?? 0;
+
+      const clampPositive = (n: number) => Math.max(0, n);
+
+      const advanceHiit = (gap: number) => {
+        const work = Math.max(1, restoredState.workTime ?? 20);
+        const rest = Math.max(1, restoredState.restTime ?? 10);
+        const totalRounds = Math.max(1, restoredState.rounds ?? 8);
+        let g = gap;
+        let round = Math.max(1, nextCurrentRound);
+        let isWork = nextIsWork;
+        let left = nextPhaseLeft > 0 ? nextPhaseLeft : (isWork ? work : rest);
+        while (g > 0) {
+          if (g < left) {
+            left -= g;
+            g = 0;
+            break;
+          }
+          // consume current phase completely
+          g -= left;
+          if (isWork) {
+            // switch to rest
+            isWork = false;
+            left = rest;
+          } else {
+            // finished a rest; increment round or finish
+            if (round >= totalRounds) {
+              // session completed during background; set to end state
+              left = 0;
+              g = 0;
+              break;
+            }
+            round += 1;
+            isWork = true;
+            left = work;
+          }
+        }
+        nextCurrentRound = round;
+        nextIsWork = isWork;
+        nextPhaseLeft = clampPositive(left);
+      };
+
+      const advanceWalkRun = (gap: number) => {
+        const run = Math.max(1, restoredState.runTime ?? 30);
+        const walk = Math.max(1, restoredState.walkTime ?? 30);
+        const laps = Math.max(1, restoredState.laps ?? 4);
+        let g = gap;
+        let lap = Math.max(1, nextCurrentLap);
+        let isRun = nextIsRun;
+        let left = nextPhaseLeft > 0 ? nextPhaseLeft : (isRun ? run : walk);
+        while (g > 0) {
+          if (g < left) {
+            left -= g;
+            g = 0;
+            break;
+          }
+          g -= left;
+          if (isRun) {
+            // run finished → walk
+            isRun = false;
+            left = walk;
+          } else {
+            // walk finished → next lap or finish
+            if (lap >= laps) {
+              left = 0;
+              g = 0;
+              break;
+            }
+            lap += 1;
+            isRun = true;
+            left = run;
+          }
+        }
+        nextCurrentLap = lap;
+        nextIsRun = isRun;
+        nextPhaseLeft = clampPositive(left);
+      };
+
+      if (!restoredState.isPaused && gapSeconds > 0) {
+        if (restoredState.type === 'hiit') {
+          advanceHiit(gapSeconds);
+        } else if (restoredState.type === 'walk_run') {
+          advanceWalkRun(gapSeconds);
+        } else {
+          // casual_walk: nothing to advance
+        }
+      }
+
+      // Restore cardio session state without re-triggering get-ready, with advanced phase state
       session.restoreFromPersistence({
         cardioType: restoredState.type,
         sessionName: restoredState.name,
@@ -347,15 +445,15 @@ export function useCardioBackgroundPersistence() {
         workTime: restoredState.workTime,
         restTime: restoredState.restTime,
         rounds: restoredState.rounds,
-        currentRound: restoredState.currentRound,
-        isWorkPhase: restoredState.isWorkPhase,
+        currentRound: nextCurrentRound,
+        isWorkPhase: nextIsWork,
         runTime: restoredState.runTime,
         walkTime: restoredState.walkTime,
         laps: restoredState.laps,
-        currentLap: restoredState.currentLap,
-        isRunPhase: restoredState.isRunPhase,
+        currentLap: nextCurrentLap,
+        isRunPhase: nextIsRun,
         totalLaps: restoredState.totalLaps,
-        phaseTimeLeft: restoredState.phaseTimeLeft,
+        phaseTimeLeft: nextPhaseLeft,
       } as any);
       
       sessionIdRef.current = restoredState.sessionId;

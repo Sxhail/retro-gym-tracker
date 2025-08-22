@@ -23,13 +23,22 @@ export function useRestTimerCleanup() {
             .from(active_session_timers)
             .where(eq(active_session_timers.timer_type, 'rest'));
           
-          // Clean up all rest timers if no workout is active
+          // SAFER CLEANUP: Only remove timers that are definitely expired or absurdly old
+          const now = new Date();
+          let cleaned = 0;
           for (const timer of restTimers) {
-            await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+            const start = new Date(timer.start_time);
+            const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
+            const remaining = Math.max(0, timer.duration - elapsed);
+            const isVeryOld = elapsed > 24 * 60 * 60; // older than 24h
+            const isExpired = remaining <= 0;
+            if (isExpired || isVeryOld) {
+              await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+              cleaned++;
+            }
           }
-          
-          if (restTimers.length > 0) {
-            console.log('🧹 Cleaned up', restTimers.length, 'orphaned rest timers');
+          if (cleaned > 0) {
+            console.log('🧹 Cleaned up', cleaned, 'expired/old rest timers');
           }
         } catch (error) {
           console.error('Failed to cleanup orphaned rest timers:', error);
@@ -37,8 +46,8 @@ export function useRestTimerCleanup() {
       }
     };
 
-    // Run cleanup after a short delay to ensure session state is stable
-    const timeout = setTimeout(cleanupOrphanedTimers, 3000);
+    // Run cleanup after a slightly longer delay to avoid racing restoration on cold start
+    const timeout = setTimeout(cleanupOrphanedTimers, 8000);
     return () => clearTimeout(timeout);
   }, [session.isWorkoutActive]);
 }

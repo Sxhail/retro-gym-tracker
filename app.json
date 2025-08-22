@@ -52,10 +52,7 @@
         "expo-notifications",
         {
           "icon": "./app/assets/icon.png",
-          "color": "#00FFC2",
-          "sounds": [
-            "./app/assets/rest timer audio.wav"
-          ]
+          "color": "#00FFC2"
         }
       ]
     ],

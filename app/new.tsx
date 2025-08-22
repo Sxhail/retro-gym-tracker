@@ -492,6 +492,7 @@ export default function NewWorkoutScreen() {
   const { templateId } = useLocalSearchParams<{ templateId?: string }>();
   const [workoutDate, setWorkoutDate] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
 
   // Add state for custom exercise modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -525,7 +526,9 @@ export default function NewWorkoutScreen() {
     saveWorkout,
     resetSession,
     globalRestTimer,
-    setGlobalRestTimer
+  setGlobalRestTimer,
+  restNotificationSessionId,
+  setRestNotificationSessionId
   } = useWorkoutSession();
 
   // Fetch max weights for exercises
@@ -778,7 +781,7 @@ export default function NewWorkoutScreen() {
         
         console.log('🏃 Started new global rest timer:', restDuration, 'seconds for exercise', exerciseId, 'set', setIdx + 1);
 
-        // iOS local notification for rest completion (Scenario 1)
+        // iOS local notification for rest completion (pre-scheduled so it fires in background/locked/force-quit)
         try {
           const NotificationService = (await import('../services/notifications')).default;
           const sessionId = `lift-rest-${exerciseId}-${setIdx}-${now.getTime()}`;
@@ -789,17 +792,22 @@ export default function NewWorkoutScreen() {
             'Rest over',
             'Time for your next set!'
           );
+          setRestNotificationSessionId(sessionId);
         } catch (e) {
           console.warn('Failed to schedule iOS rest completion notification', e);
         }
       } else if (targetSet && targetSet.completed) {  // If it's being uncompleted
-        // Stop global rest timer and cleanup background data
+  // Stop global rest timer and cleanup background data
         setGlobalRestTimer(null);
-        // Try cancel all pending notifications just in case
+        // Cancel the scheduled rest notification for this session if present
         try {
-          const NotificationService = (await import('../services/notifications')).default;
-          await NotificationService.cancelAllPending();
+          if (restNotificationSessionId) {
+            const NotificationService = (await import('../services/notifications')).default;
+            await NotificationService.cancelAllForSession(restNotificationSessionId);
+            setRestNotificationSessionId(null);
+          }
         } catch {}
+  // We don't cancel all pending globally to avoid affecting other notifications.
         
         // Also cleanup background data for this specific timer
         try {
@@ -977,27 +985,12 @@ export default function NewWorkoutScreen() {
 
 
 
-  // Handle cancel workout
-  const handleCancelWorkout = () => {
-    Alert.alert(
-      'Cancel Workout',
-      'Are you sure you want to cancel this workout? All progress will be lost.',
-      [
-        {
-          text: 'Keep Working Out',
-          style: 'cancel'
-        },
-        {
-          text: 'Cancel Workout',
-          style: 'destructive',
-          onPress: async () => {
-            await resetSession();
-            router.push('/');
-          }
-        }
-      ]
-    );
+  // Finish confirmation modal actions
+  const confirmFinish = async () => {
+    setShowFinishConfirm(false);
+    await handleFinishWorkout();
   };
+  const cancelFinish = () => setShowFinishConfirm(false);
 
   // Handle back button - directly navigate back without save prompt
   const handleBackButton = () => {
@@ -1141,18 +1134,8 @@ export default function NewWorkoutScreen() {
           </Text>
         )}
         
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {sessionExercises.length > 0 && (
-            <TouchableOpacity onPress={handleCancelWorkout}>
-              <Text style={{ 
-                color: theme.colors.neon, 
-                fontFamily: theme.fonts.body, 
-                fontSize: 24, 
-                fontWeight: 'bold',
-              }}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+  {/* X removed as per requirement */}
+  <View style={{ flexDirection: 'row', alignItems: 'center' }} />
       </View>
       {/* Main content (workout box, input, END WORKOUT) */}
       {sessionExercises.length === 0 ? (
@@ -1258,9 +1241,6 @@ export default function NewWorkoutScreen() {
               onChangeText={setSearch}
               onFocus={() => setModalVisible(true)}
             />
-                <TouchableOpacity style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }} onPress={() => setModalVisible(true)}>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 32, fontWeight: 'bold', marginTop: -2 }}>+</Text>
-            </TouchableOpacity>
           </View>
               <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
                 <TouchableOpacity 
@@ -1276,7 +1256,7 @@ export default function NewWorkoutScreen() {
                     marginTop: 0,
                     opacity: isSaving ? 0.6 : 1.0 // Visual feedback for disabled state
                   }}
-                  onPress={handleFinishWorkout}
+                  onPress={() => setShowFinishConfirm(true)}
                   disabled={isSaving}
                   activeOpacity={isSaving ? 1.0 : 0.7} // Prevent tap feedback when disabled
                 >
@@ -1290,6 +1270,27 @@ export default function NewWorkoutScreen() {
         </>
       )}
       {/* Exercise Picker Modal */}
+      {/* Finish confirmation modal */}
+      <Modal
+        visible={showFinishConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelFinish}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#000', borderWidth: 2, borderColor: theme.colors.neon, borderRadius: 8, padding: 20, width: '80%', maxWidth: 360 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 18, textAlign: 'center', marginBottom: 12 }}>Are you sure you want to finish your workout?</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+              <TouchableOpacity onPress={confirmFinish} style={{ flex: 1, marginRight: 8, paddingVertical: 12, borderWidth: 2, borderColor: theme.colors.neon, borderRadius: 6, alignItems: 'center', backgroundColor: 'rgba(0,255,0,0.1)' }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontWeight: 'bold' }}>Yes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={cancelFinish} style={{ flex: 1, marginLeft: 8, paddingVertical: 12, borderWidth: 2, borderColor: '#666', borderRadius: 6, alignItems: 'center', backgroundColor: 'transparent' }}>
+                <Text style={{ color: '#AAA', fontFamily: theme.fonts.code, fontWeight: 'bold' }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <Modal
         visible={modalVisible}
         animationType="slide"

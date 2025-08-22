@@ -44,7 +44,8 @@ export const NotificationService = {
       content: {
         title,
         body,
-        sound: 'rest timer audio.wav',
+  // Use default iOS notification sound
+  sound: true,
       },
   trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when },
     });

@@ -70,6 +70,9 @@ interface WorkoutSessionContextType {
   setOnRestTimerComplete: (callback: (() => void) | null) => void;
   accumulatedTime: number;
   setAccumulatedTime: (time: number) => void;
+  // Track scheduled iOS notification session id for rest timer (for cancelation)
+  restNotificationSessionId: string | null;
+  setRestNotificationSessionId: (id: string | null) => void;
 }
 
 const WorkoutSessionContext = createContext<WorkoutSessionContextType | undefined>(undefined);
@@ -111,6 +114,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     startTime: Date | null;
   } | null>(null);
   const [onRestTimerComplete, setOnRestTimerComplete] = useState<(() => void) | null>(null);
+  const [restNotificationSessionId, setRestNotificationSessionId] = useState<string | null>(null);
 
   const timerRef = useRef<any>(null);
 
@@ -294,6 +298,10 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       // iOS: cancel all pending local notifications
       try {
         const NotificationService = (await import('../services/notifications')).default;
+        if (restNotificationSessionId) {
+          await NotificationService.cancelAllForSession(restNotificationSessionId);
+          setRestNotificationSessionId(null);
+        }
         await NotificationService.cancelAllPending();
       } catch {}
       
@@ -447,6 +455,10 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     // iOS: cancel all pending local notifications
     try {
       const NotificationService = (await import('../services/notifications')).default;
+      if (restNotificationSessionId) {
+        await NotificationService.cancelAllForSession(restNotificationSessionId);
+        setRestNotificationSessionId(null);
+      }
       await NotificationService.cancelAllPending();
     } catch {}
 
@@ -533,6 +545,8 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       setGlobalRestTimer,
       onRestTimerComplete,
       setOnRestTimerComplete,
+  restNotificationSessionId,
+  setRestNotificationSessionId,
     }}>
       {children}
     </WorkoutSessionContext.Provider>

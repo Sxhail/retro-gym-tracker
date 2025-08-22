@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 
 // Contract
 // - initialize(): request iOS permissions and set handler
@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
 type SessionId = string;
 
 const sessionMap = new Map<SessionId, string[]>();
+let isAppForeground = AppState.currentState === 'active';
 
 export const NotificationService = {
   async initialize() {
@@ -18,11 +19,18 @@ export const NotificationService = {
     // Show alerts and play sounds for local notifications
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true,
+        // Suppress alert when app is foregrounded; only show outside the app
+        shouldShowAlert: !isAppForeground,
         shouldPlaySound: true,
         shouldSetBadge: false,
       }),
     });
+
+    // Track app foreground/background state for handler
+    const appStateListener = (state: AppStateStatus) => {
+      isAppForeground = state === 'active';
+    };
+    AppState.addEventListener('change', appStateListener);
 
     // Permission request
     const settings = await Notifications.getPermissionsAsync();
@@ -40,6 +48,9 @@ export const NotificationService = {
 
   async scheduleAbsolute(sessionId: SessionId, when: Date, title: string, body: string) {
     if (Platform.OS !== 'ios') return null;
+    // Clamp past times to near-future to ensure delivery
+    const now = Date.now();
+    const fireAt = when.getTime() <= now ? new Date(now + 500) : when;
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title,
@@ -47,7 +58,8 @@ export const NotificationService = {
   // Use default iOS notification sound
   sound: true,
       },
-  trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when },
+  // Use date trigger; Expo will deliver even if app is backgrounded/force-quit
+  trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
     });
 
     const list = sessionMap.get(sessionId) ?? [];

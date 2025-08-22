@@ -290,6 +290,12 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       // Clear global rest timer when workout ends
       setGlobalRestTimer(null);
       setOnRestTimerComplete(null);
+
+      // iOS: cancel all pending local notifications
+      try {
+        const NotificationService = (await import('../services/notifications')).default;
+        await NotificationService.cancelAllPending();
+      } catch {}
       
       // Clear any background rest timer data as well
       try {
@@ -438,6 +444,12 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     setGlobalRestTimer(null);
     setOnRestTimerComplete(null);
     
+    // iOS: cancel all pending local notifications
+    try {
+      const NotificationService = (await import('../services/notifications')).default;
+      await NotificationService.cancelAllPending();
+    } catch {}
+
     // Clear any background rest timer data as well
     try {
       const { backgroundSessionService } = await import('../services/backgroundSession');

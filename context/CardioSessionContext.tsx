@@ -164,6 +164,90 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     }
     
     console.log('🚀 Cardio session started:', { type, name, config });
+
+    // Pre-schedule iOS local notifications for the entire session
+    (async () => {
+      try {
+        const NotificationService = (await import('../services/notifications')).default;
+        // Cancel any previous queued items to avoid overlap
+        await NotificationService.cancelAllPending();
+
+        const sessionId = `cardio-${type}-${now.getTime()}`;
+        let cursorMs = 0;
+        const work = type === 'hiit' ? (config.workTime || 20) : (type === 'walk_run' ? (config.runTime || 30) : 0);
+        const rest = type === 'hiit' ? (config.restTime || 10) : (type === 'walk_run' ? (config.walkTime || 30) : 0);
+        const count = type === 'hiit' ? (config.rounds || 8) : (type === 'walk_run' ? (config.laps || 4) : 0);
+
+        const getReady = options?.skipGetReady ? 0 : 10;
+        cursorMs += getReady * 1000; // start after get-ready, if any
+
+        if (type === 'hiit') {
+          for (let r = 1; r <= count; r++) {
+            // Work phase ends → Scenario 2
+            cursorMs += work * 1000;
+            await NotificationService.scheduleAbsolute(
+              sessionId,
+              new Date(now.getTime() + cursorMs),
+              'Work phase done',
+              'Time to rest.'
+            );
+            // Last rest completion leads to completion instead of next
+            if (r === count) break;
+            // Rest phase ends → Scenario 3
+            cursorMs += rest * 1000;
+            await NotificationService.scheduleAbsolute(
+              sessionId,
+              new Date(now.getTime() + cursorMs),
+              'Rest over',
+              'Get moving!'
+            );
+          }
+          // Final completion → Scenario 4
+          if (rest > 0) {
+            // If count>0, the loop ended after adding last work end; add final rest to reach session total
+            cursorMs += rest * 1000;
+          }
+          await NotificationService.scheduleAbsolute(
+            sessionId,
+            new Date(now.getTime() + cursorMs),
+            'HIIT session complete',
+            'Well done!'
+          );
+        } else if (type === 'walk_run') {
+          for (let lap = 1; lap <= count; lap++) {
+            // Run ends → Scenario 5
+            cursorMs += work * 1000;
+            await NotificationService.scheduleAbsolute(
+              sessionId,
+              new Date(now.getTime() + cursorMs),
+              'Run done',
+              'Switch to walking.'
+            );
+            if (lap === count) break;
+            // Walk ends → Scenario 6
+            cursorMs += rest * 1000;
+            await NotificationService.scheduleAbsolute(
+              sessionId,
+              new Date(now.getTime() + cursorMs),
+              'Walk done',
+              'Time to run!'
+            );
+          }
+          // Final completion → Scenario 7
+          if (rest > 0) {
+            cursorMs += rest * 1000;
+          }
+          await NotificationService.scheduleAbsolute(
+            sessionId,
+            new Date(now.getTime() + cursorMs),
+            'Walk/Run session complete',
+            'Great job!'
+          );
+        }
+      } catch (e) {
+        console.warn('Failed to pre-schedule cardio iOS notifications', e);
+      }
+    })();
   };
 
   // Pause session
@@ -347,6 +431,12 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       throw new Error('Failed to save workout: Missing session data (type or name)');
     }
     
+    // Cancel pending notifications when ending early or finishing
+    try {
+      const NotificationService = (await import('../services/notifications')).default;
+      await NotificationService.cancelAllPending();
+    } catch {}
+
     resetSession();
   };
 
@@ -377,6 +467,14 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     setGetReadyTimeLeft(10);
     completionAlertShownRef.current = false; // clear completion guard
     
+    // Clear any pending notifications
+    (async () => {
+      try {
+        const NotificationService = (await import('../services/notifications')).default;
+        await NotificationService.cancelAllPending();
+      } catch {}
+    })();
+
     console.log('🔄 Cardio session reset');
   };
 

@@ -130,3 +130,11 @@ Retro Gym Tracker is a cross-platform mobile app for tracking workouts, visualiz
 4. Open a Pull Request
 
 ---
+
+## iOS Local Notifications
+
+- Implemented with `expo-notifications` (iOS only). Permissions and handler are set at app start.
+- Cardio HIIT and Walk/Run: all transitions and a final completion notification are pre-scheduled when the session starts.
+- Lift rest timer: a notification is scheduled at the start of each rest to fire at rest completion.
+- Ending/canceling a session cancels pending notifications to avoid irrelevant alerts.
+

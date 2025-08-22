@@ -26,7 +26,11 @@
       "requireFullScreen": false,
       "icon": "./app/assets/icon.png",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "audio",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -43,7 +47,17 @@
       "expo-router",
       "expo-sqlite",
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./app/assets/icon.png",
+          "color": "#00FFC2",
+          "sounds": [
+            "./app/assets/rest timer audio.wav"
+          ]
+        }
+      ]
     ],
     "assetBundlePatterns": [
       "**/*",

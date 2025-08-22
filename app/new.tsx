@@ -777,9 +777,29 @@ export default function NewWorkoutScreen() {
         });
         
         console.log('🏃 Started new global rest timer:', restDuration, 'seconds for exercise', exerciseId, 'set', setIdx + 1);
+
+        // iOS local notification for rest completion (Scenario 1)
+        try {
+          const NotificationService = (await import('../services/notifications')).default;
+          const sessionId = `lift-rest-${exerciseId}-${setIdx}-${now.getTime()}`;
+          const fireAt = new Date(now.getTime() + restDuration * 1000);
+          await NotificationService.scheduleAbsolute(
+            sessionId,
+            fireAt,
+            'Rest over',
+            'Time for your next set!'
+          );
+        } catch (e) {
+          console.warn('Failed to schedule iOS rest completion notification', e);
+        }
       } else if (targetSet && targetSet.completed) {  // If it's being uncompleted
         // Stop global rest timer and cleanup background data
         setGlobalRestTimer(null);
+        // Try cancel all pending notifications just in case
+        try {
+          const NotificationService = (await import('../services/notifications')).default;
+          await NotificationService.cancelAllPending();
+        } catch {}
         
         // Also cleanup background data for this specific timer
         try {

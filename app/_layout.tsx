@@ -19,11 +19,16 @@ import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSe
 import CustomSplashScreen from '../components/CustomSplashScreen';
 import { GlobalRestTimerNotification } from '../components/GlobalRestTimerNotification';
 import GlobalCardioPhaseNotification from '../components/GlobalCardioPhaseNotification';
+import NotificationService from '../services/notifications';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function Layout() {
+  // Initialize iOS notifications once
+  useEffect(() => {
+    NotificationService.initialize().catch(console.warn);
+  }, []);
   const [orbitronLoaded] = useOrbitron({ Orbitron_700Bold });
   const [pressStart2PLoaded] = usePressStart2P({ PressStart2P_400Regular });
   const [vt323Loaded] = useVT323({ VT323_400Regular });

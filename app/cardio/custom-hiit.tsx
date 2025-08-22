@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
+import GlobalCardioTimerBar from '../../components/GlobalCardioTimerBar';
 import { useCardioSession } from '../../context/CardioSessionContext';
 
 export default function CustomHiitScreen() {
@@ -92,6 +93,7 @@ export default function CustomHiitScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <GlobalCardioTimerBar />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

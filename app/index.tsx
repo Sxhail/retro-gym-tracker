@@ -218,15 +218,11 @@ export default function HomeScreen() {
 
       {/* Action Buttons - moved to bottom */}
       <View style={styles.bottomActionSection}>
-        {isWorkoutActive ? (
-          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-            <Text style={styles.startButtonText}>CONTINUE LIFT</Text>
-          </TouchableOpacity>
-        ) : isCardioActive ? (
+        {/* Cardio should take precedence so the CTA is always correct regardless of navigation path */}
+        {isCardioActive ? (
           <TouchableOpacity
             style={styles.startButton}
             onPress={() => {
-              // Navigate to the exact cardio screen based on active type
               if (cardioType === 'hiit') router.push('/cardio/quick-hiit');
               else if (cardioType === 'walk_run') router.push('/cardio/distance-run-new');
               else if (cardioType === 'casual_walk') router.push('/cardio/casual-walk-new');
@@ -234,6 +230,10 @@ export default function HomeScreen() {
             }}
           >
             <Text style={styles.startButtonText}>CONTINUE CARDIO</Text>
+          </TouchableOpacity>
+        ) : isWorkoutActive ? (
+          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
+            <Text style={styles.startButtonText}>CONTINUE LIFT</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>

@@ -10,7 +10,8 @@ export default function CardioScreen() {
   const [selectedType, setSelectedType] = useState('HIIT');
   const { isActive: isCardioActive, cardioType: activeCardioType, resetSession } = useCardioSession();
 
-  const cardioTypes = ['HIIT', 'RUN', 'STEADY'];
+  // Disable STEADY for now (keep routes working for ongoing sessions)
+  const cardioTypes = ['HIIT', 'RUN'];
 
   const cardioOptions = {
     HIIT: [
@@ -28,15 +29,16 @@ export default function CardioScreen() {
         duration: null,
         type: 'walk_run'
       }
-    ],
-    STEADY: [
-      {
-        title: 'CASUAL WALK',
-        subtitle: 'LOW INTENSITY • RECOVERY',
-        duration: null,
-        type: 'casual_walk'
-      }
-    ]
+  ],
+  // STEADY is disabled for now
+  // STEADY: [
+  //   {
+  //     title: 'CASUAL WALK',
+  //     subtitle: 'LOW INTENSITY • RECOVERY',
+  //     duration: null,
+  //     type: 'casual_walk'
+  //   }
+  // ]
   };
 
   const handleCardioSelection = (option: any) => {
@@ -108,7 +110,7 @@ export default function CardioScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+  <SafeAreaView style={styles.container}>
       <GlobalRestTimerDisplay />
       {/* Header */}
       <View style={styles.header}>

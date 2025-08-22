@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
+import GlobalCardioTimerBar from '../../components/GlobalCardioTimerBar';
 import { useCardioSession } from '../../context/CardioSessionContext';
 
 export default function QuickHiitScreen() {
@@ -17,6 +18,8 @@ export default function QuickHiitScreen() {
   const [configRestTime, setConfigRestTime] = useState(10);
   const [configRounds, setConfigRounds] = useState(8);
   // get-ready is handled in context now
+
+  const [showFinishModal, setShowFinishModal] = useState(false);
 
   // Initialize or restore session
   useEffect(() => {
@@ -51,19 +54,13 @@ export default function QuickHiitScreen() {
       'Are you sure you want to finish this HIIT workout? Your progress will be saved.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Finish', 
+        {
+          text: 'Finish',
           onPress: async () => {
             try {
               await endSession();
-              Alert.alert(
-                'Workout Saved',
-                'What would you like to do next?',
-                [
-                  { text: 'View History', onPress: () => router.replace('/history') },
-                  { text: 'New Cardio', onPress: () => router.replace('/cardio') },
-                ]
-              );
+              // Show custom modal immediately after finishing
+              setShowFinishModal(true);
             } catch (error) {
               console.error('Error saving workout:', error);
               const errorMessage = error instanceof Error ? error.message : 'Failed to save workout. Please try again.';
@@ -81,8 +78,8 @@ export default function QuickHiitScreen() {
                 Alert.alert('Save Failed', errorMessage);
               }
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -130,7 +127,9 @@ export default function QuickHiitScreen() {
   const displayRounds = isActive ? rounds : configRounds;
 
   return (
+    <>
     <SafeAreaView style={styles.container}>
+  <GlobalCardioTimerBar />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -285,6 +284,30 @@ export default function QuickHiitScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    
+    {/* Finish modal */}
+    <Modal visible={showFinishModal} transparent animationType="fade" onRequestClose={() => setShowFinishModal(false)}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ width: '85%', maxWidth: 380, backgroundColor: theme.colors.background, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 14, padding: 16 }}>
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', textAlign: 'center', marginBottom: 12 }}>HIIT SESSION SAVED</Text>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity
+              style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 10, paddingVertical: 12, alignItems: 'center', backgroundColor: 'rgba(0,255,0,0.10)' }}
+              onPress={() => { setShowFinishModal(false); router.replace('/history'); }}
+            >
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.display, fontSize: 14, fontWeight: 'bold' }}>VIEW HISTORY</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 10, paddingVertical: 12, alignItems: 'center', backgroundColor: 'rgba(0,255,0,0.10)' }}
+              onPress={() => { setShowFinishModal(false); router.replace('/cardio'); }}
+            >
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.display, fontSize: 14, fontWeight: 'bold' }}>NEW CARDIO</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 

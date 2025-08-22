@@ -47,7 +47,14 @@ export default function DistanceRunScreen() {
           onPress: async () => {
             try {
               await endSession();
-              router.replace('/history');
+              Alert.alert(
+                'Workout Saved',
+                'What would you like to do next?',
+                [
+                  { text: 'View History', onPress: () => router.replace('/history') },
+                  { text: 'New Cardio', onPress: () => router.replace('/cardio') },
+                ]
+              );
             } catch (error) {
               console.error('Error saving workout:', error);
               const errorMessage = error instanceof Error ? error.message : 'Failed to save workout. Please try again.';

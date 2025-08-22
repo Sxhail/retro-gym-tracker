@@ -57,9 +57,14 @@ export default function TimeRunScreen() {
           onPress: async () => {
             try {
               await endSession();
-              Alert.alert('Run Complete!', 'Your time run session has been saved.', [
-                { text: 'OK', onPress: () => router.back() }
-              ]);
+              Alert.alert(
+                'Workout Saved',
+                'What would you like to do next?',
+                [
+                  { text: 'View History', onPress: () => router.replace('/history') },
+                  { text: 'New Cardio', onPress: () => router.replace('/cardio') },
+                ]
+              );
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : 'Failed to save run. Please try again.';
               Alert.alert('Save Failed', errorMessage);

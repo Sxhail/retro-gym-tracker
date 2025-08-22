@@ -10,7 +10,7 @@ import { ProgramManager, ProgramData } from '../services/programManager';
 import ExerciseCard from '../components/ExerciseCard';
 import { dbOperations } from '../services/database';
 import { getExerciseMaxWeights } from '../services/workoutHistory';
-import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
+// Global rest timer display is injected via AppLayout; no need to render here
 
 interface ProgramConfig {
   programName: string;
@@ -249,7 +249,6 @@ export default function ProgramScreen() {
 
   const renderHeader = () => (
     <View>
-      <GlobalRestTimerDisplay />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>

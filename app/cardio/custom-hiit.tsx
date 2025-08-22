@@ -38,9 +38,14 @@ export default function CustomHiitScreen() {
           onPress: async () => {
             try {
               await endSession();
-              Alert.alert('Workout Complete!', 'Your HIIT session has been saved.', [
-                { text: 'OK', onPress: () => router.back() }
-              ]);
+              Alert.alert(
+                'Workout Saved',
+                'What would you like to do next?',
+                [
+                  { text: 'View History', onPress: () => router.replace('/history') },
+                  { text: 'New Cardio', onPress: () => router.replace('/cardio') },
+                ]
+              );
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : 'Failed to save workout. Please try again.';
               Alert.alert('Save Failed', errorMessage);

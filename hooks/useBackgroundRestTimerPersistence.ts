@@ -91,19 +91,12 @@ export function useBackgroundRestTimerPersistence() {
       return false; // Already restored or timer already active
     }
 
-    // CRITICAL: Only restore if there's actually an active workout session
-    if (!session.isWorkoutActive) {
-      console.log('🚫 Skipping rest timer restoration - no active workout session');
-      setIsRestored(true);
-      return false;
-    }
-
     try {
       const { db } = await import('../db/client');
       const { active_session_timers } = await import('../db/schema');
       const { eq } = await import('drizzle-orm');
       
-      // Look for any active rest timers
+  // Look for any active rest timers
       const activeRestTimers = await db
         .select()
         .from(active_session_timers)
@@ -115,7 +108,8 @@ export function useBackgroundRestTimerPersistence() {
       const now = new Date();
       let validRestTimers = [];
       
-      for (const restTimer of activeRestTimers) {
+    let expiredFound = false;
+    for (const restTimer of activeRestTimers) {
         const startTime = new Date(restTimer.start_time);
         const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
         const remaining = Math.max(0, restTimer.duration - elapsed);
@@ -129,6 +123,7 @@ export function useBackgroundRestTimerPersistence() {
             age: `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`
           });
           await backgroundSessionService.clearTimerData(restTimer.session_id, 'rest');
+      if (remaining <= 0) expiredFound = true;
         } else {
           validRestTimers.push({ restTimer, remaining, elapsed });
         }
@@ -176,6 +171,15 @@ export function useBackgroundRestTimerPersistence() {
         });
       }
       
+      // If a rest timer expired while we were away, trigger the completion callback for UX
+      if (expiredFound && session.onRestTimerComplete) {
+        try {
+          // Defer slightly so UI is ready
+          setTimeout(() => {
+            session.onRestTimerComplete && session.onRestTimerComplete();
+          }, 300);
+        } catch {}
+      }
       setIsRestored(true);
       return false;
     } catch (error) {
@@ -198,18 +202,24 @@ export function useBackgroundRestTimerPersistence() {
     }
   }, []);
 
-  // Auto-save on rest timer state changes
+  // Auto-save on rest timer state changes (do not require isRestored)
   useEffect(() => {
-    if (session.globalRestTimer?.isActive && isRestored) {
+    if (session.globalRestTimer?.isActive) {
       saveRestTimerState();
     }
   }, [
     session.globalRestTimer?.isActive,
     session.globalRestTimer?.timeRemaining,
     session.globalRestTimer?.startTime,
-    isRestored,
     saveRestTimerState,
   ]);
+
+  // Save immediately when a rest timer starts (first frame)
+  useEffect(() => {
+    if (session.globalRestTimer?.isActive && session.globalRestTimer.startTime) {
+      saveRestTimerState();
+    }
+  }, [session.globalRestTimer?.isActive]);
 
   // Handle app state changes for rest timer
   useEffect(() => {
@@ -243,9 +253,24 @@ export function useBackgroundRestTimerPersistence() {
   // Restore rest timer on hook mount (app launch)
   useEffect(() => {
     if (!isRestored) {
+      // Try immediately
       restoreRestTimerState();
+      // Try again shortly after to allow workout restoration to complete
+      const t = setTimeout(() => {
+        if (!isRestored && !session.globalRestTimer?.isActive) {
+          restoreRestTimerState();
+        }
+      }, 800);
+      return () => clearTimeout(t);
     }
   }, [restoreRestTimerState, isRestored]);
+
+  // If workout becomes active after launch, attempt rest timer restore once
+  useEffect(() => {
+    if (!isRestored && session.isWorkoutActive && !session.globalRestTimer?.isActive) {
+      restoreRestTimerState();
+    }
+  }, [session.isWorkoutActive, session.globalRestTimer?.isActive, isRestored, restoreRestTimerState]);
 
   // Clean up when rest timer ends
   useEffect(() => {

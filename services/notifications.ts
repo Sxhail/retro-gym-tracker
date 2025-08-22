@@ -70,18 +70,17 @@ export const NotificationService = {
     // Clamp past times to near-future to ensure delivery
     const now = Date.now();
     const fireAt = when.getTime() <= now ? new Date(now + 500) : when;
+    const deltaMs = Math.max(1000, fireAt.getTime() - Date.now());
+    const seconds = Math.ceil(deltaMs / 1000);
+    // Prefer time-interval trigger on iOS for reliability; OS handles delivery when app is killed
     const payload: Notifications.NotificationRequestInput = {
       content: {
         title,
         body,
-        // Default iOS notification sound
         sound: true,
-        // Help delivery under Focus by marking as time-sensitive (best-effort; iOS specific)
-        // Casting to any to avoid TS friction if type defs lag behind
         ...( { interruptionLevel: 'timeSensitive' } as any ),
       },
-      // Use date trigger; Expo will deliver even if app is backgrounded/force-quit
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: fireAt },
+  trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, repeats: false },
     };
     const id = await Notifications.scheduleNotificationAsync(payload);
 

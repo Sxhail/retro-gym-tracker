@@ -13,6 +13,9 @@ interface CardioSessionState {
   accumulatedTime: number;
   isPaused: boolean;
   lastResumeTime: Date | null;
+  // Get-Ready state
+  isGetReady?: boolean;
+  getReadyTimeLeft?: number;
   
   // HIIT specific
   workTime?: number;
@@ -57,6 +60,8 @@ class CardioBackgroundService {
           isCardio: true,
           type: state.type,
           cardio: {
+            isGetReady: state.isGetReady ?? null,
+            getReadyTimeLeft: state.getReadyTimeLeft ?? null,
             workTime: state.workTime ?? null,
             restTime: state.restTime ?? null,
             rounds: state.rounds ?? null,
@@ -127,6 +132,8 @@ class CardioBackgroundService {
         accumulatedTime: cardioRow.elapsed_time,
         isPaused: cardioRow.is_paused === 1,
         lastResumeTime,
+  isGetReady: cardio.isGetReady ?? undefined,
+  getReadyTimeLeft: cardio.getReadyTimeLeft ?? undefined,
         workTime: cardio.workTime ?? undefined,
         restTime: cardio.restTime ?? undefined,
         rounds: cardio.rounds ?? undefined,
@@ -276,6 +283,8 @@ export function useCardioBackgroundPersistence() {
         accumulatedTime: accumulatedTimeOnly,
         isPaused: session.isPaused,
         lastResumeTime: session.lastResumeTime,
+  isGetReady: session.isGetReady,
+  getReadyTimeLeft: session.getReadyTimeLeft,
         
         // HIIT specific
         workTime: session.workTime,
@@ -347,6 +356,8 @@ export function useCardioBackgroundPersistence() {
       let nextCurrentLap = restoredState.currentLap ?? 1;
       let nextIsRun = restoredState.isRunPhase ?? true;
       let nextPhaseLeft = restoredState.phaseTimeLeft ?? 0;
+      let nextIsGetReady = restoredState.isGetReady ?? false;
+      let nextGetReadyLeft = restoredState.getReadyTimeLeft ?? 0;
 
       const clampPositive = (n: number) => Math.max(0, n);
 
@@ -424,13 +435,33 @@ export function useCardioBackgroundPersistence() {
         nextPhaseLeft = clampPositive(left);
       };
 
+      // Handle Get-Ready countdown restore first
       if (!restoredState.isPaused && gapSeconds > 0) {
-        if (restoredState.type === 'hiit') {
-          advanceHiit(gapSeconds);
-        } else if (restoredState.type === 'walk_run') {
-          advanceWalkRun(gapSeconds);
+        if (nextIsGetReady) {
+          const newLeft = clampPositive((nextGetReadyLeft || 0) - gapSeconds);
+          if (newLeft > 0) {
+            nextGetReadyLeft = newLeft;
+          } else {
+            // Get-Ready finished in background; start first phase fresh
+            nextIsGetReady = false;
+            nextGetReadyLeft = 0;
+            if (restoredState.type === 'hiit') {
+              nextIsWork = true;
+              nextPhaseLeft = Math.max(1, restoredState.workTime ?? 20);
+            } else if (restoredState.type === 'walk_run') {
+              nextIsRun = true;
+              nextPhaseLeft = Math.max(1, restoredState.runTime ?? 30);
+            }
+          }
         } else {
-          // casual_walk: nothing to advance
+          // Advance active phase timers only when not in get-ready
+          if (restoredState.type === 'hiit') {
+            advanceHiit(gapSeconds);
+          } else if (restoredState.type === 'walk_run') {
+            advanceWalkRun(gapSeconds);
+          } else {
+            // casual_walk: nothing to advance
+          }
         }
       }
 
@@ -442,6 +473,8 @@ export function useCardioBackgroundPersistence() {
         elapsedTime: restoredElapsedTime,
         accumulatedTime: restoredState.accumulatedTime,
         lastResumeTime: restoredState.lastResumeTime,
+        isGetReady: nextIsGetReady,
+        getReadyTimeLeft: nextGetReadyLeft,
         workTime: restoredState.workTime,
         restTime: restoredState.restTime,
         rounds: restoredState.rounds,

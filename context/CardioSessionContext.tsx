@@ -165,6 +165,14 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     
     console.log('🚀 Cardio session started:', { type, name, config });
 
+    // Persist immediately to capture initial get-ready state
+    setTimeout(() => {
+      try {
+        const { saveCurrentState } = (require('../hooks/useCardioBackgroundPersistence') as any);
+        if (typeof saveCurrentState === 'function') saveCurrentState();
+      } catch {}
+    }, 100);
+
     // Pre-schedule iOS local notifications for the entire session
     (async () => {
       try {
@@ -608,8 +616,19 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
 
     // Timers
     if (typeof restored.phaseTimeLeft === 'number') setPhaseTimeLeft(restored.phaseTimeLeft);
-    setIsGetReady(false);
-    setGetReadyTimeLeft(0);
+    if (typeof restored.isGetReady === 'boolean') {
+      setIsGetReady(restored.isGetReady);
+      if (typeof restored.getReadyTimeLeft === 'number') {
+        setGetReadyTimeLeft(restored.getReadyTimeLeft);
+      } else if (restored.isGetReady) {
+        setGetReadyTimeLeft(10);
+      } else {
+        setGetReadyTimeLeft(0);
+      }
+    } else {
+      setIsGetReady(false);
+      setGetReadyTimeLeft(0);
+    }
   };
 
   const contextValue: CardioSessionContextType = {

@@ -15,14 +15,14 @@ import { Swipeable } from 'react-native-gesture-handler';
 export type Exercise = typeof schema.exercises.$inferSelect;
 
 // --- SetRow component for swipe-to-remove ---
-function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSetComplete, handleRemoveSet, theme, isLastCompleted }: any) {
+function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestChange, handleToggleSetComplete, handleRemoveSet, theme, isLastCompleted }: any) {
   // Remove PanResponder and Animated pan logic
 
   // Only allow marking as complete if both KG and REPS are positive numbers
   const canComplete = !!set.weight && !!set.reps && Number(set.weight) > 0 && Number(set.reps) > 0;
 
   // Rest timer state (per set) - timestamp-based for background persistence
-  const [restTime, setRestTime] = useState(set.rest ?? 120);
+  const [restTime, setRestTime] = useState(set.restDuration ?? 120);
   const [restActive, setRestActive] = useState(false);
   const [timerPaused, setTimerPaused] = useState(false);
   const restInterval = useRef<any>(null);
@@ -77,7 +77,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
         sessionId: timerId,
         timerType: 'rest',
         startTime: resumeTime,
-        duration: Number(set.rest ?? 120),
+        duration: Number(set.restDuration ?? 120),
         elapsedWhenPaused: accumulatedTimeOnly,
         isActive: !timerPaused,
       });
@@ -99,7 +99,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       if (timerState) {
         const now = new Date();
         const totalElapsed = timerState.elapsedWhenPaused;
-        const totalRestDuration = Number(set.rest ?? 120);
+  const totalRestDuration = Number(set.restDuration ?? 120);
         const remaining = Math.max(0, totalRestDuration - totalElapsed);
         
         // If timer was still active and hasn't finished
@@ -168,7 +168,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
         setRestStartTime(null);
         setRestLastResumeTime(null);
         setRestAccumulatedTime(0);
-        setRestTime(Number(set.rest ?? 120));
+        setRestTime(Number(set.restDuration ?? 120));
         setTimerPaused(false);
         console.log('🛑 Local timer stopped - global timer belongs to different set');
       }
@@ -178,11 +178,11 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       setRestStartTime(null);
       setRestLastResumeTime(null);
       setRestAccumulatedTime(0);
-      setRestTime(Number(set.rest ?? 120));
+      setRestTime(Number(set.restDuration ?? 120));
       setTimerPaused(false);
       console.log('� Local timer stopped - no global timer active');
     }
-  }, [sessionWorkout.globalRestTimer, sessionWorkout.globalRestTimer?.timeRemaining, exerciseId, setIdx, set.rest, set.completed]);
+  }, [sessionWorkout.globalRestTimer, sessionWorkout.globalRestTimer?.timeRemaining, exerciseId, setIdx, set.restDuration, set.completed]);
 
   // Cleanup rest timer state when component unmounts or set is no longer completed
   useEffect(() => {
@@ -202,14 +202,52 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
   }, [exerciseId, setIdx]);
 
   // Update rest duration handler
-  const handleRestChange = (delta: number) => {
-    let newRest = Math.max(15, Math.min(Number(set.rest ?? 120) + delta, 600));
-    handleSetFieldChange(exerciseId, setIdx, 'rest', String(newRest));
-    // If timer is running, reset timer to new value
-    if (restActive) {
-      setRestTime(newRest);
+  const handleRestChange = async (delta: number) => {
+    const prevTotal = Number(set.restDuration ?? 120);
+    const newTotal = Math.max(15, Math.min(prevTotal + delta, 600));
+    // Update session exercise model
+    handleSetRestChange(exerciseId, setIdx, delta);
+
+    // If this set owns the global timer, adjust it and reschedule notification
+    const grt = sessionWorkout.globalRestTimer;
+    if (grt && grt.isActive && grt.exerciseId === exerciseId && grt.setIdx === setIdx && grt.startTime) {
+      const now = new Date();
+      const elapsed = Math.floor((now.getTime() - grt.startTime.getTime()) / 1000);
+      const newRemaining = Math.max(0, newTotal - elapsed);
+
+      // Update global timer immediately
+      sessionWorkout.setGlobalRestTimer({
+        ...grt,
+        originalDuration: newTotal,
+        timeRemaining: newRemaining,
+      });
+      setRestTime(newRemaining);
+
+      // Reschedule local notification
+      try {
+        const NotificationService = (await import('../services/notifications')).default;
+        if (sessionWorkout.restNotificationSessionId) {
+          await NotificationService.cancelAllForSession(sessionWorkout.restNotificationSessionId);
+          sessionWorkout.setRestNotificationSessionId(null);
+        }
+        if (newRemaining > 0) {
+          const newFireAt = new Date(now.getTime() + newRemaining * 1000);
+          const sessionId = `lift-rest-${exerciseId}-${setIdx}-${grt.startTime.getTime()}`;
+          await NotificationService.scheduleAbsolute(sessionId, newFireAt, 'Rest over', 'Time for your next set!');
+          sessionWorkout.setRestNotificationSessionId(sessionId);
+        }
+      } catch {}
+
+      // If time reduced to zero or below, end timer
+      if (newRemaining <= 0) {
+        sessionWorkout.setGlobalRestTimer(null);
+      }
+    } else if (restActive) {
+      // Local-only safety update
+      setRestTime(newTotal);
     }
   };
+  
 
   // Handle rest timer pause/resume (timestamp-based)
   const toggleTimerPause = () => {
@@ -228,7 +266,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
           setRestAccumulatedTime(newAccumulated);
           
           // Update display to show current remaining time
-          const totalRestDuration = Number(set.rest ?? 120);
+          const totalRestDuration = Number(set.restDuration ?? 120);
           const remaining = Math.max(0, totalRestDuration - newAccumulated);
           setRestTime(remaining);
         }
@@ -248,7 +286,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     setRestStartTime(null);
     setRestLastResumeTime(null);
     setRestAccumulatedTime(0);
-    setRestTime(Number(set.rest ?? 120));
+  setRestTime(Number(set.restDuration ?? 120));
     setTimerPaused(false);
     // Clear background state when timer is skipped
     clearRestTimerState();
@@ -279,7 +317,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       }
 
       const now = new Date();
-      const totalRestDuration = Number(set.rest ?? 120);
+  const totalRestDuration = Number(set.restDuration ?? 120);
 
       sessionWorkout.setGlobalRestTimer({
         isActive: true,
@@ -307,11 +345,11 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       setRestStartTime(null);
       setRestLastResumeTime(null);
       setRestAccumulatedTime(0);
-      setRestTime(Number(set.rest ?? 120));
+  setRestTime(Number(set.restDuration ?? 120));
       setTimerPaused(false);
       clearRestTimerState();
     }
-  }, [set.completed, canComplete, set.rest, sessionWorkout.globalRestTimer?.isActive]);
+  }, [set.completed, canComplete, set.restDuration, sessionWorkout.globalRestTimer?.isActive]);
 
   // Format rest timer mm:ss or hh:mm:ss
   function formatRestTimer(seconds: number) {
@@ -886,7 +924,8 @@ export default function NewWorkoutScreen() {
   };
 
   // Add handler to update rest
-  const handleSetRestChange = (exerciseId: number, setIdx: number, delta: number) => {
+  const handleSetRestChange = async (exerciseId: number, setIdx: number, delta: number) => {
+    // 1) Update state model
     setCurrentExercises(sessionExercises.map((ex) => {
       if (ex.id === exerciseId) {
         const currentSets = ex.sets || [];
@@ -1233,6 +1272,7 @@ export default function NewWorkoutScreen() {
                       setIdx={setIdx}
                       exerciseId={ex.id}
                       handleSetFieldChange={handleSetFieldChange}
+                      handleSetRestChange={handleSetRestChange}
                       handleToggleSetComplete={handleToggleSetComplete}
                       handleRemoveSet={handleRemoveSet}
                       theme={theme}

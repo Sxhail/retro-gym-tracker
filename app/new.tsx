@@ -784,6 +784,11 @@ export default function NewWorkoutScreen() {
         // iOS local notification for rest completion (pre-scheduled so it fires in background/locked/force-quit)
         try {
           const NotificationService = (await import('../services/notifications')).default;
+          // Cancel any previously scheduled rest notification session to avoid overlap
+          if (restNotificationSessionId) {
+            await NotificationService.cancelAllForSession(restNotificationSessionId);
+            setRestNotificationSessionId(null);
+          }
           const sessionId = `lift-rest-${exerciseId}-${setIdx}-${now.getTime()}`;
           const fireAt = new Date(now.getTime() + restDuration * 1000);
           await NotificationService.scheduleAbsolute(

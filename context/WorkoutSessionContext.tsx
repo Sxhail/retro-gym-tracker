@@ -221,19 +221,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
               console.log('🔔 Rest timer completed naturally at 00:00');
               onRestTimerComplete();
             }
-            // Also schedule a fallback immediate local notification (just in case app is backgrounded)
-            (async () => {
-              try {
-                const NotificationService = (await import('../services/notifications')).default;
-                const now = new Date();
-                await NotificationService.scheduleAbsolute(
-                  `lift-rest-fallback-${now.getTime()}`,
-                  new Date(now.getTime() + 250),
-                  'Rest over',
-                  'Time for your next set!'
-                );
-              } catch {}
-            })();
+            // We rely on the pre-scheduled notification; no fallback to avoid duplicates.
           }, 300); // Show 00:00 for 300ms before clearing
         }
       }, 1000);

@@ -438,19 +438,25 @@ export function useCardioBackgroundPersistence() {
       // Handle Get-Ready countdown restore first
       if (!restoredState.isPaused && gapSeconds > 0) {
         if (nextIsGetReady) {
-          const newLeft = clampPositive((nextGetReadyLeft || 0) - gapSeconds);
-          if (newLeft > 0) {
-            nextGetReadyLeft = newLeft;
+          const remainingGetReady = nextGetReadyLeft || 0;
+          const afterGetReadyGap = gapSeconds - remainingGetReady;
+          if (afterGetReadyGap < 0) {
+            // Still in get-ready
+            nextGetReadyLeft = Math.max(0, remainingGetReady - gapSeconds);
           } else {
-            // Get-Ready finished in background; start first phase fresh
+            // Get-Ready finished in background; advance into the first phase by the overflow
             nextIsGetReady = false;
             nextGetReadyLeft = 0;
             if (restoredState.type === 'hiit') {
               nextIsWork = true;
               nextPhaseLeft = Math.max(1, restoredState.workTime ?? 20);
+              // Advance into phase with overflow
+              advanceHiit(afterGetReadyGap);
             } else if (restoredState.type === 'walk_run') {
               nextIsRun = true;
               nextPhaseLeft = Math.max(1, restoredState.runTime ?? 30);
+              // Advance into phase with overflow
+              advanceWalkRun(afterGetReadyGap);
             }
           }
         } else {
@@ -465,6 +471,21 @@ export function useCardioBackgroundPersistence() {
         }
       }
 
+      // Align lastResumeTime to the start of the current active phase to keep elapsed math stable on next saves
+      let alignedLastResumeTime = restoredState.lastResumeTime;
+      if (!restoredState.isPaused && !nextIsGetReady) {
+        let phaseTotal = 0;
+        if (restoredState.type === 'hiit') {
+          phaseTotal = nextIsWork ? Math.max(1, restoredState.workTime ?? 20) : Math.max(1, restoredState.restTime ?? 10);
+        } else if (restoredState.type === 'walk_run') {
+          phaseTotal = nextIsRun ? Math.max(1, restoredState.runTime ?? 30) : Math.max(1, restoredState.walkTime ?? 30);
+        }
+        if (phaseTotal > 0 && nextPhaseLeft >= 0) {
+          const spentInCurrentPhase = Math.max(0, phaseTotal - nextPhaseLeft);
+          alignedLastResumeTime = new Date(Date.now() - spentInCurrentPhase * 1000);
+        }
+      }
+
       // Restore cardio session state without re-triggering get-ready, with advanced phase state
       session.restoreFromPersistence({
         cardioType: restoredState.type,
@@ -472,7 +493,7 @@ export function useCardioBackgroundPersistence() {
         isPaused: restoredState.isPaused,
         elapsedTime: restoredElapsedTime,
         accumulatedTime: restoredState.accumulatedTime,
-        lastResumeTime: restoredState.lastResumeTime,
+        lastResumeTime: alignedLastResumeTime,
         isGetReady: nextIsGetReady,
         getReadyTimeLeft: nextGetReadyLeft,
         workTime: restoredState.workTime,

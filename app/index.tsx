@@ -219,7 +219,7 @@ export default function HomeScreen() {
       {/* Action Buttons - moved to bottom */}
       <View style={styles.bottomActionSection}>
         {/* Cardio should take precedence so the CTA is always correct regardless of navigation path */}
-        {isCardioActive ? (
+        {(isCardioActive || !!cardioType) ? (
           <TouchableOpacity
             style={styles.startButton}
             onPress={() => {

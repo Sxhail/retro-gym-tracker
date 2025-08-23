@@ -471,7 +471,6 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     
     setIsActive(false);
     setIsPaused(false);
-    setCardioType(null);
     setSessionName('');
     setSessionStartTime(null);
     setElapsedTime(0);

@@ -26,6 +26,8 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
   const [restActive, setRestActive] = useState(false);
   const [timerPaused, setTimerPaused] = useState(false);
   const restInterval = useRef<any>(null);
+  // Track previous completed state to avoid auto-restarting timer on remount/navigation
+  const prevCompletedRef = useRef<boolean>(set.completed);
   
   // Background-persistent timer state (like main workout timer)
   const [restStartTime, setRestStartTime] = useState<Date | null>(null);
@@ -264,13 +266,21 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
     };
   }, []);
 
-  // Start/stop rest timer when set is marked/unmarked as complete
+  // Start/stop rest timer only on completion state transition (false -> true / true -> false)
   useEffect(() => {
-    if (set.completed && canComplete) {
-      // Start global rest timer with timestamp-based approach
+    const prevCompleted = prevCompletedRef.current;
+    prevCompletedRef.current = set.completed;
+
+    // Start only when toggled to completed, not on initial mount or rerenders
+    if (!prevCompleted && set.completed && canComplete) {
+      // If another rest timer is already active, don't start a new one
+      if (sessionWorkout.globalRestTimer?.isActive) {
+        return;
+      }
+
       const now = new Date();
       const totalRestDuration = Number(set.rest ?? 120);
-      
+
       sessionWorkout.setGlobalRestTimer({
         isActive: true,
         timeRemaining: totalRestDuration,
@@ -279,7 +289,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
         setIdx,
         startTime: now,
       });
-      
+
       // Local state for display
       setRestActive(true);
       setRestStartTime(now);
@@ -287,19 +297,21 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleToggleSet
       setRestAccumulatedTime(0);
       setRestTime(totalRestDuration);
       setTimerPaused(false);
-    } else {
-      // Stop both global and local rest timer
+      return;
+    }
+
+    // Stop only when toggled to not completed
+    if (prevCompleted && !set.completed) {
       sessionWorkout.setGlobalRestTimer(null);
       setRestActive(false);
       setRestStartTime(null);
-      setRestLastResumeTime(null);  
+      setRestLastResumeTime(null);
       setRestAccumulatedTime(0);
       setRestTime(Number(set.rest ?? 120));
       setTimerPaused(false);
-      // Clear background state when timer stops
       clearRestTimerState();
     }
-  }, [set.completed, canComplete, set.rest]);
+  }, [set.completed, canComplete, set.rest, sessionWorkout.globalRestTimer?.isActive]);
 
   // Format rest timer mm:ss or hh:mm:ss
   function formatRestTimer(seconds: number) {

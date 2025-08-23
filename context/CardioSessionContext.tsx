@@ -101,12 +101,19 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
   const [phaseTimeLeft, setPhaseTimeLeft] = useState(10); // Get ready time
   const [isGetReady, setIsGetReady] = useState(false);
   const [getReadyTimeLeft, setGetReadyTimeLeft] = useState(10);
+  // Phase timing internals (timestamp-based like lift): original duration, accumulated seconds in current phase, and last resume timestamp
+  const [phaseOriginalDuration, setPhaseOriginalDuration] = useState<number>(0);
+  const [phaseElapsedAccumulated, setPhaseElapsedAccumulated] = useState<number>(0);
+  const [phaseLastResumeTime, setPhaseLastResumeTime] = useState<Date | null>(null);
   
   // Timer refs
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const accumulatedTimeRef = useRef(0);
   const completionAlertShownRef = useRef(false);
   const [onPhaseComplete, setOnPhaseComplete] = useState<((event: 'hiit_work_complete' | 'hiit_rest_complete' | 'walk_run_run_complete' | 'walk_run_walk_complete') => void) | null>(null);
+  // Previous remaining refs for zero-crossing detection (avoid duplicate transitions)
+  const prevGetReadyLeftRef = useRef<number>(getReadyTimeLeft);
+  const prevPhaseLeftRef = useRef<number>(phaseTimeLeft);
 
   // Start a cardio session
   const startSession = (type: CardioType, name: string, config: any, options?: { skipGetReady?: boolean }) => {
@@ -138,9 +145,17 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       if (options?.skipGetReady) {
         setIsGetReady(false);
         setGetReadyTimeLeft(0);
+        // Initialize phase tracker for the first WORK phase
+        setPhaseOriginalDuration(initialWork);
+        setPhaseElapsedAccumulated(0);
+        setPhaseLastResumeTime(now);
       } else {
         setIsGetReady(true);
         setGetReadyTimeLeft(10);
+        // Initialize phase tracker for GET-READY countdown
+        setPhaseOriginalDuration(10);
+        setPhaseElapsedAccumulated(0);
+        setPhaseLastResumeTime(now);
       }
     } else if (type === 'walk_run') {
       setRunTime(config.runTime || 30);
@@ -152,15 +167,27 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       if (options?.skipGetReady) {
         setIsGetReady(false);
         setGetReadyTimeLeft(0);
+        // Initialize phase tracker for the first RUN phase
+        setPhaseOriginalDuration(initialRun);
+        setPhaseElapsedAccumulated(0);
+        setPhaseLastResumeTime(now);
       } else {
         setIsGetReady(true);
         setGetReadyTimeLeft(10);
+        // Initialize phase tracker for GET-READY countdown
+        setPhaseOriginalDuration(10);
+        setPhaseElapsedAccumulated(0);
+        setPhaseLastResumeTime(now);
       }
     } else if (type === 'casual_walk') {
       setTotalLaps(config.totalLaps || 1);
       setPhaseTimeLeft(0); // Free running timer
       setIsGetReady(false);
       setGetReadyTimeLeft(0);
+      // No discrete phases for casual walk; clear phase trackers
+      setPhaseOriginalDuration(0);
+      setPhaseElapsedAccumulated(0);
+      setPhaseLastResumeTime(now);
     }
     
     console.log('🚀 Cardio session started:', { type, name, config });
@@ -271,6 +298,14 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       accumulatedTimeRef.current += segmentDuration;
       setAccumulatedTime(accumulatedTimeRef.current);
     }
+
+    // Freeze current phase progress
+    if (phaseLastResumeTime) {
+      const phaseSegment = Math.floor((Date.now() - phaseLastResumeTime.getTime()) / 1000);
+      const newAccum = phaseElapsedAccumulated + phaseSegment;
+      setPhaseElapsedAccumulated(newAccum);
+      setPhaseLastResumeTime(null);
+    }
     
     setIsPaused(true);
     setLastResumeTime(null);
@@ -290,6 +325,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     const now = new Date();
     setLastResumeTime(now);
     setIsPaused(false);
+  // Resume current phase timing
+  setPhaseLastResumeTime(now);
     
     console.log('▶️ Cardio session resumed at:', now.toISOString());
     // Persist on resume
@@ -311,6 +348,10 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         if (onPhaseComplete) onPhaseComplete('hiit_work_complete');
         setIsWorkPhase(false);
         setPhaseTimeLeft(restTime);
+        // Reset phase trackers for REST
+        setPhaseOriginalDuration(restTime);
+        setPhaseElapsedAccumulated(0);
+        setPhaseLastResumeTime(new Date());
         console.log(`✅ Work phase ${currentRound}/${rounds} complete, starting rest (${restTime}s)`);
       } else {
         // Rest phase finished
@@ -330,6 +371,10 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
           setIsWorkPhase(true);
           setCurrentRound(prev => prev + 1);
           setPhaseTimeLeft(workTime);
+          // Reset phase trackers for WORK
+          setPhaseOriginalDuration(workTime);
+          setPhaseElapsedAccumulated(0);
+          setPhaseLastResumeTime(new Date());
           console.log(`✅ Rest complete, starting work phase ${currentRound + 1}/${rounds} (${workTime}s)`);
         }
       }
@@ -339,6 +384,10 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         if (onPhaseComplete) onPhaseComplete('walk_run_run_complete');
         setIsRunPhase(false);
         setPhaseTimeLeft(walkTime);
+        // Reset phase trackers for WALK
+        setPhaseOriginalDuration(walkTime);
+        setPhaseElapsedAccumulated(0);
+        setPhaseLastResumeTime(new Date());
         console.log(`✅ Run phase ${currentLap}/${laps} complete, starting walk (${walkTime}s)`);
       } else {
         // Walk phase finished
@@ -358,6 +407,10 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
           setIsRunPhase(true);
           setCurrentLap(prev => prev + 1);
           setPhaseTimeLeft(runTime);
+          // Reset phase trackers for RUN
+          setPhaseOriginalDuration(runTime);
+          setPhaseElapsedAccumulated(0);
+          setPhaseLastResumeTime(new Date());
           console.log(`✅ Walk complete, starting run phase ${currentLap + 1}/${laps} (${runTime}s)`);
         }
       }
@@ -487,6 +540,10 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     setIsGetReady(false);
     setGetReadyTimeLeft(10);
     completionAlertShownRef.current = false; // clear completion guard
+  // Reset phase tracking
+  setPhaseOriginalDuration(0);
+  setPhaseElapsedAccumulated(0);
+  setPhaseLastResumeTime(null);
     
     // Clear any pending notifications
     (async () => {
@@ -506,7 +563,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     })();
   };
 
-  // Timer effect - similar to lift workout timer
+  // Timer effect - timestamp-based like lift workout timer (accurate across background/app restarts)
   useEffect(() => {
     if (!isActive || isPaused) {
       if (timerRef.current) {
@@ -519,59 +576,68 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     // Start/resume timer
     timerRef.current = setInterval(() => {
       if (lastResumeTime) {
-        const currentSegmentTime = Math.floor((Date.now() - lastResumeTime.getTime()) / 1000);
+        const nowMs = Date.now();
+        const currentSegmentTime = Math.floor((nowMs - lastResumeTime.getTime()) / 1000);
         const totalElapsed = accumulatedTimeRef.current + currentSegmentTime;
         setElapsedTime(totalElapsed);
-        // Handle get-ready countdown for HIIT and Walk-Run
+
+        // Timestamp-based per-phase remaining
+        const phaseAccum = phaseElapsedAccumulated + (phaseLastResumeTime ? Math.floor((nowMs - phaseLastResumeTime.getTime()) / 1000) : 0);
+
+        // Handle get-ready countdown first
         if ((cardioType === 'hiit' || cardioType === 'walk_run') && isGetReady) {
-          setGetReadyTimeLeft(prev => {
-            const newTime = prev - 1;
-            if (newTime <= 0) {
-              // End get-ready and start actual phase now
-              setIsGetReady(false);
-              setLastResumeTime(new Date()); // Reset resume time to mark phase start
-              // Ensure phase time starts at full configured duration
-              if (cardioType === 'hiit') {
-                setIsWorkPhase(true);
-                setPhaseTimeLeft(workTime);
-              } else if (cardioType === 'walk_run') {
-                setIsRunPhase(true);
-                setPhaseTimeLeft(runTime);
-              }
-              // Persist immediately when phase starts
-              try {
-                const { saveCurrentState } = (require('../hooks/useCardioBackgroundPersistence') as any);
-                if (typeof saveCurrentState === 'function') saveCurrentState();
-              } catch {}
-              return 0;
+          const readyDuration = 10;
+          const readyLeft = Math.max(0, readyDuration - phaseAccum);
+          // Zero-cross detect
+          const prevReady = prevGetReadyLeftRef.current;
+          prevGetReadyLeftRef.current = readyLeft;
+          setGetReadyTimeLeft(readyLeft);
+          if (prevReady > 0 && readyLeft <= 0) {
+            // End get-ready and start actual phase now
+            setIsGetReady(false);
+            const now = new Date();
+            setLastResumeTime(now); // mark phase start for total elapsed
+            // Initialize next phase trackers
+            if (cardioType === 'hiit') {
+              setIsWorkPhase(true);
+              setPhaseTimeLeft(workTime);
+              setPhaseOriginalDuration(workTime);
+            } else if (cardioType === 'walk_run') {
+              setIsRunPhase(true);
+              setPhaseTimeLeft(runTime);
+              setPhaseOriginalDuration(runTime);
             }
-            return newTime;
-          });
-          return; // Skip phase timer decrement during get-ready
+            setPhaseElapsedAccumulated(0);
+            setPhaseLastResumeTime(now);
+            // Persist immediately when phase starts
+            try {
+              const { saveCurrentState } = (require('../hooks/useCardioBackgroundPersistence') as any);
+              if (typeof saveCurrentState === 'function') saveCurrentState();
+            } catch {}
+            return; // skip further handling this tick
+          }
+          return; // during get-ready, skip phase handling
         }
 
-        // Handle phase transitions for HIIT and Walk-Run after get-ready
+        // Handle phase remaining after get-ready
         if ((cardioType === 'hiit' || cardioType === 'walk_run') && !isGetReady) {
-          setPhaseTimeLeft(prev => {
-            const newTime = prev - 1;
-            console.log(`⏰ Phase time: ${newTime}, Type: ${cardioType}, Phase: ${cardioType === 'hiit' ? (isWorkPhase ? 'WORK' : 'REST') : (isRunPhase ? 'RUN' : 'WALK')}`);
-            
-            if (newTime <= 0) {
-              // Only trigger transition once when crossing from >0 to <=0
-              if (prev > 0) {
-                console.log('🔄 Phase transition triggered');
-                // Use setTimeout to ensure state updates are processed
-                setTimeout(() => nextPhase(), 100);
-                // Persist immediately on phase transition
-                try {
-                  const { saveCurrentState } = (require('../hooks/useCardioBackgroundPersistence') as any);
-                  if (typeof saveCurrentState === 'function') saveCurrentState();
-                } catch {}
-              }
-              return 0; // clamp at 0 to avoid repeated triggers
-            }
-            return newTime;
-          });
+          const phaseLeft = Math.max(0, phaseOriginalDuration - phaseAccum);
+          const prev = prevPhaseLeftRef.current;
+          prevPhaseLeftRef.current = phaseLeft;
+          setPhaseTimeLeft(phaseLeft);
+
+          // Log occasionally for debugging
+          // console.log(`⏰ Phase left ${phaseLeft}s of ${phaseOriginalDuration}s`);
+
+          if (prev > 0 && phaseLeft <= 0) {
+            console.log('🔄 Phase transition triggered (timestamp-based)');
+            setTimeout(() => nextPhase(), 50);
+            // Persist immediately on phase transition
+            try {
+              const { saveCurrentState } = (require('../hooks/useCardioBackgroundPersistence') as any);
+              if (typeof saveCurrentState === 'function') saveCurrentState();
+            } catch {}
+          }
         }
       }
     }, 1000);
@@ -582,7 +648,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         timerRef.current = null;
       }
     };
-  }, [isActive, isPaused, lastResumeTime, cardioType, isWorkPhase, isRunPhase, currentRound, currentLap, workTime, restTime, runTime, walkTime, rounds, laps]);
+  }, [isActive, isPaused, lastResumeTime, cardioType, isWorkPhase, isRunPhase, currentRound, currentLap, workTime, restTime, runTime, walkTime, rounds, laps, isGetReady, phaseOriginalDuration, phaseElapsedAccumulated, phaseLastResumeTime]);
 
   const restoreFromPersistence = (restored: Partial<CardioSessionContextType> & { cardioType: CardioType; sessionName: string }) => {
     // Basic identifiers
@@ -627,6 +693,32 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     } else {
       setIsGetReady(false);
       setGetReadyTimeLeft(0);
+    }
+
+    // Initialize timestamp-based phase trackers based on restored state
+    let currentDuration = 0;
+    if (restored.isGetReady) {
+      currentDuration = 10;
+    } else if (restored.cardioType === 'hiit') {
+      const isWork = restored.isWorkPhase ?? true;
+      currentDuration = isWork ? (restored.workTime ?? workTime) : (restored.restTime ?? restTime);
+    } else if (restored.cardioType === 'walk_run') {
+      const isRun = restored.isRunPhase ?? true;
+      currentDuration = isRun ? (restored.runTime ?? runTime) : (restored.walkTime ?? walkTime);
+    } else {
+      currentDuration = 0;
+    }
+    setPhaseOriginalDuration(currentDuration);
+
+    const left = restored.isGetReady ? (restored.getReadyTimeLeft ?? 10) : (restored.phaseTimeLeft ?? currentDuration);
+    if (restored.isPaused) {
+      // When paused, accumulate elapsed and clear last resume
+      setPhaseElapsedAccumulated(Math.max(0, currentDuration - left));
+      setPhaseLastResumeTime(null);
+    } else {
+      // When active, align last resume to represent time spent in current phase; leave accumulated at 0
+      setPhaseElapsedAccumulated(0);
+      setPhaseLastResumeTime(restored.lastResumeTime ?? new Date());
     }
   };
 

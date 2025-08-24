@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import theme from '../styles/theme';
 import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
-import { useCardioSession } from '../context/CardioSessionContext';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
 import { ProgramManager } from '../services/programManager';
 import { useFocusEffect } from '@react-navigation/native';
@@ -49,7 +48,6 @@ export default function HomeScreen() {
   };
   const [programProgress, setProgramProgress] = useState<any>({});
   const { isWorkoutActive, startProgramWorkout, globalRestTimer } = useWorkoutSession();
-  const { isActive: isCardioActive, cardioType } = useCardioSession();
 
   useEffect(() => {
     loadAllProgramsWithProgress();
@@ -143,6 +141,7 @@ export default function HomeScreen() {
       // Use the actual day name for the session loader
       const template = await ProgramManager.getProgramWorkoutTemplate(program.id, progress.nextWorkoutDayName);
       // If the next day is a cardio day (category marked as 'cardio'), route to cardio
+      // If next day is a cardio day, just route to cardio selection (timers removed for now)
       if (template?.template?.category && template.template.category.toLowerCase() === 'cardio') {
         router.push('/cardio');
         return;
@@ -218,20 +217,7 @@ export default function HomeScreen() {
 
       {/* Action Buttons - moved to bottom */}
       <View style={styles.bottomActionSection}>
-  {/* Only show Continue Cardio if a cardio session is actually active */}
-  {isCardioActive ? (
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={() => {
-              if (cardioType === 'hiit') router.push('/cardio/quick-hiit');
-              else if (cardioType === 'walk_run') router.push('/cardio/distance-run-new');
-              else if (cardioType === 'casual_walk') router.push('/cardio/casual-walk-new');
-              else router.push('/cardio');
-            }}
-          >
-            <Text style={styles.startButtonText}>CONTINUE CARDIO</Text>
-          </TouchableOpacity>
-        ) : isWorkoutActive ? (
+  {isWorkoutActive ? (
           <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
             <Text style={styles.startButtonText}>CONTINUE LIFT</Text>
           </TouchableOpacity>

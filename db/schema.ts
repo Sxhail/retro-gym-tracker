@@ -158,6 +158,33 @@ export const active_session_timers = sqliteTable('active_session_timers', {
   created_at: text('created_at').default('CURRENT_TIMESTAMP'),
 });
 
+// Active Cardio Session Persistence Tables (separate from workout FKs)
+export const active_cardio_sessions = sqliteTable('active_cardio_sessions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  session_id: text('session_id').notNull().unique(),
+  mode: text('mode').notNull(), // 'hiit' | 'walk_run'
+  params_json: text('params_json').notNull(), // stringified parameters
+  started_at: text('started_at').notNull(), // ISO timestamp (UTC)
+  phase_index: integer('phase_index').notNull().default(0),
+  cycle_index: integer('cycle_index').notNull().default(0),
+  phase_started_at: text('phase_started_at').notNull(),
+  phase_will_end_at: text('phase_will_end_at').notNull(),
+  paused_at: text('paused_at'), // nullable ISO
+  accumulated_pause_ms: integer('accumulated_pause_ms').notNull().default(0),
+  schedule_json: text('schedule_json').notNull(), // stringified schedule with absolute UTC timestamps
+  is_completed: integer('is_completed').notNull().default(0), // boolean 0/1
+  last_updated: text('last_updated').notNull(),
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
+});
+
+export const active_cardio_notifications = sqliteTable('active_cardio_notifications', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  session_id: text('session_id').notNull(), // references active_cardio_sessions.session_id (no FK to simplify RN migrations)
+  notification_id: text('notification_id').notNull(), // Expo notifications ID
+  fire_at: text('fire_at').notNull(), // ISO UTC
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
+});
+
 // User Programs (simplified approach - reuses existing template system)
 export const user_programs = sqliteTable('user_programs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -248,3 +275,7 @@ export type NewActiveSessionTimer = typeof active_session_timers.$inferInsert;
 // Cardio types
 export type CardioSession = typeof cardio_sessions.$inferSelect;
 export type NewCardioSession = typeof cardio_sessions.$inferInsert; 
+export type ActiveCardioSession = typeof active_cardio_sessions.$inferSelect;
+export type NewActiveCardioSession = typeof active_cardio_sessions.$inferInsert;
+export type ActiveCardioNotification = typeof active_cardio_notifications.$inferSelect;
+export type NewActiveCardioNotification = typeof active_cardio_notifications.$inferInsert;

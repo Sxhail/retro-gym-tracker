@@ -1,52 +1,30 @@
 import React from 'react';
 import { View } from 'react-native';
+import { usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import theme from '../styles/theme';
-import { useCardioSession } from '../context/CardioSessionContext';
+import { useCardioSession } from '../hooks/useCardioSession';
 
-/**
- * Global Cardio Timer Display - Slim Top Bar
- * Mirrors LIFT line bar but for cardio countdown phases (HIIT, Walk-Run) and Get Ready.
- */
 export default function GlobalCardioTimerBar() {
+  const { state } = useCardioSession();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const {
-    isActive,
-    cardioType,
-    isGetReady,
-    getReadyTimeLeft,
-    phaseTimeLeft,
-    workTime,
-    restTime,
-    isWorkPhase,
-    runTime,
-    walkTime,
-    isRunPhase,
-  } = useCardioSession();
 
-  if (!isActive || !cardioType) return null;
+  const active = !!state.sessionId && state.phase !== 'idle' && state.phase !== 'completed';
+  if (!active) return null;
 
-  // Determine current and total for bar
-  let total = 0;
-  let remaining = 0;
-  if (isGetReady) {
-    total = 10;
-    remaining = getReadyTimeLeft;
-  } else if (cardioType === 'hiit') {
-    total = isWorkPhase ? Math.max(1, workTime) : Math.max(1, restTime);
-    remaining = phaseTimeLeft;
-  } else if (cardioType === 'walk_run') {
-    total = isRunPhase ? Math.max(1, runTime) : Math.max(1, walkTime);
-    remaining = phaseTimeLeft;
-  } else {
-    // casual_walk and others have no phase countdown
-    return null;
-  }
+  // Do not show the global cardio bar on the cardio screen itself
+  if (pathname === '/cardio') return null;
 
-  if (!total || remaining <= 0) return null;
-
+  const phaseStart = state.phaseStartedAt ? new Date(state.phaseStartedAt).getTime() : 0;
+  const phaseEnd = state.phaseWillEndAt ? new Date(state.phaseWillEndAt).getTime() : 1;
+  const now = Date.now();
+  const total = Math.max(1, phaseEnd - phaseStart);
+  const remaining = Math.max(0, phaseEnd - now);
   const pct = Math.max(0, Math.min(1, remaining / total));
+
   const top = Math.max(0, insets.top);
+  const height = 4;
 
   return (
     <View
@@ -56,7 +34,7 @@ export default function GlobalCardioTimerBar() {
         top,
         left: 0,
         right: 0,
-        height: 4,
+        height,
         backgroundColor: 'rgba(0, 0, 0, 0.35)',
         zIndex: 2000,
       }}

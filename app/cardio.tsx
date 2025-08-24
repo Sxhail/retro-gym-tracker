@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
-import { useCardioSession } from '../context/CardioSessionContext';
 import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
+import { useCardioSession } from '../hooks/useCardioSession';
 
 export default function CardioScreen() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState('HIIT');
-  const { isActive: isCardioActive, cardioType: activeCardioType, resetSession } = useCardioSession();
+  const cardio = useCardioSession();
 
   // Disable STEADY for now (keep routes working for ongoing sessions)
   const cardioTypes = ['HIIT', 'RUN'];
@@ -42,76 +42,36 @@ export default function CardioScreen() {
   };
 
   const handleCardioSelection = (option: any) => {
-    // Check if there's an active cardio session and if it's different from the selected option
-    if (isCardioActive && activeCardioType) {
-      const currentSessionType = getSessionTypeFromCardioType(activeCardioType);
-      const newSessionType = option.type;
-      
-      // If trying to start a different session type, show confirmation dialog
-      if (currentSessionType !== newSessionType) {
-        Alert.alert(
-          'Active Cardio Session',
-          `You have an active ${activeCardioType.toUpperCase()} session running. Would you like to stop it and start a new ${option.title} session?`,
-          [
-            { 
-              text: 'No', 
-              style: 'cancel' 
-            },
-            { 
-              text: 'Yes', 
-              onPress: () => {
-                resetSession();
-                navigateToCardioWorkout(option);
-              }
-            }
-          ]
-        );
-        return;
-      }
-    }
-    
-    navigateToCardioWorkout(option);
-  };
-
-  const getSessionTypeFromCardioType = (cardioType: string): string => {
-    switch (cardioType) {
-      case 'hiit':
-        return 'quick_hiit';
-      case 'walk_run':
-        return 'walk_run';
-      case 'casual_walk':
-        return 'casual_walk';
-      default:
-        return cardioType;
-    }
-  };
-
-  const navigateToCardioWorkout = (option: any) => {
-    // Navigate to specific cardio workout screens
-    switch (option.type) {
-      case 'quick_hiit':
-        router.push('/cardio/quick-hiit');
-        break;
-      case 'custom_hiit':
-        router.push('/cardio/custom-hiit');
-        break;
-      case 'walk_run':
-        router.push('/cardio/distance-run-new');
-        break;
-      case 'time_run':
-        router.push('/cardio/time-run');
-        break;
-      case 'casual_walk':
-        router.push('/cardio/casual-walk-new');
-        break;
-      default:
-        console.log('Unknown cardio type:', option.type);
-    }
+    // Navigate to specific cardio workout screens for full control
+    if (option.type === 'quick_hiit') router.push('/cardio/quick-hiit');
+    else if (option.type === 'walk_run') router.push('/cardio/walk-run');
   };
 
   return (
   <SafeAreaView style={styles.container}>
       <GlobalRestTimerDisplay />
+      {/* CTA if an active cardio session exists */}
+      {cardio.state.sessionId && cardio.state.phase !== 'completed' && (
+        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+          <TouchableOpacity
+            style={{
+              borderWidth: 1,
+              borderColor: theme.colors.neon,
+              borderRadius: 10,
+              padding: 12,
+              backgroundColor: 'rgba(0,255,0,0.08)'
+            }}
+            onPress={() => {
+              if (cardio.state.mode === 'hiit') router.push('/cardio/quick-hiit');
+              else if (cardio.state.mode === 'walk_run') router.push('/cardio/walk-run');
+            }}
+          >
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, textAlign: 'center' }}>
+              CONTINUE {cardio.state.mode?.toUpperCase()} — {cardio.state.phase.toUpperCase()} {Math.ceil(cardio.state.remainingMs/1000)}s left
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

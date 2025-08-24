@@ -10,16 +10,16 @@ import { useFonts as useShareTechMono, ShareTechMono_400Regular } from '@expo-go
 import * as SplashScreen from 'expo-splash-screen';
 import { DatabaseProvider } from '../context/DatabaseContext';
 import { WorkoutSessionProvider } from '../context/WorkoutSessionContext';
-import { CardioSessionProvider } from '../context/CardioSessionContext';
 import { initializeDatabase, useDatabaseMigrations } from '../db/client';
 import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
 import BackgroundRestTimerPersistence from '../components/BackgroundRestTimerPersistence';
-import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
 import CustomSplashScreen from '../components/CustomSplashScreen';
 import { GlobalRestTimerNotification } from '../components/GlobalRestTimerNotification';
-import GlobalCardioPhaseNotification from '../components/GlobalCardioPhaseNotification';
 import NotificationService from '../services/notifications';
+import GlobalCardioTimerBar from '../components/GlobalCardioTimerBar';
+import GlobalCardioPhaseNotification from '../components/GlobalCardioPhaseNotification';
+import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -73,24 +73,23 @@ export default function Layout() {
       <SafeAreaProvider>
         <DatabaseProvider>
           <WorkoutSessionProvider>
-            <CardioSessionProvider>
-              <BackgroundWorkoutPersistence>
-                <BackgroundRestTimerPersistence>
-                  <BackgroundCardioSessionPersistence>
-                    <AppLayout>
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          animation: 'none',
-                        }}
-                      />
-                      <GlobalRestTimerNotification />
-                      <GlobalCardioPhaseNotification />
-                    </AppLayout>
-                  </BackgroundCardioSessionPersistence>
-                </BackgroundRestTimerPersistence>
-              </BackgroundWorkoutPersistence>
-            </CardioSessionProvider>
+            <BackgroundWorkoutPersistence>
+              <BackgroundRestTimerPersistence>
+                <BackgroundCardioSessionPersistence>
+                <AppLayout>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      animation: 'none',
+                    }}
+                  />
+                  <GlobalCardioTimerBar />
+                  <GlobalCardioPhaseNotification />
+                  <GlobalRestTimerNotification />
+                </AppLayout>
+                </BackgroundCardioSessionPersistence>
+              </BackgroundRestTimerPersistence>
+            </BackgroundWorkoutPersistence>
           </WorkoutSessionProvider>
         </DatabaseProvider>
       </SafeAreaProvider>

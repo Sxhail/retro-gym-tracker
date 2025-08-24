@@ -11,34 +11,33 @@ function formatMs(ms: number) {
   return `${m.toString().padStart(2, '0')}:${r.toString().padStart(2, '0')}`;
 }
 
-export default function QuickHiitScreen() {
+export default function WalkRunScreen() {
   const router = useRouter();
   const cardio = useCardioSession();
-  const [workSec, setWorkSec] = useState(20);
-  const [restSec, setRestSec] = useState(10);
-  const [rounds, setRounds] = useState(8);
+  const [runSec, setRunSec] = useState(30);
+  const [walkSec, setWalkSec] = useState(30);
+  const [laps, setLaps] = useState(4);
 
-  const isActiveHiit = cardio.state.mode === 'hiit' && cardio.state.phase !== 'idle' && cardio.state.phase !== 'completed';
+  const isActive = cardio.state.mode === 'walk_run' && cardio.state.phase !== 'idle' && cardio.state.phase !== 'completed';
   const isPaused = cardio.state.isPaused;
 
   const totalPlannedMs = useMemo(() => {
-    // If active, use derived; else compute from controls
-    if (cardio.state.mode === 'hiit' && cardio.state.totalPlannedMs > 0) return cardio.state.totalPlannedMs;
-    const includeTrailingRest = false;
+    if (cardio.state.mode === 'walk_run' && cardio.state.totalPlannedMs > 0) return cardio.state.totalPlannedMs;
+    const includeTrailingWalk = false;
     let total = 0;
-    for (let r = 0; r < rounds; r++) {
-      total += workSec * 1000;
-      const isLast = r === rounds - 1;
-      const includeRest = includeTrailingRest ? true : !isLast;
-      if (includeRest) total += restSec * 1000;
+    for (let l = 0; l < laps; l++) {
+      total += runSec * 1000;
+      const isLast = l === laps - 1;
+      const include = includeTrailingWalk ? true : !isLast;
+      if (include) total += walkSec * 1000;
     }
     return total;
-  }, [cardio.state.mode, cardio.state.totalPlannedMs, workSec, restSec, rounds]);
+  }, [cardio.state.mode, cardio.state.totalPlannedMs, runSec, walkSec, laps]);
 
   const phaseLabel = useMemo(() => {
-    if (cardio.state.mode !== 'hiit' || cardio.state.phase === 'idle') return 'SETUP';
-    if (cardio.state.phase === 'work') return 'WORK TIME';
-    if (cardio.state.phase === 'rest') return 'REST TIME';
+    if (cardio.state.mode !== 'walk_run' || cardio.state.phase === 'idle') return 'RUN PHASE';
+    if (cardio.state.phase === 'run') return 'RUN PHASE';
+    if (cardio.state.phase === 'walk') return 'WALK PHASE';
     if (cardio.state.phase === 'completed') return 'COMPLETED';
     return cardio.state.phase.toUpperCase();
   }, [cardio.state.mode, cardio.state.phase]);
@@ -54,15 +53,15 @@ export default function QuickHiitScreen() {
   }, [cardio.state.phaseStartedAt, cardio.state.phaseWillEndAt, cardio.state.remainingMs]);
 
   const startOrResume = async () => {
-    if (cardio.state.mode === 'hiit' && isActiveHiit && !isPaused) {
+    if (cardio.state.mode === 'walk_run' && isActive && !isPaused) {
       await cardio.pause();
       return;
     }
-    if (cardio.state.mode === 'hiit' && isPaused) {
+    if (cardio.state.mode === 'walk_run' && isPaused) {
       await cardio.resume();
       return;
     }
-    await cardio.startHiit({ workSec, restSec, rounds, includeTrailingRest: false });
+    await cardio.startWalkRun({ runSec, walkSec, laps, includeTrailingWalk: false });
   };
 
   const reset = async () => {
@@ -74,16 +73,15 @@ export default function QuickHiitScreen() {
     router.back();
   };
 
-  const totalLabel = cardio.state.mode === 'hiit' && cardio.state.totalPlannedMs
+  const totalLabel = cardio.state.mode === 'walk_run' && cardio.state.totalPlannedMs
     ? formatMs(cardio.state.totalPlannedMs - cardio.state.totalElapsedMs)
     : formatMs(totalPlannedMs);
 
-  const timerLabel = cardio.state.mode === 'hiit'
+  const timerLabel = cardio.state.mode === 'walk_run'
     ? formatMs(cardio.state.remainingMs)
     : '00:00';
 
-  const adjustDisabled = isActiveHiit && !isPaused;
-
+  const adjustDisabled = isActive && !isPaused;
   const adj = (setter: (n: number) => void, val: number, delta: number, min: number, max: number) => {
     if (adjustDisabled) return;
     const next = Math.max(min, Math.min(max, val + delta));
@@ -96,7 +94,7 @@ export default function QuickHiitScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>QUICK HIIT</Text>
+        <Text style={styles.headerTitle}>WALK - RUN</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -111,51 +109,51 @@ export default function QuickHiitScreen() {
 
       <View style={styles.settingsGrid}>
         <View style={styles.settingCard}>
-          <Text style={styles.settingLabel}>WORK TIME</Text>
-          <Text style={styles.settingValue}>{workSec}s</Text>
+          <Text style={styles.settingLabel}>RUN TIME</Text>
+          <Text style={styles.settingValue}>{runSec}s</Text>
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setWorkSec, workSec, -5, 5, 600)}>
+            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setRunSec, runSec, -5, 5, 600)}>
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setWorkSec, workSec, +5, 5, 600)}>
+            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setRunSec, runSec, +5, 5, 600)}>
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
         <View style={styles.settingCard}>
-          <Text style={styles.settingLabel}>REST TIME</Text>
-          <Text style={styles.settingValue}>{restSec}s</Text>
+          <Text style={styles.settingLabel}>WALK TIME</Text>
+          <Text style={styles.settingValue}>{walkSec}s</Text>
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setRestSec, restSec, -5, 5, 600)}>
+            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setWalkSec, walkSec, -5, 5, 600)}>
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setRestSec, restSec, +5, 5, 600)}>
+            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setWalkSec, walkSec, +5, 5, 600)}>
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
         <View style={styles.settingCard}>
-          <Text style={styles.settingLabel}>ROUNDS</Text>
-          <Text style={styles.settingValue}>{rounds}</Text>
+          <Text style={styles.settingLabel}>LAPS</Text>
+          <Text style={styles.settingValue}>{laps}</Text>
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setRounds, rounds, -1, 1, 100)}>
+            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setLaps, laps, -1, 1, 100)}>
               <Text style={styles.adjustButtonText}>-</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setRounds, rounds, +1, 1, 100)}>
+            <TouchableOpacity style={styles.adjustButton} disabled={adjustDisabled} onPress={() => adj(setLaps, laps, +1, 1, 100)}>
               <Text style={styles.adjustButtonText}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
         <View style={styles.settingCard}>
-          <Text style={styles.settingLabel}>ROUND</Text>
-          <Text style={styles.settingValue}>{cardio.state.currentRound ?? 1}</Text>
+          <Text style={styles.settingLabel}>LAP</Text>
+          <Text style={styles.settingValue}>{cardio.state.currentLap ?? 1}</Text>
         </View>
       </View>
 
       <View style={styles.controlsRow}>
         <TouchableOpacity style={styles.controlButton} onPress={startOrResume}>
           <Text style={styles.controlButtonText}>
-            {isActiveHiit && !isPaused ? 'PAUSE' : isPaused ? 'RESUME' : 'START'}
+            {isActive && !isPaused ? 'PAUSE' : isPaused ? 'RESUME' : 'START'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlButton} onPress={reset}>
@@ -200,12 +198,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1,
   },
-  placeholder: {
-    width: 40,
-  },
+  placeholder: { width: 40 },
   phaseTitle: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.heading,
+    fontFamily: theme.fonts.display,
     fontSize: 22,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -218,10 +214,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     overflow: 'hidden',
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: theme.colors.neon,
-  },
+  progressFill: { height: '100%', backgroundColor: theme.colors.neon },
   mainTimer: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
@@ -268,10 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: theme.spacing.sm,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-  },
+  buttonRow: { flexDirection: 'row', gap: theme.spacing.sm },
   adjustButton: {
     width: 32,
     height: 32,
@@ -282,12 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 255, 0, 0.1)',
   },
-  adjustButtonText: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  adjustButtonText: { color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold' },
   controlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -304,10 +289,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 255, 0, 0.05)',
     alignItems: 'center',
   },
-  finishButton: {
-    backgroundColor: 'rgba(255,0,0,0.08)',
-    borderColor: '#FF0000',
-  },
+  finishButton: { backgroundColor: 'rgba(255,0,0,0.08)', borderColor: '#FF0000' },
   controlButtonText: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,

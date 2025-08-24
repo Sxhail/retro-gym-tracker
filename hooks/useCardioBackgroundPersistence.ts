@@ -36,10 +36,6 @@ interface CardioSessionState {
   
   // Phase timer
   phaseTimeLeft?: number;
-  // Per-phase timestamp-based trackers
-  phaseOriginalDuration?: number;
-  phaseElapsedAccumulated?: number;
-  phaseLastResumeTime?: Date | null;
 }
 
 class CardioBackgroundService {
@@ -79,9 +75,6 @@ class CardioBackgroundService {
             totalLaps: state.totalLaps ?? null,
             phaseTimeLeft: state.phaseTimeLeft ?? null,
             lastResumeTime: state.lastResumeTime ? state.lastResumeTime.toISOString() : null,
-            phaseOriginalDuration: state.phaseOriginalDuration ?? null,
-            phaseElapsedAccumulated: state.phaseElapsedAccumulated ?? null,
-            phaseLastResumeTime: state.phaseLastResumeTime ? state.phaseLastResumeTime.toISOString() : null,
           },
         }),
         last_updated: new Date().toISOString(),
@@ -136,12 +129,11 @@ class CardioBackgroundService {
       });
       if (!cardioRow) return null;
 
-  let parsed: any = {};
-  try { parsed = cardioRow.session_data ? JSON.parse(cardioRow.session_data) : {}; } catch {}
-  const cardio = parsed.cardio || {};
+      let parsed: any = {};
+      try { parsed = cardioRow.session_data ? JSON.parse(cardioRow.session_data) : {}; } catch {}
+      const cardio = parsed.cardio || {};
       const startTime = new Date(cardioRow.start_time);
-  const lastResumeTime = cardio.lastResumeTime ? new Date(cardio.lastResumeTime) : null;
-  const restoredPhaseLastResumeTime = cardio.phaseLastResumeTime ? new Date(cardio.phaseLastResumeTime) : null;
+      const lastResumeTime = cardio.lastResumeTime ? new Date(cardio.lastResumeTime) : null;
 
       const restored: CardioSessionState = {
         sessionId: cardioRow.session_id,
@@ -152,8 +144,8 @@ class CardioBackgroundService {
         accumulatedTime: cardioRow.elapsed_time,
         isPaused: cardioRow.is_paused === 1,
         lastResumeTime,
-  isGetReady: cardio.isGetReady ?? undefined,
-  getReadyTimeLeft: cardio.getReadyTimeLeft ?? undefined,
+        isGetReady: cardio.isGetReady ?? undefined,
+        getReadyTimeLeft: cardio.getReadyTimeLeft ?? undefined,
         workTime: cardio.workTime ?? undefined,
         restTime: cardio.restTime ?? undefined,
         rounds: cardio.rounds ?? undefined,
@@ -166,9 +158,6 @@ class CardioBackgroundService {
         isRunPhase: cardio.isRunPhase ?? undefined,
         totalLaps: cardio.totalLaps ?? undefined,
         phaseTimeLeft: cardio.phaseTimeLeft ?? undefined,
-  phaseOriginalDuration: cardio.phaseOriginalDuration ?? undefined,
-  phaseElapsedAccumulated: cardio.phaseElapsedAccumulated ?? undefined,
-  phaseLastResumeTime: restoredPhaseLastResumeTime ?? undefined,
       };
 
       console.log('✅ Restored cardio background state from SQLite');
@@ -330,8 +319,8 @@ export function useCardioBackgroundPersistence() {
         accumulatedTime: accumulatedTimeOnly,
         isPaused: session.isPaused,
         lastResumeTime: session.lastResumeTime,
-  isGetReady: session.isGetReady,
-  getReadyTimeLeft: session.getReadyTimeLeft,
+        isGetReady: session.isGetReady,
+        getReadyTimeLeft: session.getReadyTimeLeft,
         
         // HIIT specific
         workTime: session.workTime,
@@ -352,9 +341,6 @@ export function useCardioBackgroundPersistence() {
         
         // Phase timer
         phaseTimeLeft: session.phaseTimeLeft,
-  phaseOriginalDuration: session.phaseOriginalDuration,
-  phaseElapsedAccumulated: session.phaseElapsedAccumulated,
-  phaseLastResumeTime: session.phaseLastResumeTime,
       };
 
       await cardioBackgroundService.saveCardioSessionState(state);
@@ -560,10 +546,6 @@ export function useCardioBackgroundPersistence() {
         isRunPhase: nextIsRun,
         totalLaps: restoredState.totalLaps,
         phaseTimeLeft: nextPhaseLeft,
-  // Provide tracker internals for exact continuity (align with get-ready style)
-  phaseOriginalDuration: nextPhaseOriginal || (nextIsGetReady ? 10 : (restoredState.type === 'hiit' ? (nextIsWork ? Math.max(1, restoredState.workTime ?? 20) : Math.max(1, restoredState.restTime ?? 10)) : (restoredState.type === 'walk_run' ? (nextIsRun ? Math.max(1, restoredState.runTime ?? 30) : Math.max(1, restoredState.walkTime ?? 30)) : 0))),
-  phaseElapsedAccumulated: 0,
-  phaseLastResumeTime: alignedLastResumeTime,
       } as any);
       
       sessionIdRef.current = restoredState.sessionId;
@@ -599,9 +581,6 @@ export function useCardioBackgroundPersistence() {
           isRunPhase: nextIsRun,
           totalLaps: restoredState.totalLaps,
           phaseTimeLeft: nextPhaseLeft,
-          phaseOriginalDuration: nextPhaseOriginal || (nextIsGetReady ? 10 : (restoredState.type === 'hiit' ? (nextIsWork ? Math.max(1, restoredState.workTime ?? 20) : Math.max(1, restoredState.restTime ?? 10)) : (restoredState.type === 'walk_run' ? (nextIsRun ? Math.max(1, restoredState.runTime ?? 30) : Math.max(1, restoredState.walkTime ?? 30)) : 0))),
-          phaseElapsedAccumulated: 0,
-          phaseLastResumeTime: restoredState.isPaused ? null : (alignedLastResumeTime || null),
         });
       } catch {}
   return true;

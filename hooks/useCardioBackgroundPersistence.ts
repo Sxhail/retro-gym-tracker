@@ -120,13 +120,25 @@ class CardioBackgroundService {
     try {
       const { db } = await import('../db/client');
       const { active_workout_sessions } = await import('../db/schema');
+      const { desc } = await import('drizzle-orm');
       // Get most recent session that looks like cardio (session_id prefix or session_data flag)
-      const rows = await db.select().from(active_workout_sessions).limit(10);
-      const cardioRow = rows.find(r => r.session_id.startsWith('cardio_') || (r.session_data && (() => { try { const d = JSON.parse(r.session_data); return d.isCardio; } catch { return false; } })()));
+      const rows = await db.select().from(active_workout_sessions).orderBy(desc(active_workout_sessions.last_updated)).limit(10);
+      const cardioRow = rows.find(r => {
+        if (r.session_id?.startsWith?.('cardio_')) return true;
+        if (!r.session_data) return false;
+        try {
+          const d = JSON.parse(r.session_data);
+          // Newer saves nest under cardio, older may set isCardio at root
+          return d?.isCardio === true || !!d?.cardio;
+        } catch {
+          return false;
+        }
+      });
       if (!cardioRow) return null;
 
-      const parsed = cardioRow.session_data ? JSON.parse(cardioRow.session_data) : {};
-      const cardio = parsed.cardio || {};
+  let parsed: any = {};
+  try { parsed = cardioRow.session_data ? JSON.parse(cardioRow.session_data) : {}; } catch {}
+  const cardio = parsed.cardio || {};
       const startTime = new Date(cardioRow.start_time);
   const lastResumeTime = cardio.lastResumeTime ? new Date(cardio.lastResumeTime) : null;
   const restoredPhaseLastResumeTime = cardio.phaseLastResumeTime ? new Date(cardio.phaseLastResumeTime) : null;
@@ -533,8 +545,9 @@ export function useCardioBackgroundPersistence() {
       sessionIdRef.current = restoredState.sessionId;
 
       console.log(`✅ CARDIO RESTORED: ${restoredState.type} session - ${Math.floor(restoredElapsedTime/60)}min ${restoredElapsedTime%60}sec`);
-      
-      return true;
+  // Immediately persist the restored state so a second force-close still has fresh data
+  try { await saveCurrentState(); } catch {}
+  return true;
     } catch (error) {
       console.error('Failed to restore cardio session state:', error);
       return false;
@@ -542,203 +555,8 @@ export function useCardioBackgroundPersistence() {
   }, [session]);
 
   // Catch up active cardio session when app returns to foreground
-  const catchUpActiveSession = useCallback(async () => {
-    try {
-      if (!session.isActive || session.isPaused || !session.cardioType) {
-        return false;
-      }
-
-      const now = Date.now();
-      // Calculate total elapsed since lastResumeTime (for overall elapsed)
-      const totalGap = session.lastResumeTime ? Math.max(0, Math.floor((now - session.lastResumeTime.getTime()) / 1000)) : 0;
-      const newElapsed = session.accumulatedTime + totalGap;
-
-      // Calculate phase gap using per-phase trackers
-      const phaseGap = session.phaseLastResumeTime ? Math.max(0, Math.floor((now - session.phaseLastResumeTime.getTime()) / 1000)) : 0;
-
-      // Working copies of state
-      let nextIsGetReady = session.isGetReady;
-      let nextGetReadyLeft = session.getReadyTimeLeft;
-      let nextPhaseLeft = session.phaseTimeLeft;
-      let nextPhaseOriginal = session.phaseOriginalDuration;
-      let nextPhaseElapsedAccum = session.phaseElapsedAccumulated;
-      let nextPhaseLastResume: Date | null = session.phaseLastResumeTime;
-      let nextIsWork = session.isWorkPhase;
-      let nextRound = session.currentRound;
-      let nextIsRun = session.isRunPhase;
-      let nextLap = session.currentLap;
-
-      const hiitWork = Math.max(1, session.workTime);
-      const hiitRest = Math.max(1, session.restTime);
-      const hiitRounds = Math.max(1, session.rounds);
-      const wrRun = Math.max(1, session.runTime);
-      const wrWalk = Math.max(1, session.walkTime);
-      const wrLaps = Math.max(1, session.laps);
-
-      let g = phaseGap;
-
-      // Handle Get-Ready catch up first
-      if (nextIsGetReady) {
-        const remaining = Math.max(0, nextGetReadyLeft);
-        if (g < remaining) {
-          nextGetReadyLeft = remaining - g;
-          g = 0;
-        } else {
-          // Finish get-ready and overflow into first phase
-          g -= remaining;
-          nextIsGetReady = false;
-          nextGetReadyLeft = 0;
-          if (session.cardioType === 'hiit') {
-            nextIsWork = true;
-            nextPhaseOriginal = hiitWork;
-          } else if (session.cardioType === 'walk_run') {
-            nextIsRun = true;
-            nextPhaseOriginal = wrRun;
-          } else {
-            nextPhaseOriginal = 0;
-          }
-          nextPhaseElapsedAccum = 0;
-          nextPhaseLastResume = new Date(now - g * 1000); // overflow represents time spent in first phase
-        }
-      }
-
-      const advanceHiit = (gap: number) => {
-        let left = nextPhaseOriginal - (nextPhaseElapsedAccum + gap);
-        // If we have negative left, consume phases in a loop
-        let overflow = Math.max(0, -left);
-        // Normalize left to a non-negative value for the current phase
-        left = Math.max(0, left);
-        while (overflow > 0) {
-          if (nextIsWork) {
-            // Move to rest
-            nextIsWork = false;
-            nextPhaseOriginal = hiitRest;
-            // Entering new phase with overflow already spent
-            if (overflow < nextPhaseOriginal) {
-              left = nextPhaseOriginal - overflow;
-              overflow = 0;
-            } else {
-              overflow -= nextPhaseOriginal;
-              left = 0;
-            }
-          } else {
-            // Finished a rest; increment round or end
-            if (nextRound >= hiitRounds) {
-              left = 0;
-              overflow = 0;
-              break;
-            }
-            nextRound += 1;
-            nextIsWork = true;
-            nextPhaseOriginal = hiitWork;
-            if (overflow < nextPhaseOriginal) {
-              left = nextPhaseOriginal - overflow;
-              overflow = 0;
-            } else {
-              overflow -= nextPhaseOriginal;
-              left = 0;
-            }
-          }
-        }
-        nextPhaseLeft = Math.max(0, Math.floor(left));
-        // Align last resume so that on next tick the math continues properly
-        const spent = Math.max(0, nextPhaseOriginal - nextPhaseLeft);
-        nextPhaseElapsedAccum = 0;
-        nextPhaseLastResume = new Date(Date.now() - spent * 1000);
-      };
-
-      const advanceWalkRun = (gap: number) => {
-        let left = nextPhaseOriginal - (nextPhaseElapsedAccum + gap);
-        let overflow = Math.max(0, -left);
-        left = Math.max(0, left);
-        while (overflow > 0) {
-          if (nextIsRun) {
-            // run -> walk
-            nextIsRun = false;
-            nextPhaseOriginal = wrWalk;
-            if (overflow < nextPhaseOriginal) {
-              left = nextPhaseOriginal - overflow;
-              overflow = 0;
-            } else {
-              overflow -= nextPhaseOriginal;
-              left = 0;
-            }
-          } else {
-            // walk -> next lap or end
-            if (nextLap >= wrLaps) {
-              left = 0;
-              overflow = 0;
-              break;
-            }
-            nextLap += 1;
-            nextIsRun = true;
-            nextPhaseOriginal = wrRun;
-            if (overflow < nextPhaseOriginal) {
-              left = nextPhaseOriginal - overflow;
-              overflow = 0;
-            } else {
-              overflow -= nextPhaseOriginal;
-              left = 0;
-            }
-          }
-        }
-        nextPhaseLeft = Math.max(0, Math.floor(left));
-        const spent = Math.max(0, nextPhaseOriginal - nextPhaseLeft);
-        nextPhaseElapsedAccum = 0;
-        nextPhaseLastResume = new Date(Date.now() - spent * 1000);
-      };
-
-      if (!nextIsGetReady && g > 0) {
-        if (session.cardioType === 'hiit') {
-          // Ensure we have a valid phaseOriginal
-          if (!nextPhaseOriginal || nextPhaseOriginal <= 0) {
-            nextPhaseOriginal = nextIsWork ? hiitWork : hiitRest;
-          }
-          advanceHiit(g);
-        } else if (session.cardioType === 'walk_run') {
-          if (!nextPhaseOriginal || nextPhaseOriginal <= 0) {
-            nextPhaseOriginal = nextIsRun ? wrRun : wrWalk;
-          }
-          advanceWalkRun(g);
-        }
-      }
-
-      const alignedLastResume = session.isPaused ? session.lastResumeTime : new Date(Date.now() - Math.max(0, (nextPhaseOriginal - nextPhaseLeft)) * 1000);
-
-      // Push updated state back into the context in one shot
-      session.restoreFromPersistence({
-        cardioType: session.cardioType,
-        sessionName: session.sessionName,
-        isPaused: session.isPaused,
-        elapsedTime: newElapsed,
-        accumulatedTime: session.accumulatedTime,
-        lastResumeTime: alignedLastResume,
-        isGetReady: nextIsGetReady,
-        getReadyTimeLeft: nextGetReadyLeft,
-        workTime: session.workTime,
-        restTime: session.restTime,
-        rounds: session.rounds,
-        currentRound: nextRound,
-        isWorkPhase: nextIsWork,
-        runTime: session.runTime,
-        walkTime: session.walkTime,
-        laps: session.laps,
-        currentLap: nextLap,
-        isRunPhase: nextIsRun,
-        totalLaps: session.totalLaps,
-        phaseTimeLeft: nextPhaseLeft,
-        // Provide tracker internals for exact continuity
-        phaseOriginalDuration: nextPhaseOriginal,
-        phaseElapsedAccumulated: nextPhaseElapsedAccum,
-        phaseLastResumeTime: nextPhaseLastResume,
-      } as any);
-
-      return true;
-    } catch (e) {
-      console.warn('Failed to catch up active cardio session:', e);
-      return false;
-    }
-  }, [session]);
+  // We no longer "catch up" on foreground; the timestamp-based timer handles gaps accurately.
+  const catchUpActiveSession = useCallback(async () => false, []);
 
   // Clear session state when workout ends
   const clearSessionState = useCallback(async () => {
@@ -763,9 +581,6 @@ export function useCardioBackgroundPersistence() {
         // App coming to foreground - restore state if needed
         if (!session.isActive) {
           restoreSessionState();
-        } else {
-          // Catch up active session timers just like get-ready logic
-          catchUpActiveSession();
         }
       }
       
@@ -789,6 +604,9 @@ export function useCardioBackgroundPersistence() {
     if (!session.isActive) {
       return;
     }
+
+  // Save immediately when a session becomes active (first-run safety)
+  saveCurrentState();
 
     const saveInterval = setInterval(() => {
       saveCurrentState();

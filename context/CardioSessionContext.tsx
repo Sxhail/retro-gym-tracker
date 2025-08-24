@@ -684,7 +684,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       if (typeof restored.totalLaps === 'number') setTotalLaps(restored.totalLaps);
     }
 
-    // Timers
+  // Timers
     if (typeof restored.phaseTimeLeft === 'number') setPhaseTimeLeft(restored.phaseTimeLeft);
     if (typeof restored.isGetReady === 'boolean') {
       setIsGetReady(restored.isGetReady);
@@ -700,7 +700,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       setGetReadyTimeLeft(0);
     }
 
-    // Initialize timestamp-based phase trackers, preferring any restored internals for exactness
+  // Initialize timestamp-based phase trackers, preferring any restored internals for exactness
     if (typeof restored.phaseOriginalDuration === 'number' || typeof restored.phaseElapsedAccumulated === 'number' || restored.phaseLastResumeTime !== undefined) {
       setPhaseOriginalDuration(restored.phaseOriginalDuration ?? 0);
       setPhaseElapsedAccumulated(restored.phaseElapsedAccumulated ?? 0);
@@ -730,6 +730,20 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         setPhaseElapsedAccumulated(0);
         setPhaseLastResumeTime(restored.lastResumeTime ?? new Date());
       }
+
+      // Reset zero-crossing detection refs to current values to avoid duplicate transitions post-restore
+      try {
+        prevGetReadyLeftRef.current = restored.isGetReady ? (restored.getReadyTimeLeft ?? 10) : 0;
+        const currentPhaseTotal = restored.isGetReady ? 10 : (
+          restored.cardioType === 'hiit'
+            ? ((restored.isWorkPhase ?? true) ? (restored.workTime ?? workTime) : (restored.restTime ?? restTime))
+            : restored.cardioType === 'walk_run'
+              ? ((restored.isRunPhase ?? true) ? (restored.runTime ?? runTime) : (restored.walkTime ?? walkTime))
+              : 0
+        );
+        const currentLeft = restored.isGetReady ? (restored.getReadyTimeLeft ?? 10) : (restored.phaseTimeLeft ?? currentPhaseTotal);
+        prevPhaseLeftRef.current = Math.max(0, currentLeft ?? 0);
+      } catch {}
     }
   };
 

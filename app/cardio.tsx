@@ -50,28 +50,6 @@ export default function CardioScreen() {
   return (
   <SafeAreaView style={styles.container}>
       <GlobalRestTimerDisplay />
-      {/* CTA if an active cardio session exists */}
-      {cardio.state.sessionId && cardio.state.phase !== 'completed' && (
-        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          <TouchableOpacity
-            style={{
-              borderWidth: 1,
-              borderColor: theme.colors.neon,
-              borderRadius: 10,
-              padding: 12,
-              backgroundColor: 'rgba(0,255,0,0.08)'
-            }}
-            onPress={() => {
-              if (cardio.state.mode === 'hiit') router.push('/cardio/quick-hiit');
-              else if (cardio.state.mode === 'walk_run') router.push('/cardio/walk-run');
-            }}
-          >
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, textAlign: 'center' }}>
-              CONTINUE {cardio.state.mode?.toUpperCase()} — {cardio.state.phase.toUpperCase()} {Math.ceil(cardio.state.remainingMs/1000)}s left
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

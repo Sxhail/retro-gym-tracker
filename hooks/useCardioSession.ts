@@ -460,6 +460,11 @@ export function useCardioSession() {
     }
     await svc.cancelAllNotifications(sessionId);
     await svc.clearActiveSession(sessionId);
+    try {
+      // Re-init NotificationService channel/permissions in case they were altered
+      const NotificationService = (await import('../services/notifications')).default;
+      await NotificationService.initialize();
+    } catch {}
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -477,6 +482,10 @@ export function useCardioSession() {
     try {
       await svc.cancelAllNotifications(sessionId);
       await svc.clearActiveSession(sessionId);
+      try {
+        const NotificationService = (await import('../services/notifications')).default;
+        await NotificationService.initialize();
+      } catch {}
     } catch {}
     setSessionId(null);
     setMode(null);
@@ -495,6 +504,10 @@ export function useCardioSession() {
     try {
       await svc.cancelAllNotifications(sessionId);
       await svc.clearActiveSession(sessionId);
+      try {
+        const NotificationService = (await import('../services/notifications')).default;
+        await NotificationService.initialize();
+      } catch {}
     } catch {}
     setSessionId(null);
     setMode(null);
@@ -551,6 +564,13 @@ export function useCardioSession() {
     const sub = AppState.addEventListener('change', onChange);
     return () => sub.remove();
   }, [persist, schedule, isPaused, ensureTick, clearTick]);
+
+  // Stop ticking entirely once session reaches completed state
+  useEffect(() => {
+    if (derived.phase === 'completed') {
+      clearTick();
+    }
+  }, [derived.phase, clearTick]);
 
   return {
     state: derived,

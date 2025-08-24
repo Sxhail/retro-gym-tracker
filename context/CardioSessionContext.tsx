@@ -108,6 +108,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
   const completionAlertShownRef = useRef(false);
   // Guard to prevent multiple rapid phase transitions in the same tick/window
   const phaseTransitioningRef = useRef(false);
+  // Dedicated phase start anchor (separate from overall elapsed anchor)
+  const phaseStartTimeRef = useRef<Date | null>(null);
   const [onPhaseComplete, setOnPhaseComplete] = useState<((event: 'hiit_work_complete' | 'hiit_rest_complete' | 'walk_run_run_complete' | 'walk_run_walk_complete') => void) | null>(null);
 
   // Start a cardio session (simplified)
@@ -124,6 +126,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     setIsPaused(false);
     setIsActive(true);
     completionAlertShownRef.current = false;
+  phaseStartTimeRef.current = now; // anchor for get-ready or initial phase
     
     // Reset phase state
     setCurrentRound(1);
@@ -140,9 +143,11 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       if (options?.skipGetReady) {
         setIsGetReady(false);
         setGetReadyTimeLeft(0);
+  phaseStartTimeRef.current = now; // start phase immediately
       } else {
         setIsGetReady(true);
         setGetReadyTimeLeft(10);
+  phaseStartTimeRef.current = now; // anchor get-ready start
       }
     } else if (type === 'walk_run') {
       setRunTime(config.runTime || 30);
@@ -154,9 +159,11 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       if (options?.skipGetReady) {
         setIsGetReady(false);
         setGetReadyTimeLeft(0);
+  phaseStartTimeRef.current = now; // start phase immediately
       } else {
         setIsGetReady(true);
         setGetReadyTimeLeft(10);
+  phaseStartTimeRef.current = now; // anchor get-ready start
       }
     } else if (type === 'casual_walk') {
       setTotalLaps(config.totalLaps || 1);
@@ -316,6 +323,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     setTimeout(() => { phaseTransitioningRef.current = false; }, 400);
     // Anchor the new phase start immediately
     setLastResumeTime(new Date());
+  phaseStartTimeRef.current = new Date();
     
     if (cardioType === 'hiit') {
       if (isWorkPhase) {
@@ -521,7 +529,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
 
   // Timer effect - simplified timestamp-based like lift workout timer (accurate across background/app restarts)
   useEffect(() => {
-    if (!isActive || isPaused) {
+  // Align with lift timer: run only when active, not paused, and with a valid anchor
+  if (!isActive || isPaused || !lastResumeTime) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -531,7 +540,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
 
     // Start/resume timer - simplified approach like lift workout
     timerRef.current = setInterval(() => {
-      if (lastResumeTime) {
+  if (lastResumeTime) {
         const now = new Date();
         const currentSegmentTime = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
         const totalElapsed = accumulatedTimeRef.current + currentSegmentTime;
@@ -539,7 +548,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
 
         // Handle get-ready countdown first (simplified)
         if ((cardioType === 'hiit' || cardioType === 'walk_run') && isGetReady) {
-          const getReadyElapsed = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
+          const anchor = phaseStartTimeRef.current ?? lastResumeTime;
+          const getReadyElapsed = Math.floor((now.getTime() - anchor.getTime()) / 1000);
           const getReadyRemaining = Math.max(0, 10 - getReadyElapsed);
           setGetReadyTimeLeft(getReadyRemaining);
           
@@ -550,6 +560,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
             accumulatedTimeRef.current += 10;
             setAccumulatedTime(accumulatedTimeRef.current);
             setLastResumeTime(now);
+            phaseStartTimeRef.current = now; // start first phase anchor
             
             // Start first phase
             if (cardioType === 'hiit') {
@@ -580,7 +591,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
             phaseDuration = isRunPhase ? Math.max(1, runTime) : Math.max(1, walkTime);
           }
 
-          const phaseElapsed = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
+          const phaseAnchor = phaseStartTimeRef.current ?? lastResumeTime;
+          const phaseElapsed = Math.floor((now.getTime() - phaseAnchor.getTime()) / 1000);
           const phaseRemaining = Math.max(0, phaseDuration - phaseElapsed);
           setPhaseTimeLeft(phaseRemaining);
 
@@ -591,6 +603,7 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
             accumulatedTimeRef.current += phaseDuration;
             setAccumulatedTime(accumulatedTimeRef.current);
             setLastResumeTime(now);
+            phaseStartTimeRef.current = now; // anchor next phase
             
             nextPhase();
             

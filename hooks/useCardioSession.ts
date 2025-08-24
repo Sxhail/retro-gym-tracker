@@ -560,8 +560,8 @@ export function useCardioSession() {
         // foreground: recompute phase index immediately (but not while paused)
         if (!isPaused && schedule.length) setPhaseIndex(indexAt(schedule, Date.now()));
       }
-    appStateRef.current = state;
-    if (nowActive && !isPaused) ensureTick(); else clearTick();
+  appStateRef.current = state;
+  if (nowActive && !isPaused) ensureTick(); else clearTick();
     };
     const sub = AppState.addEventListener('change', onChange);
     return () => sub.remove();

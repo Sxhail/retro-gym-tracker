@@ -150,8 +150,9 @@ export function useCardioSession() {
   const tickRef = useRef<number | null>(null);
 
   const ensureTick = useCallback(() => {
-    if (tickRef.current) return;
-  tickRef.current = setInterval(() => {
+    // Do not tick while paused or if already ticking
+    if (isPaused || tickRef.current) return;
+    tickRef.current = setInterval(() => {
       // force a state update via phaseIndex recompute
       if (schedule.length) {
         const now = Date.now();
@@ -159,7 +160,7 @@ export function useCardioSession() {
         if (idx !== phaseIndex) setPhaseIndex(idx);
       }
     }, 500);
-  }, [schedule, phaseIndex]);
+  }, [schedule, phaseIndex, isPaused]);
 
   const clearTick = useCallback(() => {
     if (tickRef.current) {
@@ -536,7 +537,8 @@ export function useCardioSession() {
         setPausedAt(snap.pausedAt);
         setIsPaused(!!snap.pausedAt);
         setAccumPauseMs(snap.accumulatedPauseMs);
-        ensureTick();
+  // Only tick if not paused
+  if (!snap.pausedAt) ensureTick();
       } catch (e) {}
     })();
     return clearTick;
@@ -555,11 +557,11 @@ export function useCardioSession() {
           svc.scheduleNotifications(sessionId, schedule).catch(() => {});
         }
       } else if (!wasActive && nowActive) {
-        // foreground: recompute phase index immediately
-        if (schedule.length) setPhaseIndex(indexAt(schedule, Date.now()));
+        // foreground: recompute phase index immediately (but not while paused)
+        if (!isPaused && schedule.length) setPhaseIndex(indexAt(schedule, Date.now()));
       }
-      appStateRef.current = state;
-      if (nowActive) ensureTick(); else clearTick();
+    appStateRef.current = state;
+    if (nowActive && !isPaused) ensureTick(); else clearTick();
     };
     const sub = AppState.addEventListener('change', onChange);
     return () => sub.remove();

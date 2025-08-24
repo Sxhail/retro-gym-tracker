@@ -600,7 +600,13 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
             // End get-ready and start actual phase now
             setIsGetReady(false);
             const now = new Date();
-            setLastResumeTime(now); // mark phase start for total elapsed
+            // Accumulate the get-ready segment into total before resetting anchor
+            if (lastResumeTime) {
+              const getReadySegment = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
+              accumulatedTimeRef.current += getReadySegment;
+              setAccumulatedTime(accumulatedTimeRef.current);
+            }
+            setLastResumeTime(now); // keep total continuous without dropping
             // Initialize next phase trackers
             if (cardioType === 'hiit') {
               setIsWorkPhase(true);

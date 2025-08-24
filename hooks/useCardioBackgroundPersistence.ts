@@ -246,6 +246,30 @@ class CardioBackgroundService {
 
 export const cardioBackgroundService = new CardioBackgroundService();
 
+// Module-level delegates so non-hook code (e.g., context) can trigger saves/restores
+let externalSaveDelegate: (() => Promise<void>) | null = null;
+let externalRestoreDelegate: (() => Promise<boolean>) | null = null;
+let externalClearDelegate: (() => Promise<void>) | null = null;
+
+export async function saveCurrentState(): Promise<void> {
+  if (externalSaveDelegate) {
+    await externalSaveDelegate();
+  }
+}
+
+export async function restoreSessionState(): Promise<boolean> {
+  if (externalRestoreDelegate) {
+    return await externalRestoreDelegate();
+  }
+  return false;
+}
+
+export async function clearSessionState(): Promise<void> {
+  if (externalClearDelegate) {
+    await externalClearDelegate();
+  }
+}
+
 /**
  * Background Persistence Hook for Cardio Sessions
  * Provides the same reliable background persistence as lift workouts
@@ -601,6 +625,18 @@ export function useCardioBackgroundPersistence() {
       console.error('Failed to clear cardio session state:', error);
     }
   }, []);
+
+  // Register delegates for external callers (e.g., context lifecycle events)
+  useEffect(() => {
+    externalSaveDelegate = saveCurrentState;
+    externalRestoreDelegate = restoreSessionState;
+    externalClearDelegate = clearSessionState;
+    return () => {
+      if (externalSaveDelegate === saveCurrentState) externalSaveDelegate = null;
+      if (externalRestoreDelegate === restoreSessionState) externalRestoreDelegate = null;
+      if (externalClearDelegate === clearSessionState) externalClearDelegate = null;
+    };
+  }, [saveCurrentState, restoreSessionState, clearSessionState]);
 
   // Handle app state changes (background/foreground)
   const handleAppStateChange = useCallback(

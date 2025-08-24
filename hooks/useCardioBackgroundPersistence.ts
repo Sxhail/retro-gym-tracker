@@ -545,8 +545,41 @@ export function useCardioBackgroundPersistence() {
       sessionIdRef.current = restoredState.sessionId;
 
       console.log(`✅ CARDIO RESTORED: ${restoredState.type} session - ${Math.floor(restoredElapsedTime/60)}min ${restoredElapsedTime%60}sec`);
-  // Immediately persist the restored state so a second force-close still has fresh data
-  try { await saveCurrentState(); } catch {}
+      // Immediately persist the restored state so a second force-close still has fresh data.
+      // IMPORTANT: Do not rely on React state (session.*) here as it updates asynchronously.
+      // Save directly using the computed values above.
+      try {
+        await cardioBackgroundService.saveCardioSessionState({
+          sessionId: restoredState.sessionId,
+          type: restoredState.type,
+          name: restoredState.name,
+          // Persist resume anchor: when active, use alignedLastResumeTime; when paused, use now.
+          startTime: restoredState.isPaused ? new Date() : (alignedLastResumeTime || new Date()),
+          // Strict contract: elapsedTime is the accumulated portion only
+          elapsedTime: restoredState.accumulatedTime,
+          accumulatedTime: restoredState.accumulatedTime,
+          isPaused: restoredState.isPaused,
+          lastResumeTime: restoredState.isPaused ? null : (alignedLastResumeTime || null),
+          // Phase details advanced through the background gap
+          isGetReady: nextIsGetReady,
+          getReadyTimeLeft: nextGetReadyLeft,
+          workTime: restoredState.workTime,
+          restTime: restoredState.restTime,
+          rounds: restoredState.rounds,
+          currentRound: nextCurrentRound,
+          isWorkPhase: nextIsWork,
+          runTime: restoredState.runTime,
+          walkTime: restoredState.walkTime,
+          laps: restoredState.laps,
+          currentLap: nextCurrentLap,
+          isRunPhase: nextIsRun,
+          totalLaps: restoredState.totalLaps,
+          phaseTimeLeft: nextPhaseLeft,
+          phaseOriginalDuration: nextPhaseOriginal || (nextIsGetReady ? 10 : (restoredState.type === 'hiit' ? (nextIsWork ? Math.max(1, restoredState.workTime ?? 20) : Math.max(1, restoredState.restTime ?? 10)) : (restoredState.type === 'walk_run' ? (nextIsRun ? Math.max(1, restoredState.runTime ?? 30) : Math.max(1, restoredState.walkTime ?? 30)) : 0))),
+          phaseElapsedAccumulated: 0,
+          phaseLastResumeTime: restoredState.isPaused ? null : (alignedLastResumeTime || null),
+        });
+      } catch {}
   return true;
     } catch (error) {
       console.error('Failed to restore cardio session state:', error);

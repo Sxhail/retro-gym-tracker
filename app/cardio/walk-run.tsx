@@ -70,14 +70,16 @@ export default function WalkRunScreen() {
         { text: 'No', style: 'cancel' },
         {
           text: 'Yes', style: 'destructive', onPress: async () => {
-            await cardio.reset();
+            await cardio.cancel();
             router.push('/');
           }
         }
       ]);
     } else {
-      await cardio.cancel();
-      router.push('/');
+      Alert.alert('Cancel cardio?', 'Are you sure you want to cancel?', [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: async () => { await cardio.cancel(); router.push('/'); } }
+      ]);
     }
   };
 

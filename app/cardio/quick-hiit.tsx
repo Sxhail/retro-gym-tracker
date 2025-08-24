@@ -71,20 +71,22 @@ export default function QuickHiitScreen() {
   const onSecondary = async () => {
     const isActive = cardio.state.mode === 'hiit' && cardio.state.phase !== 'idle';
     if (isActive) {
-      // Active -> Reset (no save) with confirm
+      // Active -> Confirm cancel (not reset) and navigate home
       Alert.alert('Cancel cardio?', 'Are you sure you want to cancel this session?', [
         { text: 'No', style: 'cancel' },
         {
           text: 'Yes', style: 'destructive', onPress: async () => {
-            await cardio.reset();
+            await cardio.cancel();
             router.push('/');
           }
         }
       ]);
     } else {
-      // Not started -> Cancel clears any stray session
-      await cardio.cancel();
-      router.push('/');
+      // Not started -> confirm cancel then navigate home
+      Alert.alert('Cancel cardio?', 'Are you sure you want to cancel?', [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: async () => { await cardio.cancel(); router.push('/'); } }
+      ]);
     }
   };
 

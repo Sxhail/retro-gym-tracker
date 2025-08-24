@@ -242,11 +242,12 @@ export default function HomeScreen() {
                       text: 'Cancel',
                       style: 'destructive',
                       onPress: async () => {
-                        await cardio.reset();
-                        // After cancel, button should revert to Start Training
+                        Alert.alert('Cancel cardio?', 'Are you sure you want to cancel the current session?', [
+                          { text: 'No', style: 'cancel' },
+                          { text: 'Yes', style: 'destructive', onPress: async () => { await cardio.cancel(); } }
+                        ]);
                       }
-                    },
-                    { text: 'Close', style: 'cancel' }
+                    }
                   ]
                 );
               }}

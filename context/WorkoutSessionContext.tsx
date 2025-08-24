@@ -82,22 +82,22 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   const getNextWorkoutName = async () => {
     try {
       const nextNumber = await getNextWorkoutNumber();
-      return `WORKOUT ${nextNumber}`;
+      return `LIFT ${nextNumber}`;
     } catch (error) {
       console.error('Error getting next workout number:', error);
-      return 'WORKOUT 1';
+      return 'LIFT 1';
     }
   };
 
   const [currentExercises, setCurrentExercises] = useState<Exercise[]>([]);
   const [sessionMeta, setSessionMeta] = useState<SessionMeta>({ 
     date: new Date().toISOString().slice(0, 10),
-    name: 'WORKOUT 1'
+    name: 'LIFT 1'
   });
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionEndTime, setSessionEndTime] = useState<Date | null>(null);
   const [isWorkoutActive, setIsWorkoutActive] = useState<boolean>(false);
-  const [workoutName, setWorkoutName] = useState<string>('WORKOUT 1');
+  const [workoutName, setWorkoutName] = useState<string>('LIFT 1');
   // Timer state
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);

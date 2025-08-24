@@ -970,6 +970,7 @@ export default function NewWorkoutScreen() {
   // Start workout and set date when first exercise is added
   useEffect(() => {
     if (sessionExercises.length > 0 && !isWorkoutActive) {
+      // Start timer; context now runs an immediate tick
       startWorkout();
       // Set the workout date to today
       const now = new Date();
@@ -1049,7 +1050,11 @@ export default function NewWorkoutScreen() {
   const cancelFinish = () => setShowFinishConfirm(false);
 
   // Handle back button - directly navigate back without save prompt
-  const handleBackButton = () => {
+  const handleBackButton = async () => {
+    // If there are no exercises, ensure session is reset so home shows START TRAINING
+    if (sessionExercises.length === 0) {
+      await resetSession();
+    }
     router.back();
   };
 

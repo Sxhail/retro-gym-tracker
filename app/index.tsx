@@ -47,7 +47,7 @@ export default function HomeScreen() {
     }
   };
   const [programProgress, setProgramProgress] = useState<any>({});
-  const { isWorkoutActive, startProgramWorkout, globalRestTimer } = useWorkoutSession();
+  const { isWorkoutActive, currentExercises, startProgramWorkout, globalRestTimer } = useWorkoutSession();
 
   useEffect(() => {
     loadAllProgramsWithProgress();
@@ -216,8 +216,8 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Action Buttons - moved to bottom */}
-      <View style={styles.bottomActionSection}>
-  {isWorkoutActive ? (
+    <View style={styles.bottomActionSection}>
+  {isWorkoutActive && (currentExercises?.length ?? 0) > 0 ? (
           <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
             <Text style={styles.startButtonText}>CONTINUE LIFT</Text>
           </TouchableOpacity>

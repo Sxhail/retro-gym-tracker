@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
 import { useCardioSession } from '../../hooks/useCardioSession';
@@ -46,9 +46,8 @@ export default function WalkRunScreen() {
     const start = cardio.state.phaseStartedAt ? new Date(cardio.state.phaseStartedAt).getTime() : 0;
     const end = cardio.state.phaseWillEndAt ? new Date(cardio.state.phaseWillEndAt).getTime() : 0;
     if (!start || !end || end <= start) return 0;
-    const now = Date.now();
     const total = end - start;
-    const remaining = Math.max(0, end - now);
+    const remaining = Math.max(0, Math.min(total, cardio.state.remainingMs));
     return Math.max(0, Math.min(1, 1 - remaining / total));
   }, [cardio.state.phaseStartedAt, cardio.state.phaseWillEndAt, cardio.state.remainingMs]);
 
@@ -64,18 +63,29 @@ export default function WalkRunScreen() {
     await cardio.startWalkRun({ runSec, walkSec, laps, includeTrailingWalk: false });
   };
 
-  const reset = async () => {
-    if (cardio.hasActiveSession) await cardio.reset();
+  const onSecondary = async () => {
+    if (cardio.state.mode === 'walk_run' && cardio.state.phase !== 'idle') {
+      await cardio.reset();
+    } else {
+      await cardio.cancel();
+    }
   };
 
   const finish = async () => {
     if (cardio.hasActiveSession) await cardio.finish();
-    router.back();
+    Alert.alert(
+      'Cardio Saved!',
+      'Your cardio session has been saved successfully.',
+      [
+        { text: 'View History', onPress: () => router.push('/history') },
+        { text: 'Start New Cardio', onPress: () => router.push('/cardio') },
+      ]
+    );
   };
 
-  const totalLabel = cardio.state.mode === 'walk_run' && cardio.state.totalPlannedMs
-    ? formatMs(cardio.state.totalPlannedMs - cardio.state.totalElapsedMs)
-    : formatMs(totalPlannedMs);
+  const totalLabel = cardio.state.mode === 'walk_run'
+    ? formatMs(cardio.state.totalElapsedMs)
+    : '00:00';
 
   const timerLabel = cardio.state.mode === 'walk_run'
     ? formatMs(cardio.state.remainingMs)
@@ -156,8 +166,10 @@ export default function WalkRunScreen() {
             {isActive && !isPaused ? 'PAUSE' : isPaused ? 'RESUME' : 'START'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.controlButton} onPress={reset}>
-          <Text style={styles.controlButtonText}>RESET</Text>
+        <TouchableOpacity style={styles.controlButton} onPress={onSecondary}>
+          <Text style={styles.controlButtonText}>
+            {isActive ? 'RESET' : 'CANCEL'}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.controlButton, styles.finishButton]} onPress={finish}>
           <Text style={styles.controlButtonText}>FINISH</Text>

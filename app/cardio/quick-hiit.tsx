@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
 import { useCardioSession } from '../../hooks/useCardioSession';
@@ -9,6 +9,10 @@ function formatMs(ms: number) {
   const m = Math.floor(s / 60);
   const r = s % 60;
   return `${m.toString().padStart(2, '0')}:${r.toString().padStart(2, '0')}`;
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
 }
 
 export default function QuickHiitScreen() {
@@ -47,9 +51,8 @@ export default function QuickHiitScreen() {
     const start = cardio.state.phaseStartedAt ? new Date(cardio.state.phaseStartedAt).getTime() : 0;
     const end = cardio.state.phaseWillEndAt ? new Date(cardio.state.phaseWillEndAt).getTime() : 0;
     if (!start || !end || end <= start) return 0;
-    const now = Date.now();
     const total = end - start;
-    const remaining = Math.max(0, end - now);
+    const remaining = clamp(cardio.state.remainingMs, 0, total);
     return Math.max(0, Math.min(1, 1 - remaining / total));
   }, [cardio.state.phaseStartedAt, cardio.state.phaseWillEndAt, cardio.state.remainingMs]);
 
@@ -65,18 +68,31 @@ export default function QuickHiitScreen() {
     await cardio.startHiit({ workSec, restSec, rounds, includeTrailingRest: false });
   };
 
-  const reset = async () => {
-    if (cardio.hasActiveSession) await cardio.reset();
+  const onSecondary = async () => {
+    if (cardio.state.mode === 'hiit' && cardio.state.phase !== 'idle') {
+      // Active -> Reset
+      await cardio.reset();
+    } else {
+      // Not started -> Cancel clears any stray session
+      await cardio.cancel();
+    }
   };
 
   const finish = async () => {
     if (cardio.hasActiveSession) await cardio.finish();
-    router.back();
+    Alert.alert(
+      'Cardio Saved!',
+      'Your cardio session has been saved successfully.',
+      [
+        { text: 'View History', onPress: () => router.push('/history') },
+        { text: 'Start New Cardio', onPress: () => router.push('/cardio') },
+      ]
+    );
   };
 
-  const totalLabel = cardio.state.mode === 'hiit' && cardio.state.totalPlannedMs
-    ? formatMs(cardio.state.totalPlannedMs - cardio.state.totalElapsedMs)
-    : formatMs(totalPlannedMs);
+  const totalLabel = cardio.state.mode === 'hiit'
+    ? formatMs(cardio.state.totalElapsedMs)
+    : '00:00';
 
   const timerLabel = cardio.state.mode === 'hiit'
     ? formatMs(cardio.state.remainingMs)
@@ -158,8 +174,10 @@ export default function QuickHiitScreen() {
             {isActiveHiit && !isPaused ? 'PAUSE' : isPaused ? 'RESUME' : 'START'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.controlButton} onPress={reset}>
-          <Text style={styles.controlButtonText}>RESET</Text>
+        <TouchableOpacity style={styles.controlButton} onPress={onSecondary}>
+          <Text style={styles.controlButtonText}>
+            {isActiveHiit ? 'RESET' : 'CANCEL'}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.controlButton, styles.finishButton]} onPress={finish}>
           <Text style={styles.controlButtonText}>FINISH</Text>

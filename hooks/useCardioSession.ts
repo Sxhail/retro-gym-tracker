@@ -183,20 +183,21 @@ export function useCardioSession() {
         totalElapsedMs: 0,
         startedAt,
         phaseStartedAt: null,
-  phaseWillEndAt: null,
-  willEndAt: null,
-  currentRound: null,
-  currentLap: null,
+        phaseWillEndAt: null,
+        willEndAt: null,
+        currentRound: null,
+        currentLap: null,
       };
     }
-    const now = Date.now();
-    const idx = clamp(indexAt(schedule, now), 0, schedule.length - 1);
+    // Freeze time-based calculations while paused
+    const tNow = (isPaused && pausedAt) ? new Date(pausedAt).getTime() : Date.now();
+    const idx = clamp(indexAt(schedule, tNow), 0, schedule.length - 1);
     const current = schedule[idx];
     const endMs = new Date(current.endAt).getTime();
     const start0 = new Date(schedule[0].startAt).getTime();
-    const remainingMs = Math.max(0, endMs - now);
+    const remainingMs = Math.max(0, endMs - tNow);
     const totalPlanned = totalPlannedMs(schedule);
-    const totalElapsed = Math.max(0, Math.min(totalPlanned, now - start0));
+    const totalElapsed = Math.max(0, Math.min(totalPlanned, tNow - start0));
     const isHiit = mode === 'hiit';
     const currentRound = isHiit && current.phase !== 'completed' ? current.cycleIndex + 1 : null;
     const currentLap = !isHiit && current.phase !== 'completed' ? current.cycleIndex + 1 : null;
@@ -212,12 +213,12 @@ export function useCardioSession() {
       totalElapsedMs: totalElapsed,
       startedAt,
       phaseStartedAt: current.startAt,
-  phaseWillEndAt: current.endAt,
-  willEndAt: schedule[schedule.length - 1]?.endAt ?? current.endAt,
+      phaseWillEndAt: current.endAt,
+      willEndAt: schedule[schedule.length - 1]?.endAt ?? current.endAt,
       currentRound,
       currentLap,
     };
-  }, [sessionId, mode, isPaused, startedAt, schedule]);
+  }, [sessionId, mode, isPaused, startedAt, schedule, pausedAt]);
 
   // Persist snapshot
   const persist = useCallback(async () => {
@@ -334,7 +335,9 @@ export function useCardioSession() {
   // While paused, cancel all scheduled notifications to avoid premature cues
   try { await svc.cancelAllNotifications(sessionId); } catch {}
     await persist();
-  }, [sessionId, isPaused, persist]);
+    // Stop ticking while paused
+    clearTick();
+  }, [sessionId, isPaused, persist, clearTick]);
 
   const resume = useCallback(async () => {
     if (!sessionId || !pausedAt) return;
@@ -359,7 +362,7 @@ export function useCardioSession() {
       isCompleted: false,
     });
     await svc.scheduleNotifications(sessionId, newSched);
-    ensureTick();
+  ensureTick();
   }, [sessionId, pausedAt, schedule, derived.currentIndex, mode, params, startedAt, accumPauseMs, ensureTick]);
 
   const skipPhase = useCallback(async () => {
@@ -469,8 +472,40 @@ export function useCardioSession() {
   }, [sessionId, clearTick]);
 
   const reset = useCallback(async () => {
-    await finish();
-  }, [finish]);
+    // Reset should NOT save to history; just clear active state
+    if (!sessionId) return;
+    try {
+      await svc.cancelAllNotifications(sessionId);
+      await svc.clearActiveSession(sessionId);
+    } catch {}
+    setSessionId(null);
+    setMode(null);
+    setParams(null);
+    setSchedule([]);
+    setIsPaused(false);
+    setPausedAt(null);
+    setAccumPauseMs(0);
+    setStartedAt(null);
+    clearTick();
+  }, [sessionId, clearTick]);
+
+  // Cancel without saving to history
+  const cancel = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      await svc.cancelAllNotifications(sessionId);
+      await svc.clearActiveSession(sessionId);
+    } catch {}
+    setSessionId(null);
+    setMode(null);
+    setParams(null);
+    setSchedule([]);
+    setIsPaused(false);
+    setPausedAt(null);
+    setAccumPauseMs(0);
+    setStartedAt(null);
+    clearTick();
+  }, [sessionId, clearTick]);
 
   // Restore on mount
   useEffect(() => {
@@ -527,6 +562,7 @@ export function useCardioSession() {
   addTenSeconds: () => addSecondsToCurrentPhase(10),
   addSecondsToCurrentPhase,
     reset,
+  cancel,
     finish,
     hasActiveSession: !!sessionId,
   };

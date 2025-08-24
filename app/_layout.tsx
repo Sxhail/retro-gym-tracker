@@ -17,7 +17,6 @@ import BackgroundRestTimerPersistence from '../components/BackgroundRestTimerPer
 import CustomSplashScreen from '../components/CustomSplashScreen';
 import { GlobalRestTimerNotification } from '../components/GlobalRestTimerNotification';
 import NotificationService from '../services/notifications';
-import GlobalCardioTimerBar from '../components/GlobalCardioTimerBar';
 import GlobalCardioPhaseNotification from '../components/GlobalCardioPhaseNotification';
 import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
 
@@ -83,7 +82,6 @@ export default function Layout() {
                       animation: 'none',
                     }}
                   />
-                  <GlobalCardioTimerBar />
                   <GlobalCardioPhaseNotification />
                   <GlobalRestTimerNotification />
                 </AppLayout>

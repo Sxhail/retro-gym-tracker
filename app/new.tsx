@@ -1217,14 +1217,30 @@ export default function NewWorkoutScreen() {
               )}
             </View>
             <View style={{ flexDirection: 'row', width: '100%', marginBottom: 18 }}>
-              <TextInput
-                style={{ flex: 1, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4 }}
-                placeholder="ADD EXERCISE"
-                placeholderTextColor={theme.colors.neon}
-                value={search}
-                onChangeText={setSearch}
-                onFocus={() => setModalVisible(true)}
-              />
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: theme.colors.neon,
+                  borderRadius: 6,
+                  paddingVertical: 14,
+                  paddingHorizontal: 12,
+                  backgroundColor: 'rgba(0,255,0,0.1)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                activeOpacity={0.7}
+                onPress={() => {
+                  // Open instantly and avoid double open
+                  if (!modalVisible) {
+                    setModalVisible(true);
+                  }
+                }}
+              >
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1, textAlign: 'center' }}>
+                  ADD EXERCISE
+                </Text>
+              </TouchableOpacity>
             </View>
 
           </View>
@@ -1290,15 +1306,30 @@ export default function NewWorkoutScreen() {
           <SafeAreaView style={{ width: '100%', paddingHorizontal: 0, paddingBottom: 8, backgroundColor: 'transparent' }}>
             <View style={{ width: '100%', paddingHorizontal: 0, marginTop: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 16, paddingHorizontal: 8 }}>
-            <TextInput
-                  style={{ flex: 1, borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, paddingVertical: 12, paddingHorizontal: 12, backgroundColor: 'transparent', marginRight: 8 }}
-                  placeholder="ADD EXERCISE"
-              placeholderTextColor={theme.colors.neon}
-              value={search}
-              onChangeText={setSearch}
-              onFocus={() => setModalVisible(true)}
-            />
-          </View>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    borderWidth: 1,
+                    borderColor: theme.colors.neon,
+                    borderRadius: 6,
+                    paddingVertical: 14,
+                    paddingHorizontal: 12,
+                    backgroundColor: 'rgba(0,255,0,0.1)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (!modalVisible) {
+                      setModalVisible(true);
+                    }
+                  }}
+                >
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16, fontWeight: 'bold', letterSpacing: 1, textAlign: 'center' }}>
+                    ADD EXERCISE
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
                 <TouchableOpacity 
                   style={{ 

@@ -106,6 +106,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const accumulatedTimeRef = useRef(0);
   const completionAlertShownRef = useRef(false);
+  // Guard to prevent multiple rapid phase transitions in the same tick/window
+  const phaseTransitioningRef = useRef(false);
   const [onPhaseComplete, setOnPhaseComplete] = useState<((event: 'hiit_work_complete' | 'hiit_rest_complete' | 'walk_run_run_complete' | 'walk_run_walk_complete') => void) | null>(null);
 
   // Start a cardio session (simplified)
@@ -304,6 +306,16 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
   // Move to next phase (simplified for HIIT and Walk-Run)
   const nextPhase = () => {
     console.log('🔄 nextPhase called:', { cardioType, isWorkPhase, currentRound, rounds, isRunPhase, currentLap, laps });
+
+    // Debounce/guard to avoid cascading transitions in the same second
+    if (phaseTransitioningRef.current) {
+      console.log('⏱️ Skipping nextPhase due to transition guard');
+      return;
+    }
+    phaseTransitioningRef.current = true;
+    setTimeout(() => { phaseTransitioningRef.current = false; }, 400);
+    // Anchor the new phase start immediately
+    setLastResumeTime(new Date());
     
     if (cardioType === 'hiit') {
       if (isWorkPhase) {
@@ -560,19 +572,20 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
         // Handle phase timers (simplified like lift workout timer)
         if ((cardioType === 'hiit' || cardioType === 'walk_run') && !isGetReady) {
           let phaseDuration = 0;
-          
+
           if (cardioType === 'hiit') {
-            phaseDuration = isWorkPhase ? workTime : restTime;
+            // Clamp to at least 1s to avoid zero-length phases
+            phaseDuration = isWorkPhase ? Math.max(1, workTime) : Math.max(1, restTime);
           } else if (cardioType === 'walk_run') {
-            phaseDuration = isRunPhase ? runTime : walkTime;
+            phaseDuration = isRunPhase ? Math.max(1, runTime) : Math.max(1, walkTime);
           }
-          
+
           const phaseElapsed = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
           const phaseRemaining = Math.max(0, phaseDuration - phaseElapsed);
           setPhaseTimeLeft(phaseRemaining);
-          
+
           // Phase completed - trigger next phase
-          if (phaseRemaining <= 0) {
+          if (phaseElapsed >= phaseDuration) {
             console.log('🔄 Phase transition triggered');
             // Update accumulated time for completed phase
             accumulatedTimeRef.current += phaseDuration;

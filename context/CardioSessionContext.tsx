@@ -34,6 +34,10 @@ interface CardioSessionContextType {
   phaseTimeLeft: number;
   isGetReady: boolean;
   getReadyTimeLeft: number;
+  // Expose per-phase tracker fields for background persistence
+  phaseOriginalDuration: number;
+  phaseElapsedAccumulated: number;
+  phaseLastResumeTime: Date | null;
   
   // Methods
   startSession: (type: CardioType, name: string, config: any, options?: { skipGetReady?: boolean }) => void;
@@ -631,7 +635,8 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
 
           if (prev > 0 && phaseLeft <= 0) {
             console.log('🔄 Phase transition triggered (timestamp-based)');
-            setTimeout(() => nextPhase(), 50);
+            // Transition immediately like get-ready does to ensure consistent behavior
+            nextPhase();
             // Persist immediately on phase transition
             try {
               const { saveCurrentState } = (require('../hooks/useCardioBackgroundPersistence') as any);
@@ -695,30 +700,36 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
       setGetReadyTimeLeft(0);
     }
 
-    // Initialize timestamp-based phase trackers based on restored state
-    let currentDuration = 0;
-    if (restored.isGetReady) {
-      currentDuration = 10;
-    } else if (restored.cardioType === 'hiit') {
-      const isWork = restored.isWorkPhase ?? true;
-      currentDuration = isWork ? (restored.workTime ?? workTime) : (restored.restTime ?? restTime);
-    } else if (restored.cardioType === 'walk_run') {
-      const isRun = restored.isRunPhase ?? true;
-      currentDuration = isRun ? (restored.runTime ?? runTime) : (restored.walkTime ?? walkTime);
+    // Initialize timestamp-based phase trackers, preferring any restored internals for exactness
+    if (typeof restored.phaseOriginalDuration === 'number' || typeof restored.phaseElapsedAccumulated === 'number' || restored.phaseLastResumeTime !== undefined) {
+      setPhaseOriginalDuration(restored.phaseOriginalDuration ?? 0);
+      setPhaseElapsedAccumulated(restored.phaseElapsedAccumulated ?? 0);
+      setPhaseLastResumeTime(restored.phaseLastResumeTime ?? null);
     } else {
-      currentDuration = 0;
-    }
-    setPhaseOriginalDuration(currentDuration);
+      let currentDuration = 0;
+      if (restored.isGetReady) {
+        currentDuration = 10;
+      } else if (restored.cardioType === 'hiit') {
+        const isWork = restored.isWorkPhase ?? true;
+        currentDuration = isWork ? (restored.workTime ?? workTime) : (restored.restTime ?? restTime);
+      } else if (restored.cardioType === 'walk_run') {
+        const isRun = restored.isRunPhase ?? true;
+        currentDuration = isRun ? (restored.runTime ?? runTime) : (restored.walkTime ?? walkTime);
+      } else {
+        currentDuration = 0;
+      }
+      setPhaseOriginalDuration(currentDuration);
 
-    const left = restored.isGetReady ? (restored.getReadyTimeLeft ?? 10) : (restored.phaseTimeLeft ?? currentDuration);
-    if (restored.isPaused) {
-      // When paused, accumulate elapsed and clear last resume
-      setPhaseElapsedAccumulated(Math.max(0, currentDuration - left));
-      setPhaseLastResumeTime(null);
-    } else {
-      // When active, align last resume to represent time spent in current phase; leave accumulated at 0
-      setPhaseElapsedAccumulated(0);
-      setPhaseLastResumeTime(restored.lastResumeTime ?? new Date());
+      const left = restored.isGetReady ? (restored.getReadyTimeLeft ?? 10) : (restored.phaseTimeLeft ?? currentDuration);
+      if (restored.isPaused) {
+        // When paused, accumulate elapsed and clear last resume
+        setPhaseElapsedAccumulated(Math.max(0, currentDuration - left));
+        setPhaseLastResumeTime(null);
+      } else {
+        // When active, align last resume to represent time spent in current phase; leave accumulated at 0
+        setPhaseElapsedAccumulated(0);
+        setPhaseLastResumeTime(restored.lastResumeTime ?? new Date());
+      }
     }
   };
 
@@ -754,6 +765,9 @@ export function CardioSessionProvider({ children }: CardioSessionProviderProps) 
     phaseTimeLeft,
   isGetReady,
   getReadyTimeLeft,
+  phaseOriginalDuration,
+  phaseElapsedAccumulated,
+  phaseLastResumeTime,
     
     // Methods
   startSession,

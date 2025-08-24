@@ -36,6 +36,10 @@ interface CardioSessionState {
   
   // Phase timer
   phaseTimeLeft?: number;
+  // Per-phase timestamp-based trackers
+  phaseOriginalDuration?: number;
+  phaseElapsedAccumulated?: number;
+  phaseLastResumeTime?: Date | null;
 }
 
 class CardioBackgroundService {
@@ -75,6 +79,9 @@ class CardioBackgroundService {
             totalLaps: state.totalLaps ?? null,
             phaseTimeLeft: state.phaseTimeLeft ?? null,
             lastResumeTime: state.lastResumeTime ? state.lastResumeTime.toISOString() : null,
+            phaseOriginalDuration: state.phaseOriginalDuration ?? null,
+            phaseElapsedAccumulated: state.phaseElapsedAccumulated ?? null,
+            phaseLastResumeTime: state.phaseLastResumeTime ? state.phaseLastResumeTime.toISOString() : null,
           },
         }),
         last_updated: new Date().toISOString(),
@@ -121,7 +128,8 @@ class CardioBackgroundService {
       const parsed = cardioRow.session_data ? JSON.parse(cardioRow.session_data) : {};
       const cardio = parsed.cardio || {};
       const startTime = new Date(cardioRow.start_time);
-      const lastResumeTime = cardio.lastResumeTime ? new Date(cardio.lastResumeTime) : null;
+  const lastResumeTime = cardio.lastResumeTime ? new Date(cardio.lastResumeTime) : null;
+  const restoredPhaseLastResumeTime = cardio.phaseLastResumeTime ? new Date(cardio.phaseLastResumeTime) : null;
 
       const restored: CardioSessionState = {
         sessionId: cardioRow.session_id,
@@ -146,6 +154,9 @@ class CardioBackgroundService {
         isRunPhase: cardio.isRunPhase ?? undefined,
         totalLaps: cardio.totalLaps ?? undefined,
         phaseTimeLeft: cardio.phaseTimeLeft ?? undefined,
+  phaseOriginalDuration: cardio.phaseOriginalDuration ?? undefined,
+  phaseElapsedAccumulated: cardio.phaseElapsedAccumulated ?? undefined,
+  phaseLastResumeTime: restoredPhaseLastResumeTime ?? undefined,
       };
 
       console.log('✅ Restored cardio background state from SQLite');
@@ -305,6 +316,9 @@ export function useCardioBackgroundPersistence() {
         
         // Phase timer
         phaseTimeLeft: session.phaseTimeLeft,
+  phaseOriginalDuration: session.phaseOriginalDuration,
+  phaseElapsedAccumulated: session.phaseElapsedAccumulated,
+  phaseLastResumeTime: session.phaseLastResumeTime,
       };
 
       await cardioBackgroundService.saveCardioSessionState(state);
@@ -471,8 +485,9 @@ export function useCardioBackgroundPersistence() {
         }
       }
 
-      // Align lastResumeTime to the start of the current active phase to keep elapsed math stable on next saves
+    // Align lastResumeTime to the start of the current active phase to keep elapsed math stable on next saves
       let alignedLastResumeTime = restoredState.lastResumeTime;
+    let nextPhaseOriginal = 0;
       if (!restoredState.isPaused && !nextIsGetReady) {
         let phaseTotal = 0;
         if (restoredState.type === 'hiit') {
@@ -483,6 +498,7 @@ export function useCardioBackgroundPersistence() {
         if (phaseTotal > 0 && nextPhaseLeft >= 0) {
           const spentInCurrentPhase = Math.max(0, phaseTotal - nextPhaseLeft);
           alignedLastResumeTime = new Date(Date.now() - spentInCurrentPhase * 1000);
+      nextPhaseOriginal = phaseTotal;
         }
       }
 
@@ -508,6 +524,10 @@ export function useCardioBackgroundPersistence() {
         isRunPhase: nextIsRun,
         totalLaps: restoredState.totalLaps,
         phaseTimeLeft: nextPhaseLeft,
+  // Provide tracker internals for exact continuity (align with get-ready style)
+  phaseOriginalDuration: nextPhaseOriginal || (nextIsGetReady ? 10 : (restoredState.type === 'hiit' ? (nextIsWork ? Math.max(1, restoredState.workTime ?? 20) : Math.max(1, restoredState.restTime ?? 10)) : (restoredState.type === 'walk_run' ? (nextIsRun ? Math.max(1, restoredState.runTime ?? 30) : Math.max(1, restoredState.walkTime ?? 30)) : 0))),
+  phaseElapsedAccumulated: 0,
+  phaseLastResumeTime: alignedLastResumeTime,
       } as any);
       
       sessionIdRef.current = restoredState.sessionId;
@@ -517,6 +537,205 @@ export function useCardioBackgroundPersistence() {
       return true;
     } catch (error) {
       console.error('Failed to restore cardio session state:', error);
+      return false;
+    }
+  }, [session]);
+
+  // Catch up active cardio session when app returns to foreground
+  const catchUpActiveSession = useCallback(async () => {
+    try {
+      if (!session.isActive || session.isPaused || !session.cardioType) {
+        return false;
+      }
+
+      const now = Date.now();
+      // Calculate total elapsed since lastResumeTime (for overall elapsed)
+      const totalGap = session.lastResumeTime ? Math.max(0, Math.floor((now - session.lastResumeTime.getTime()) / 1000)) : 0;
+      const newElapsed = session.accumulatedTime + totalGap;
+
+      // Calculate phase gap using per-phase trackers
+      const phaseGap = session.phaseLastResumeTime ? Math.max(0, Math.floor((now - session.phaseLastResumeTime.getTime()) / 1000)) : 0;
+
+      // Working copies of state
+      let nextIsGetReady = session.isGetReady;
+      let nextGetReadyLeft = session.getReadyTimeLeft;
+      let nextPhaseLeft = session.phaseTimeLeft;
+      let nextPhaseOriginal = session.phaseOriginalDuration;
+      let nextPhaseElapsedAccum = session.phaseElapsedAccumulated;
+      let nextPhaseLastResume: Date | null = session.phaseLastResumeTime;
+      let nextIsWork = session.isWorkPhase;
+      let nextRound = session.currentRound;
+      let nextIsRun = session.isRunPhase;
+      let nextLap = session.currentLap;
+
+      const hiitWork = Math.max(1, session.workTime);
+      const hiitRest = Math.max(1, session.restTime);
+      const hiitRounds = Math.max(1, session.rounds);
+      const wrRun = Math.max(1, session.runTime);
+      const wrWalk = Math.max(1, session.walkTime);
+      const wrLaps = Math.max(1, session.laps);
+
+      let g = phaseGap;
+
+      // Handle Get-Ready catch up first
+      if (nextIsGetReady) {
+        const remaining = Math.max(0, nextGetReadyLeft);
+        if (g < remaining) {
+          nextGetReadyLeft = remaining - g;
+          g = 0;
+        } else {
+          // Finish get-ready and overflow into first phase
+          g -= remaining;
+          nextIsGetReady = false;
+          nextGetReadyLeft = 0;
+          if (session.cardioType === 'hiit') {
+            nextIsWork = true;
+            nextPhaseOriginal = hiitWork;
+          } else if (session.cardioType === 'walk_run') {
+            nextIsRun = true;
+            nextPhaseOriginal = wrRun;
+          } else {
+            nextPhaseOriginal = 0;
+          }
+          nextPhaseElapsedAccum = 0;
+          nextPhaseLastResume = new Date(now - g * 1000); // overflow represents time spent in first phase
+        }
+      }
+
+      const advanceHiit = (gap: number) => {
+        let left = nextPhaseOriginal - (nextPhaseElapsedAccum + gap);
+        // If we have negative left, consume phases in a loop
+        let overflow = Math.max(0, -left);
+        // Normalize left to a non-negative value for the current phase
+        left = Math.max(0, left);
+        while (overflow > 0) {
+          if (nextIsWork) {
+            // Move to rest
+            nextIsWork = false;
+            nextPhaseOriginal = hiitRest;
+            // Entering new phase with overflow already spent
+            if (overflow < nextPhaseOriginal) {
+              left = nextPhaseOriginal - overflow;
+              overflow = 0;
+            } else {
+              overflow -= nextPhaseOriginal;
+              left = 0;
+            }
+          } else {
+            // Finished a rest; increment round or end
+            if (nextRound >= hiitRounds) {
+              left = 0;
+              overflow = 0;
+              break;
+            }
+            nextRound += 1;
+            nextIsWork = true;
+            nextPhaseOriginal = hiitWork;
+            if (overflow < nextPhaseOriginal) {
+              left = nextPhaseOriginal - overflow;
+              overflow = 0;
+            } else {
+              overflow -= nextPhaseOriginal;
+              left = 0;
+            }
+          }
+        }
+        nextPhaseLeft = Math.max(0, Math.floor(left));
+        // Align last resume so that on next tick the math continues properly
+        const spent = Math.max(0, nextPhaseOriginal - nextPhaseLeft);
+        nextPhaseElapsedAccum = 0;
+        nextPhaseLastResume = new Date(Date.now() - spent * 1000);
+      };
+
+      const advanceWalkRun = (gap: number) => {
+        let left = nextPhaseOriginal - (nextPhaseElapsedAccum + gap);
+        let overflow = Math.max(0, -left);
+        left = Math.max(0, left);
+        while (overflow > 0) {
+          if (nextIsRun) {
+            // run -> walk
+            nextIsRun = false;
+            nextPhaseOriginal = wrWalk;
+            if (overflow < nextPhaseOriginal) {
+              left = nextPhaseOriginal - overflow;
+              overflow = 0;
+            } else {
+              overflow -= nextPhaseOriginal;
+              left = 0;
+            }
+          } else {
+            // walk -> next lap or end
+            if (nextLap >= wrLaps) {
+              left = 0;
+              overflow = 0;
+              break;
+            }
+            nextLap += 1;
+            nextIsRun = true;
+            nextPhaseOriginal = wrRun;
+            if (overflow < nextPhaseOriginal) {
+              left = nextPhaseOriginal - overflow;
+              overflow = 0;
+            } else {
+              overflow -= nextPhaseOriginal;
+              left = 0;
+            }
+          }
+        }
+        nextPhaseLeft = Math.max(0, Math.floor(left));
+        const spent = Math.max(0, nextPhaseOriginal - nextPhaseLeft);
+        nextPhaseElapsedAccum = 0;
+        nextPhaseLastResume = new Date(Date.now() - spent * 1000);
+      };
+
+      if (!nextIsGetReady && g > 0) {
+        if (session.cardioType === 'hiit') {
+          // Ensure we have a valid phaseOriginal
+          if (!nextPhaseOriginal || nextPhaseOriginal <= 0) {
+            nextPhaseOriginal = nextIsWork ? hiitWork : hiitRest;
+          }
+          advanceHiit(g);
+        } else if (session.cardioType === 'walk_run') {
+          if (!nextPhaseOriginal || nextPhaseOriginal <= 0) {
+            nextPhaseOriginal = nextIsRun ? wrRun : wrWalk;
+          }
+          advanceWalkRun(g);
+        }
+      }
+
+      const alignedLastResume = session.isPaused ? session.lastResumeTime : new Date(Date.now() - Math.max(0, (nextPhaseOriginal - nextPhaseLeft)) * 1000);
+
+      // Push updated state back into the context in one shot
+      session.restoreFromPersistence({
+        cardioType: session.cardioType,
+        sessionName: session.sessionName,
+        isPaused: session.isPaused,
+        elapsedTime: newElapsed,
+        accumulatedTime: session.accumulatedTime,
+        lastResumeTime: alignedLastResume,
+        isGetReady: nextIsGetReady,
+        getReadyTimeLeft: nextGetReadyLeft,
+        workTime: session.workTime,
+        restTime: session.restTime,
+        rounds: session.rounds,
+        currentRound: nextRound,
+        isWorkPhase: nextIsWork,
+        runTime: session.runTime,
+        walkTime: session.walkTime,
+        laps: session.laps,
+        currentLap: nextLap,
+        isRunPhase: nextIsRun,
+        totalLaps: session.totalLaps,
+        phaseTimeLeft: nextPhaseLeft,
+        // Provide tracker internals for exact continuity
+        phaseOriginalDuration: nextPhaseOriginal,
+        phaseElapsedAccumulated: nextPhaseElapsedAccum,
+        phaseLastResumeTime: nextPhaseLastResume,
+      } as any);
+
+      return true;
+    } catch (e) {
+      console.warn('Failed to catch up active cardio session:', e);
       return false;
     }
   }, [session]);
@@ -544,12 +763,15 @@ export function useCardioBackgroundPersistence() {
         // App coming to foreground - restore state if needed
         if (!session.isActive) {
           restoreSessionState();
+        } else {
+          // Catch up active session timers just like get-ready logic
+          catchUpActiveSession();
         }
       }
       
       appStateRef.current = nextAppState;
     },
-    [saveCurrentState, restoreSessionState, session.isActive]
+    [saveCurrentState, restoreSessionState, catchUpActiveSession, session.isActive]
   );
 
   // Set up app state listener

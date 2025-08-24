@@ -69,12 +69,22 @@ export default function QuickHiitScreen() {
   };
 
   const onSecondary = async () => {
-    if (cardio.state.mode === 'hiit' && cardio.state.phase !== 'idle') {
-      // Active -> Reset
-      await cardio.reset();
+    const isActive = cardio.state.mode === 'hiit' && cardio.state.phase !== 'idle';
+    if (isActive) {
+      // Active -> Reset (no save) with confirm
+      Alert.alert('Cancel cardio?', 'Are you sure you want to cancel this session?', [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes', style: 'destructive', onPress: async () => {
+            await cardio.reset();
+            router.push('/');
+          }
+        }
+      ]);
     } else {
       // Not started -> Cancel clears any stray session
       await cardio.cancel();
+      router.push('/');
     }
   };
 

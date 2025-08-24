@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Ima
 import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
+import { useCardioSession } from '../hooks/useCardioSession';
+import { Alert } from 'react-native';
 import theme from '../styles/theme';
 import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
@@ -48,6 +50,7 @@ export default function HomeScreen() {
   };
   const [programProgress, setProgramProgress] = useState<any>({});
   const { isWorkoutActive, currentExercises, startProgramWorkout, globalRestTimer } = useWorkoutSession();
+  const cardio = useCardioSession();
 
   useEffect(() => {
     loadAllProgramsWithProgress();
@@ -217,16 +220,55 @@ export default function HomeScreen() {
 
       {/* Action Buttons - moved to bottom */}
     <View style={styles.bottomActionSection}>
-  {isWorkoutActive && (currentExercises?.length ?? 0) > 0 ? (
-          <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
-            <Text style={styles.startButtonText}>CONTINUE LIFT</Text>
-          </TouchableOpacity>
-        ) : (
+      {(() => {
+        const cardioActive = !!cardio.state.sessionId && cardio.state.phase !== 'completed' && cardio.state.phase !== 'idle';
+        if (cardioActive) {
+          return (
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={() => {
+                Alert.alert(
+                  'Cardio in progress',
+                  'Continue your cardio session or cancel it?',
+                  [
+                    {
+                      text: 'Continue',
+                      onPress: () => {
+                        if (cardio.state.mode === 'hiit') router.push('/cardio/quick-hiit');
+                        else if (cardio.state.mode === 'walk_run') router.push('/cardio/walk-run');
+                      }
+                    },
+                    {
+                      text: 'Cancel',
+                      style: 'destructive',
+                      onPress: async () => {
+                        await cardio.reset();
+                        // After cancel, button should revert to Start Training
+                      }
+                    },
+                    { text: 'Close', style: 'cancel' }
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.startButtonText}>CONTINUE CARDIO</Text>
+            </TouchableOpacity>
+          );
+        }
+        if (isWorkoutActive && (currentExercises?.length ?? 0) > 0) {
+          return (
+            <TouchableOpacity style={styles.startButton} onPress={() => router.push('/new')}>
+              <Text style={styles.startButtonText}>CONTINUE LIFT</Text>
+            </TouchableOpacity>
+          );
+        }
+        return (
           <TouchableOpacity style={styles.startButton} onPress={() => setShowTrainingModal(true)}>
             <Text style={styles.startButtonText}>START TRAINING</Text>
           </TouchableOpacity>
-        )}
-      </View>
+        );
+      })()}
+    </View>
 
       {/* Bottom Navigation */}
       <BottomNav

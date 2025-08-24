@@ -559,7 +559,7 @@ export function useCardioSession() {
         if (schedule.length) setPhaseIndex(indexAt(schedule, Date.now()));
       }
       appStateRef.current = state;
-      if (nowActive) ensureTick(); else clearTick();
+      if (nowActive && !isPaused) ensureTick(); else clearTick();
     };
     const sub = AppState.addEventListener('change', onChange);
     return () => sub.remove();

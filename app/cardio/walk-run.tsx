@@ -64,10 +64,20 @@ export default function WalkRunScreen() {
   };
 
   const onSecondary = async () => {
-    if (cardio.state.mode === 'walk_run' && cardio.state.phase !== 'idle') {
-      await cardio.reset();
+    const isActive = cardio.state.mode === 'walk_run' && cardio.state.phase !== 'idle';
+    if (isActive) {
+      Alert.alert('Cancel cardio?', 'Are you sure you want to cancel this session?', [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes', style: 'destructive', onPress: async () => {
+            await cardio.reset();
+            router.push('/');
+          }
+        }
+      ]);
     } else {
       await cardio.cancel();
+      router.push('/');
     }
   };
 

@@ -125,13 +125,16 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
 
   // Accurate timestamp-based timer effect with validation
   useEffect(() => {
-    if (isWorkoutActive && !isPaused && lastResumeTime) {
-      // Use timestamp-based calculation for accuracy
-      timerRef.current = setInterval(() => {
+    // Determine the anchor for the active segment: prefer lastResumeTime, fall back to sessionStartTime
+    const activeAnchor = (!isPaused && isWorkoutActive) ? (lastResumeTime || sessionStartTime) : null;
+
+    if (isWorkoutActive && !isPaused && activeAnchor) {
+      // Immediate tick so UI updates instantly on resume/start
+      const tick = () => {
         const now = new Date();
-        const currentSegmentElapsed = Math.floor((now.getTime() - lastResumeTime.getTime()) / 1000);
+        const currentSegmentElapsed = Math.floor((now.getTime() - activeAnchor.getTime()) / 1000);
         const totalElapsed = accumulatedTime + currentSegmentElapsed;
-        
+
         // SAFETY CHECK: Prevent unreasonable timer values
         const maxReasonableWorkout = 12 * 60 * 60; // 12 hours max workout
         if (totalElapsed > maxReasonableWorkout) {
@@ -140,9 +143,15 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
           setLastResumeTime(null);
           return;
         }
-        
+
         setElapsedTime(totalElapsed);
-      }, 1000);
+      };
+
+      // Run one immediate tick
+      tick();
+
+      // Use timestamp-based calculation for accuracy
+      timerRef.current = setInterval(tick, 1000);
     } else {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -163,33 +172,35 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
   
   useEffect(() => {
     if (globalRestTimer?.isActive && globalRestTimer.startTime) {
-      globalRestTimerRef.current = setInterval(() => {
+      const tick = () => {
         const now = new Date();
         const elapsed = Math.floor((now.getTime() - globalRestTimer.startTime!.getTime()) / 1000);
         const remaining = Math.max(0, globalRestTimer.originalDuration - elapsed);
-        
+
         // Update time remaining
-        setGlobalRestTimer(prev => prev ? { 
-          ...prev, 
-          timeRemaining: remaining 
+        setGlobalRestTimer(prev => prev ? {
+          ...prev,
+          timeRemaining: remaining
         } : null);
-        
+
         // Timer finished - check for 0 or less
         if (remaining <= 0) {
-          clearInterval(globalRestTimerRef.current);
-          globalRestTimerRef.current = null;
-          
+          if (globalRestTimerRef.current) {
+            clearInterval(globalRestTimerRef.current);
+            globalRestTimerRef.current = null;
+          }
+
           // Update to show 00:00 first
-          setGlobalRestTimer(prev => prev ? { 
-            ...prev, 
-            timeRemaining: 0 
+          setGlobalRestTimer(prev => prev ? {
+            ...prev,
+            timeRemaining: 0
           } : null);
-          
+
           // Show 00:00 briefly, then clear timer and show completion popup
           setTimeout(() => {
             // Reset timer state - this will hide the timer display
             setGlobalRestTimer(null);
-            
+
             // CRITICAL: Immediately clear background storage data when timer completes
             setTimeout(async () => {
               try {
@@ -197,17 +208,17 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
                 const { db } = await import('../db/client');
                 const { active_session_timers } = await import('../db/schema');
                 const { eq } = await import('drizzle-orm');
-                
+
                 // Clear all active rest timers from background storage
                 const restTimers = await db
                   .select()
                   .from(active_session_timers)
                   .where(eq(active_session_timers.timer_type, 'rest'));
-                
+
                 for (const timer of restTimers) {
                   await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
                 }
-                
+
                 if (restTimers.length > 0) {
                   console.log('🧹 Cleared', restTimers.length, 'rest timers from background after completion');
                 }
@@ -215,7 +226,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
                 console.error('Failed to clear rest timer background data after completion:', error);
               }
             }, 100); // Small delay to ensure timer state is updated first
-            
+
             // Trigger completion callback after clearing the timer
             if (onRestTimerComplete) {
               console.log('🔔 Rest timer completed naturally at 00:00');
@@ -224,7 +235,12 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
             // We rely on the pre-scheduled notification; no fallback to avoid duplicates.
           }, 300); // Show 00:00 for 300ms before clearing
         }
-      }, 1000);
+      };
+
+      // Run one immediate tick for instant UI update
+      tick();
+
+      globalRestTimerRef.current = setInterval(tick, 1000);
     } else if (!globalRestTimer?.isActive) {
       // Clear interval when timer becomes inactive
       if (globalRestTimerRef.current) {

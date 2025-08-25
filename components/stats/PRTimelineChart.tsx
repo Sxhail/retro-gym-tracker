@@ -3,13 +3,12 @@ import { ScrollView, View } from 'react-native';
 import Svg, { Polyline, Circle, Line, Text as SvgText, G } from 'react-native-svg';
 import theme from '../../styles/theme';
 import ChartCard from './ChartCard';
-import DateRangeFilter from './DateRangeFilter';
-import ExercisePicker from './ExercisePicker';
 import { DateRangePreset, getPRBaseRows, buildPRSeries } from '../../services/analytics';
 import Tooltip from './svg/Tooltip';
 
 export default function PRTimelineChart({ initialRange = 'all', selectedExercise }: { initialRange?: DateRangePreset; selectedExercise?: string }) {
-  const [range, setRange] = useState<DateRangePreset>(initialRange);
+  // Force all-time range; remove in-chart options
+  const range: DateRangePreset = 'all';
   const [exercise, setExercise] = useState<string>(selectedExercise || '');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<{ date: Date; value: number; isNewPR: boolean }[]>([]);
@@ -24,7 +23,7 @@ export default function PRTimelineChart({ initialRange = 'all', selectedExercise
       .then(series => { if (mounted) setData(series); })
       .finally(() => mounted && setLoading(false));
     return () => { mounted = false; };
-  }, [exercise, range]);
+  }, [exercise]);
 
   // sync when prop changes
   React.useEffect(() => {
@@ -48,8 +47,7 @@ export default function PRTimelineChart({ initialRange = 'all', selectedExercise
       empty={!exercise || data.length===0}
       emptyMessage={!exercise? 'Pick an exercise' : 'No PRs yet'}
     >
-      <DateRangeFilter value={range} onChange={setRange} />
-      {!selectedExercise && <ExercisePicker value={exercise} onChange={setExercise} />}
+  {/* Range and exercise options removed; always all-time; exercise selected globally */}
       {exercise && data.length>0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <Svg width={width} height={height}>

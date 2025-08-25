@@ -23,12 +23,15 @@ export default function ChartCard({ title, description, isLoading, empty, emptyM
       </View>
       {isLoading ? (
         <ActivityIndicator color={theme.colors.neon} />
-      ) : empty ? (
-        <View style={styles.emptyBox}>
-          <Text style={styles.emptyText}>{emptyMessage || 'No data in this period'}</Text>
-        </View>
       ) : (
-        children
+        <>
+          {children}
+          {empty && (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyText}>{emptyMessage || 'No data in this period'}</Text>
+            </View>
+          )}
+        </>
       )}
 
       {!!description && (

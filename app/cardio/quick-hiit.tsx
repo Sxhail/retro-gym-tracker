@@ -23,7 +23,6 @@ export default function QuickHiitScreen() {
   const [rounds, setRounds] = useState(8);
 
   const isActiveHiit = cardio.state.mode === 'hiit' && cardio.state.phase !== 'idle' && cardio.state.phase !== 'completed';
-  const isPaused = cardio.state.isPaused;
 
   const totalPlannedMs = useMemo(() => {
     // If active, use derived; else compute from controls
@@ -56,50 +55,45 @@ export default function QuickHiitScreen() {
     return Math.max(0, Math.min(1, 1 - remaining / total));
   }, [cardio.state.phaseStartedAt, cardio.state.phaseWillEndAt, cardio.state.remainingMs]);
 
-  const startOrResume = async () => {
-    if (cardio.state.mode === 'hiit' && isActiveHiit && !isPaused) {
-      await cardio.pause();
+  const onPrimary = async () => {
+    // Start → Reset behavior
+    if (isActiveHiit) {
+      // Reset timers: clear session and return to setup (button becomes START again)
+      await cardio.reset();
       return;
     }
-    if (cardio.state.mode === 'hiit' && isPaused) {
-      await cardio.resume();
-      return;
-    }
+    // No active session: start fresh
     await cardio.startHiit({ workSec, restSec, rounds, includeTrailingRest: false });
   };
 
   const onSecondary = async () => {
-    const isActive = cardio.state.mode === 'hiit' && cardio.state.phase !== 'idle';
-    if (isActive) {
-      // Active -> Confirm cancel (not reset) and navigate home
-      Alert.alert('Cancel cardio?', 'Are you sure you want to cancel this session?', [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes', style: 'destructive', onPress: async () => {
-            await cardio.cancel();
-            router.push('/');
-          }
-        }
-      ]);
-    } else {
-      // Not started -> confirm cancel then navigate home
-      Alert.alert('Cancel cardio?', 'Are you sure you want to cancel?', [
-        { text: 'No', style: 'cancel' },
-        { text: 'Yes', style: 'destructive', onPress: async () => { await cardio.cancel(); router.push('/'); } }
-      ]);
-    }
+    // Cancel: remove any active cardio and stop notifications, then go home
+    await cardio.cancel();
+    router.push('/');
   };
 
   const finish = async () => {
-    if (cardio.hasActiveSession) await cardio.finish();
-    Alert.alert(
-      'Cardio Saved!',
-      'Your cardio session has been saved successfully.',
-      [
-        { text: 'View History', onPress: () => router.push('/history') },
-        { text: 'Start New Cardio', onPress: () => router.push('/cardio') },
-      ]
-    );
+    if (!cardio.hasActiveSession) return;
+    const isCompleted = cardio.state.phase === 'completed';
+    const doFinish = async () => {
+      await cardio.finish();
+      Alert.alert(
+        'Cardio Saved!',
+        'Your cardio session has been saved successfully.',
+        [
+          { text: 'View History', onPress: () => router.push('/history') },
+          { text: 'Start New Cardio', onPress: () => router.push('/cardio') },
+        ]
+      );
+    };
+    if (!isCompleted) {
+      Alert.alert('Finish early?', 'Are you sure you want to finish before completing all rounds?', [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: doFinish }
+      ]);
+    } else {
+      await doFinish();
+    }
   };
 
   const totalLabel = cardio.state.mode === 'hiit'
@@ -110,7 +104,7 @@ export default function QuickHiitScreen() {
     ? formatMs(cardio.state.remainingMs)
     : '00:00';
 
-  const adjustDisabled = isActiveHiit && !isPaused;
+  const adjustDisabled = isActiveHiit; // Disable adjustments while active
 
   const adj = (setter: (n: number) => void, val: number, delta: number, min: number, max: number) => {
     if (adjustDisabled) return;
@@ -181,14 +175,14 @@ export default function QuickHiitScreen() {
       </View>
 
       <View style={styles.controlsRow}>
-        <TouchableOpacity style={styles.controlButton} onPress={startOrResume}>
+    <TouchableOpacity style={styles.controlButton} onPress={onPrimary}>
           <Text style={styles.controlButtonText}>
-            {isActiveHiit && !isPaused ? 'PAUSE' : isPaused ? 'RESUME' : 'START'}
+      {isActiveHiit ? 'RESET' : 'START'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlButton} onPress={onSecondary}>
           <Text style={styles.controlButtonText}>
-            {isActiveHiit ? 'RESET' : 'CANCEL'}
+      CANCEL
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.controlButton, styles.finishButton]} onPress={finish}>

@@ -55,7 +55,7 @@ export default function CardioScreen() {
         [
           { text: 'Continue', onPress: goToCurrent },
           {
-            text: 'Cancel',
+            text: 'Cancel Session',
             style: 'destructive',
             onPress: () => {
               Alert.alert('Cancel cardio?', 'Are you sure you want to cancel the current session?', [
@@ -64,13 +64,14 @@ export default function CardioScreen() {
                   text: 'Yes',
                   style: 'destructive',
                   onPress: async () => {
-                    await cardio.cancel();
+                    await cardio.reset();
                     router.push('/');
                   }
                 }
               ]);
             }
-          }
+          },
+          { text: 'Close', style: 'cancel' }
         ]
       );
       return;

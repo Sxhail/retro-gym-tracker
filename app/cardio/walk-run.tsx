@@ -19,7 +19,6 @@ export default function WalkRunScreen() {
   const [laps, setLaps] = useState(4);
 
   const isActive = cardio.state.mode === 'walk_run' && cardio.state.phase !== 'idle' && cardio.state.phase !== 'completed';
-  const isPaused = cardio.state.isPaused;
 
   const totalPlannedMs = useMemo(() => {
     if (cardio.state.mode === 'walk_run' && cardio.state.totalPlannedMs > 0) return cardio.state.totalPlannedMs;
@@ -51,48 +50,43 @@ export default function WalkRunScreen() {
     return Math.max(0, Math.min(1, 1 - remaining / total));
   }, [cardio.state.phaseStartedAt, cardio.state.phaseWillEndAt, cardio.state.remainingMs]);
 
-  const startOrResume = async () => {
-    if (cardio.state.mode === 'walk_run' && isActive && !isPaused) {
-      await cardio.pause();
-      return;
-    }
-    if (cardio.state.mode === 'walk_run' && isPaused) {
-      await cardio.resume();
+  const onPrimary = async () => {
+    // Start → Reset behavior
+    if (isActive) {
+      await cardio.reset();
       return;
     }
     await cardio.startWalkRun({ runSec, walkSec, laps, includeTrailingWalk: false });
   };
 
   const onSecondary = async () => {
-    const isActive = cardio.state.mode === 'walk_run' && cardio.state.phase !== 'idle';
-    if (isActive) {
-      Alert.alert('Cancel cardio?', 'Are you sure you want to cancel this session?', [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes', style: 'destructive', onPress: async () => {
-            await cardio.cancel();
-            router.push('/');
-          }
-        }
-      ]);
-    } else {
-      Alert.alert('Cancel cardio?', 'Are you sure you want to cancel?', [
-        { text: 'No', style: 'cancel' },
-        { text: 'Yes', style: 'destructive', onPress: async () => { await cardio.cancel(); router.push('/'); } }
-      ]);
-    }
+    // Cancel: remove any active cardio and stop notifications, then go home
+    await cardio.cancel();
+    router.push('/');
   };
 
   const finish = async () => {
-    if (cardio.hasActiveSession) await cardio.finish();
-    Alert.alert(
-      'Cardio Saved!',
-      'Your cardio session has been saved successfully.',
-      [
-        { text: 'View History', onPress: () => router.push('/history') },
-        { text: 'Start New Cardio', onPress: () => router.push('/cardio') },
-      ]
-    );
+    if (!cardio.hasActiveSession) return;
+    const isCompleted = cardio.state.phase === 'completed';
+    const doFinish = async () => {
+      await cardio.finish();
+      Alert.alert(
+        'Cardio Saved!',
+        'Your cardio session has been saved successfully.',
+        [
+          { text: 'View History', onPress: () => router.push('/history') },
+          { text: 'Start New Cardio', onPress: () => router.push('/cardio') },
+        ]
+      );
+    };
+    if (!isCompleted) {
+      Alert.alert('Finish early?', 'Are you sure you want to finish before completing all laps?', [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: doFinish }
+      ]);
+    } else {
+      await doFinish();
+    }
   };
 
   const totalLabel = cardio.state.mode === 'walk_run'
@@ -103,7 +97,7 @@ export default function WalkRunScreen() {
     ? formatMs(cardio.state.remainingMs)
     : '00:00';
 
-  const adjustDisabled = isActive && !isPaused;
+  const adjustDisabled = isActive; // Disable adjustments while active
   const adj = (setter: (n: number) => void, val: number, delta: number, min: number, max: number) => {
     if (adjustDisabled) return;
     const next = Math.max(min, Math.min(max, val + delta));
@@ -173,14 +167,14 @@ export default function WalkRunScreen() {
       </View>
 
       <View style={styles.controlsRow}>
-        <TouchableOpacity style={styles.controlButton} onPress={startOrResume}>
+    <TouchableOpacity style={styles.controlButton} onPress={onPrimary}>
           <Text style={styles.controlButtonText}>
-            {isActive && !isPaused ? 'PAUSE' : isPaused ? 'RESUME' : 'START'}
+      {isActive ? 'RESET' : 'START'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlButton} onPress={onSecondary}>
           <Text style={styles.controlButtonText}>
-            {isActive ? 'RESET' : 'CANCEL'}
+      CANCEL
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.controlButton, styles.finishButton]} onPress={finish}>

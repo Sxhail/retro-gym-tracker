@@ -1,9 +1,9 @@
 import * as Notifications from 'expo-notifications';
-import { Platform, AppState, AppStateStatus, Linking } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 
 // Contract
-// - initialize(): request iOS permissions and set handler
-// - scheduleAbsolute(): schedule notification for a specific Date
+// - initialize(): request permissions and set handler
+// - scheduleAbsolute(sessionId, when, title, body): schedule notification for a specific Date
 // - cancelAllForSession(sessionId): cancel pending notifications for a session
 // - cancelAllPending(): safety clear
 
@@ -11,47 +11,81 @@ type SessionId = string;
 
 const sessionMap = new Map<SessionId, string[]>();
 let isAppForeground = AppState.currentState === 'active';
+let initialized = false;
+
+// Register a notification handler ASAP at module load so foreground presentation is correct
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: !isAppForeground,
+    shouldPlaySound: !isAppForeground,
+    shouldSetBadge: false,
+  }),
+});
+
+// Track app foreground/background state for handler
+AppState.addEventListener('change', (state: AppStateStatus) => {
+  isAppForeground = state === 'active';
+});
 
 export const NotificationService = {
   async initialize() {
-    if (Platform.OS !== 'ios') return; // iOS-only per requirement
+  if (initialized) return;
 
-    // Show alerts and play sounds for local notifications
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        // Suppress alert when app is foregrounded; only show outside the app
-        shouldShowAlert: !isAppForeground,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
-    });
-
-    // Track app foreground/background state for handler
-    const appStateListener = (state: AppStateStatus) => {
-      isAppForeground = state === 'active';
-    };
-    AppState.addEventListener('change', appStateListener);
-
-    // Permission request (idempotent)
-    const settings = await Notifications.getPermissionsAsync();
-    let status = settings.status;
-    if (status !== 'granted') {
+    // Android: ensure a high-importance channel with sound
+  if (Platform.OS === 'android') {
       try {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'Default',
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#00FFC2',
+          enableVibrate: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        });
+      } catch (e) {
+        console.warn('Failed to configure Android notification channel', e);
+      }
+    }
+
+    // Permission request (idempotent) – iOS and Android 13+
+    try {
+      const settings = await Notifications.getPermissionsAsync();
+      let status = settings.status;
+      if (status !== 'granted') {
         const req = await Notifications.requestPermissionsAsync({
           ios: { allowAlert: true, allowSound: true, allowBadge: false },
         });
         status = req.status;
-      } catch (e) {
-        console.warn('Failed requesting iOS notification permissions', e);
       }
+      if (status !== 'granted') {
+        console.warn('[Notifications] Permission not granted. Local notifications may be blocked.');
+      }
+    } catch (e) {
+      console.warn('Failed requesting notification permissions', e);
     }
-    if (status !== 'granted') {
-      console.warn('[Notifications] iOS permission not granted. Alert/Sound delivery will be blocked.');
-    }
+
+    initialized = true;
   },
 
   async scheduleAbsolute(sessionId: SessionId, when: Date, title: string, body: string) {
-    if (Platform.OS !== 'ios') return null;
+    // Ensure initialization (channel/permissions) before scheduling
+    try {
+      if (!initialized) {
+        await NotificationService.initialize();
+      } else if (Platform.OS === 'android') {
+        // Re-assert channel settings defensively (idempotent)
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'Default',
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#00FFC2',
+          enableVibrate: true,
+          sound: 'default',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        });
+      }
+    } catch {}
     // Ensure permission at schedule time as well
     try {
       const perm = await Notifications.getPermissionsAsync();
@@ -67,49 +101,58 @@ export const NotificationService = {
     } catch (e) {
       console.warn('[Notifications] Permission check/request failed', e);
     }
+
     // Clamp past times to near-future to ensure delivery
     const now = Date.now();
     const fireAt = when.getTime() <= now ? new Date(now + 500) : when;
-    const deltaMs = Math.max(1000, fireAt.getTime() - Date.now());
-    const seconds = Math.ceil(deltaMs / 1000);
-    // Prefer time-interval trigger on iOS for reliability; OS handles delivery when app is killed
-    const payload: Notifications.NotificationRequestInput = {
+
+    // Use date-based trigger for precise delivery even if app is killed
+  const payload: Notifications.NotificationRequestInput = {
       content: {
         title,
         body,
         sound: true,
-        ...( { interruptionLevel: 'timeSensitive' } as any ),
+    data: { sessionId, fireAt: fireAt.toISOString() },
+        ...(Platform.OS === 'android'
+          ? { channelId: 'default', priority: Notifications.AndroidNotificationPriority.MAX }
+          : {}),
+        ...(Platform.OS === 'ios' ? ({ interruptionLevel: 'timeSensitive' } as any) : {}),
       },
-  trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, repeats: false },
+      // The simple date trigger input is the most reliable across OS versions
+      trigger: { date: fireAt } as any,
     };
+
     const id = await Notifications.scheduleNotificationAsync(payload);
 
     const list = sessionMap.get(sessionId) ?? [];
     list.push(id);
     sessionMap.set(sessionId, list);
+
     // Debug: log scheduled notifications queue (helps diagnose on device)
     try {
       const queued = await Notifications.getAllScheduledNotificationsAsync();
       const count = queued?.length ?? 0;
-      const next = queued?.[queued.length - 1];
+      const last = queued?.[queued.length - 1];
       console.log(
         `[Notifications] Scheduled '${title}' for ${fireAt.toISOString()} (id=${id}). Total queued: ${count}.` +
-          (next ? ` Last item fires at ${(next.trigger as any)?.date ?? (next.trigger as any)?.timestamp}` : '')
+          (last ? ` Last item fires at ${(last.trigger as any)?.date ?? (last.trigger as any)?.timestamp}` : '')
       );
     } catch {}
+
     return id;
   },
 
   async cancelAllForSession(sessionId: SessionId) {
     const ids = sessionMap.get(sessionId) ?? [];
     for (const id of ids) {
-      try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+      try {
+        await Notifications.cancelScheduledNotificationAsync(id);
+      } catch {}
     }
     sessionMap.delete(sessionId);
   },
 
   async cancelAllPending() {
-    if (Platform.OS !== 'ios') return;
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
       sessionMap.clear();

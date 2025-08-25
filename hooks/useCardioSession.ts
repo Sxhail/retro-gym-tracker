@@ -253,11 +253,13 @@ export function useCardioSession() {
   const now = Date.now();
   if (now - lastStartRef.current < 500) return; // debounce 0.5s
   lastStartRef.current = now;
-    // Single active session guard: if a session exists, replace it
+    // Single active session guard: remove any stale/previous sessions to avoid duplicate schedules
     const existing = await svc.restoreActiveSession();
     if (existing?.sessionId) {
       await svc.clearActiveSession(existing.sessionId);
     }
+    // Clear any other stale rows defensively
+    await svc.clearStaleSessions();
     const id = generateSessionId();
   const startMs = Date.now();
     const sched = buildHiitSchedule(startMs, p);
@@ -293,11 +295,13 @@ export function useCardioSession() {
   const now = Date.now();
   if (now - lastStartRef.current < 500) return; // debounce 0.5s
   lastStartRef.current = now;
-    // Single active session guard: if a session exists, replace it
+    // Single active session guard: remove any stale/previous sessions to avoid duplicate schedules
     const existing = await svc.restoreActiveSession();
     if (existing?.sessionId) {
       await svc.clearActiveSession(existing.sessionId);
     }
+    // Clear any other stale rows defensively
+    await svc.clearStaleSessions();
     const id = generateSessionId();
     const startMs = Date.now();
     const sched = buildWalkRunSchedule(startMs, p);

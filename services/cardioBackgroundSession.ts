@@ -95,9 +95,15 @@ class CardioBackgroundSessionService {
 
   // Load the single active cardio session (if any)
   async restoreActiveSession(): Promise<CardioSnapshot | null> {
-    const rows = await db.select().from(active_cardio_sessions).limit(1);
+    // Fetch all and pick the most recently updated to avoid reviving stale rows
+    const rows = (await db.select().from(active_cardio_sessions)) as ActiveCardioSession[];
     if (!rows.length) return null;
-    const r = rows[0] as ActiveCardioSession;
+    const latest = rows.reduce((acc, cur) => {
+      const a = new Date((acc as any).last_updated || acc.started_at).getTime();
+      const b = new Date((cur as any).last_updated || cur.started_at).getTime();
+      return b > a ? cur : acc;
+    });
+    const r = latest as ActiveCardioSession;
     return {
       sessionId: r.session_id,
       mode: (r.mode as CardioMode),
@@ -112,6 +118,25 @@ class CardioBackgroundSessionService {
       schedule: JSON.parse(r.schedule_json) as ScheduleEntry[],
       isCompleted: r.is_completed === 1,
     };
+  }
+
+  // List all active cardio sessions (may include stale rows if app crashed earlier)
+  async listActiveSessions(): Promise<CardioSnapshot[]> {
+    const rows = (await db.select().from(active_cardio_sessions)) as ActiveCardioSession[];
+    return rows.map((r) => ({
+      sessionId: r.session_id,
+      mode: (r.mode as CardioMode),
+      params: JSON.parse(r.params_json) as CardioParams,
+      startedAt: r.started_at,
+      phaseIndex: r.phase_index,
+      cycleIndex: r.cycle_index,
+      phaseStartedAt: r.phase_started_at,
+      phaseWillEndAt: r.phase_will_end_at,
+      pausedAt: (r.paused_at as string | null) ?? null,
+      accumulatedPauseMs: r.accumulated_pause_ms,
+      schedule: JSON.parse(r.schedule_json) as ScheduleEntry[],
+      isCompleted: r.is_completed === 1,
+    }));
   }
 
   // Persist notification IDs for a session
@@ -144,6 +169,17 @@ class CardioBackgroundSessionService {
         await NotificationService.cancelAllForSession(sessionId);
       } catch {}
 
+      // Defensive: scan all scheduled notifications and cancel those tagged with this sessionId
+      try {
+        const queued = await Notifications.getAllScheduledNotificationsAsync();
+        for (const q of queued) {
+          const sid = (q.content?.data as any)?.sessionId;
+          if (sid === sessionId && q.identifier) {
+            try { await Notifications.cancelScheduledNotificationAsync(q.identifier); } catch {}
+          }
+        }
+      } catch {}
+
       // Remove records
       await db
         .delete(active_cardio_notifications)
@@ -158,35 +194,73 @@ class CardioBackgroundSessionService {
     if (this.schedulingLocks.has(sessionId)) return; // drop concurrent calls
     this.schedulingLocks.add(sessionId);
     try {
-      // Clear any previously queued notifications atomically for this session
-      await this.cancelAllNotifications(sessionId);
-
       const now = Date.now();
-      // Exclude the synthetic 'completed' marker from iteration; we will handle completion explicitly
-      const realPhases = schedule.filter((e) => e.phase !== 'completed');
-      for (let i = 0; i < realPhases.length; i++) {
-        const entry = realPhases[i];
-        const fire = new Date(entry.endAt);
-        if (fire.getTime() <= now) continue;
+      const KEEP_GRACE_MS = 500; // don't cancel imminently-firing notifications
 
-        // Determine if this is the last real phase
-        const isLast = i === realPhases.length - 1;
+      // Desired notifications (exclude synthetic 'completed')
+      const realPhases = schedule.filter((e) => e.phase !== 'completed');
+      const desired = realPhases
+        .map((e, i) => ({ idx: i, fireAt: new Date(e.endAt).getTime(), entry: e }))
+        .filter((d) => d.fireAt > now - 250); // keep slightly past-due to avoid double scheduling during race
+      const desiredIsoSet = new Set(desired.map((d) => new Date(d.fireAt).toISOString()));
+
+      // Existing persisted notifications for session
+      const existingRows = (await db
+        .select()
+        .from(active_cardio_notifications)
+        .where(eq(active_cardio_notifications.session_id, sessionId))) as ActiveCardioNotification[];
+      const existingByIso = new Map(existingRows.map((r) => [r.fire_at, r.notification_id] as const));
+
+      // Also check OS queue for this session to avoid re-adding duplicates not in DB
+      let queuedTimes = new Set<string>();
+      try {
+        const queued = await Notifications.getAllScheduledNotificationsAsync();
+        for (const q of queued) {
+          const sid = (q.content?.data as any)?.sessionId;
+          const t = (q.trigger as any)?.date ?? (q.trigger as any)?.timestamp;
+          if (sid === sessionId && t) {
+            const iso = new Date(typeof t === 'number' ? t : t).toISOString();
+            queuedTimes.add(iso);
+          }
+        }
+      } catch {}
+
+      // Cancel obsolete: existing rows not in desired set and far enough in future
+      for (const row of existingRows) {
+        const fireTime = new Date(row.fire_at).getTime();
+        const shouldKeep = desiredIsoSet.has(row.fire_at);
+        if (!shouldKeep && fireTime > now + KEEP_GRACE_MS) {
+          try { await Notifications.cancelScheduledNotificationAsync(row.notification_id); } catch {}
+          try {
+            await db
+              .delete(active_cardio_notifications)
+              .where(eq(active_cardio_notifications.notification_id, row.notification_id as any));
+          } catch {}
+        }
+      }
+
+      // Schedule missing desired times
+      for (const d of desired) {
+        const iso = new Date(d.fireAt).toISOString();
+        if (existingByIso.has(iso)) continue; // already persisted
+        if (queuedTimes.has(iso)) continue; // already queued by OS (orphan without DB row)
+
+        const isLast = d.idx === realPhases.length - 1;
         let title: string;
         let body: string;
         if (isLast) {
           title = 'Workout complete';
           body = 'Great job!';
         } else {
-          const nextLabel = this.getNextPhaseLabel(entry.phase);
+          const nextLabel = this.getNextPhaseLabel(d.entry.phase);
           title = nextLabel.title;
-          body = nextLabel.body(entry);
+          body = nextLabel.body(d.entry);
         }
 
-        const id = await NotificationService.scheduleAbsolute(sessionId, fire, title, body);
+        const id = await NotificationService.scheduleAbsolute(sessionId, new Date(d.fireAt), title, body);
         if (id) {
-          await this.saveNotificationId(sessionId, id, fire.toISOString());
+          await this.saveNotificationId(sessionId, id, iso);
         }
-        // Note: Removed 3-2-1 pre-cues to ensure only one notification per phase
       }
     } finally {
       this.schedulingLocks.delete(sessionId);
@@ -216,6 +290,21 @@ class CardioBackgroundSessionService {
     await db
       .delete(active_cardio_sessions)
       .where(eq(active_cardio_sessions.session_id, sessionId));
+  }
+
+  // Clear any stale sessions except an optional one to keep
+  async clearStaleSessions(keepSessionId?: string): Promise<void> {
+    try {
+      const rows = (await db.select().from(active_cardio_sessions)) as ActiveCardioSession[];
+      for (const r of rows) {
+        if (keepSessionId && r.session_id === keepSessionId) continue;
+        try {
+          await this.clearActiveSession(r.session_id);
+        } catch {}
+      }
+    } catch (e) {
+      console.warn('Failed to clear stale cardio sessions', e);
+    }
   }
 
   // Persist a completed/ended cardio session into history table

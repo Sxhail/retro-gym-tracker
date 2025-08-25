@@ -67,9 +67,19 @@ export default function QuickHiitScreen() {
   };
 
   const onSecondary = async () => {
-    // Cancel: remove any active cardio and stop notifications, then go home
-    await cardio.cancel();
-    router.push('/');
+    // Confirm cancel before ending the session
+    Alert.alert(
+      'Cancel cardio?',
+      'Are you sure you want to cancel the current session?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: async () => { await cardio.cancel(); router.push('/'); }
+        }
+      ]
+    );
   };
 
   const finish = async () => {

@@ -29,7 +29,12 @@ export default function WorkoutFrequencyChart({ initialRange = '30d', showRollin
   const avg = showRollingAvg ? rollingAverage(data, 4) : [];
 
   return (
-    <ChartCard title="Training Frequency" isLoading={loading} empty={data.length===0}>
+    <ChartCard
+      title="Training Frequency"
+      description="Number of workouts completed each week. The line shows a 4‑week rolling average."
+      isLoading={loading}
+      empty={data.length===0}
+    >
       <DateRangeFilter value={range} onChange={setRange} />
       {data.length>0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -57,6 +62,15 @@ export default function WorkoutFrequencyChart({ initialRange = '30d', showRollin
                     rx={3}
                     onPress={() => setTipIndex(tipIndex===i? null : i)}
                   />
+                  {/* Invisible hitbox to improve tapping */}
+                  <Rect
+                    x={x - 6}
+                    y={Math.min(y, yScale(maxY)) - 6}
+                    width={barW + 12}
+                    height={Math.abs(yScale(0) - Math.min(y, yScale(maxY))) + 12}
+                    fill="transparent"
+                    onPress={() => setTipIndex(tipIndex===i? null : i)}
+                  />
                   {tipIndex===i && (
                     <Tooltip
                       x={x + barW/2}
@@ -79,7 +93,7 @@ export default function WorkoutFrequencyChart({ initialRange = '30d', showRollin
           </Svg>
         </ScrollView>
       )}
-    </ChartCard>
+  </ChartCard>
   );
 }
 

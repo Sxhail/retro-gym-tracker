@@ -204,6 +204,10 @@ export default function ProgressOverview() {
         </View>
       ) : (
         <ScrollView style={styles.list}>
+          {/* Weight Progression */}
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2, marginBottom: 6 }}>Weight Progression</Text>
+          </View>
           {charts.filter(c => c.title === selectedExercise).map((c, i) => (
             <ProgressChart key={`pc-${i}`} title={c.title} maxGain={c.maxGain} percentGain={c.percentGain} sessions={c.sessions} data={c.data} labels={c.labels} />
           ))}
@@ -211,8 +215,8 @@ export default function ProgressOverview() {
           {/* New Stats Charts */}
           <VolumeOverTimeChart initialRange={'30d'} />
           <WorkoutFrequencyChart initialRange={'30d'} showRollingAvg />
-          <PRTimelineChart initialRange={'all'} />
-          <Estimated1RMChart initialRange={'all'} />
+          <PRTimelineChart initialRange={'all'} selectedExercise={selectedExercise} />
+          <Estimated1RMChart initialRange={'all'} selectedExercise={selectedExercise} />
         </ScrollView>
       )}
     </SafeAreaView>

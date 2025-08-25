@@ -8,9 +8,9 @@ import ExercisePicker from './ExercisePicker';
 import { DateRangePreset, getEstimated1RMBaseRows, buildEstimated1RMSeries } from '../../services/analytics';
 import Tooltip from './svg/Tooltip';
 
-export default function Estimated1RMChart({ initialRange = 'all' }: { initialRange?: DateRangePreset }) {
+export default function Estimated1RMChart({ initialRange = 'all', selectedExercise }: { initialRange?: DateRangePreset; selectedExercise?: string }) {
   const [range, setRange] = useState<DateRangePreset>(initialRange);
-  const [exercise, setExercise] = useState<string>('');
+  const [exercise, setExercise] = useState<string>(selectedExercise || '');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<{ date: Date; value: number; isPeak: boolean }[]>([]);
   const [tipIndex, setTipIndex] = useState<number | null>(null);
@@ -26,6 +26,11 @@ export default function Estimated1RMChart({ initialRange = 'all' }: { initialRan
     return () => { mounted = false; };
   }, [exercise, range]);
 
+  // sync when prop changes
+  React.useEffect(() => {
+    if (selectedExercise) setExercise(selectedExercise);
+  }, [selectedExercise]);
+
   const width = Math.max(40 + data.length*(12+6) + 10, 360);
   const height = 220;
   const maxY = Math.max(10, Math.max(...data.map(d=>d.value), 0));
@@ -33,9 +38,15 @@ export default function Estimated1RMChart({ initialRange = 'all' }: { initialRan
   const ticksY = niceTicks(0, maxY, 4);
 
   return (
-    <ChartCard title="Estimated 1RM (Epley)" isLoading={loading} empty={!exercise || data.length===0} emptyMessage={!exercise? 'Pick an exercise' : 'No data'}>
+    <ChartCard
+      title="Estimated 1RM (Epley)"
+      description="Tracks your estimated 1-rep max over time for the selected exercise using the Epley formula."
+      isLoading={loading}
+      empty={!exercise || data.length===0}
+      emptyMessage={!exercise? 'Pick an exercise' : 'No data'}
+    >
       <DateRangeFilter value={range} onChange={setRange} />
-      <ExercisePicker value={exercise} onChange={setExercise} />
+      {!selectedExercise && <ExercisePicker value={exercise} onChange={setExercise} />}
       {exercise && data.length>0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <Svg width={width} height={height}>

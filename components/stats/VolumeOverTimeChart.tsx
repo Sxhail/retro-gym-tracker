@@ -29,7 +29,12 @@ export default function VolumeOverTimeChart({ initialRange = '30d' }: Props) {
   const { width, height, xScale, yScale, ticksY, maxY } = useChartGeometry(data);
 
   return (
-    <ChartCard title="Total Training Volume" isLoading={loading} empty={data.length===0}>
+    <ChartCard
+      title="Total Training Volume"
+      description="Total lifted volume per session or per week (sum of weight x reps). Use the toggle to switch grouping."
+      isLoading={loading}
+      empty={data.length===0}
+    >
       <DateRangeFilter value={range} onChange={setRange} />
       <View style={styles.toggleRow}>
         <TouchableOpacity onPress={() => setGroupBy('session')}><Text style={[styles.toggle, groupBy==='session'&&styles.toggleActive]}>Per Session</Text></TouchableOpacity>
@@ -79,7 +84,7 @@ export default function VolumeOverTimeChart({ initialRange = '30d' }: Props) {
           </Svg>
         </ScrollView>
       )}
-    </ChartCard>
+  </ChartCard>
   );
 }
 

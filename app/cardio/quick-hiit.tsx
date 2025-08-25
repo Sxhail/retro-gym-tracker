@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
@@ -37,6 +37,19 @@ export default function QuickHiitScreen() {
     }
     return total;
   }, [cardio.state.mode, cardio.state.totalPlannedMs, workSec, restSec, rounds]);
+
+  // Sync controls from active session params when applicable
+  useEffect(() => {
+    if (cardio.state.mode !== 'hiit') return;
+    const p = cardio.state.params as any;
+    if (!p) return;
+    // Only update if values differ to avoid unnecessary renders
+    if (typeof p.workSec === 'number' && p.workSec !== workSec) setWorkSec(p.workSec);
+    if (typeof p.restSec === 'number' && p.restSec !== restSec) setRestSec(p.restSec);
+    if (typeof p.rounds === 'number' && p.rounds !== rounds) setRounds(p.rounds);
+  // Intentionally omit setters from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardio.state.mode, cardio.state.params]);
 
   const phaseLabel = useMemo(() => {
     if (cardio.state.mode !== 'hiit' || cardio.state.phase === 'idle') return 'SETUP';

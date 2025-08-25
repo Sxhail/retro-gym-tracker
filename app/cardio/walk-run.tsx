@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../../styles/theme';
@@ -32,6 +32,17 @@ export default function WalkRunScreen() {
     }
     return total;
   }, [cardio.state.mode, cardio.state.totalPlannedMs, runSec, walkSec, laps]);
+
+  // Sync controls from active session params when applicable
+  useEffect(() => {
+    if (cardio.state.mode !== 'walk_run') return;
+    const p = cardio.state.params as any;
+    if (!p) return;
+    if (typeof p.runSec === 'number' && p.runSec !== runSec) setRunSec(p.runSec);
+    if (typeof p.walkSec === 'number' && p.walkSec !== walkSec) setWalkSec(p.walkSec);
+    if (typeof p.laps === 'number' && p.laps !== laps) setLaps(p.laps);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardio.state.mode, cardio.state.params]);
 
   const phaseLabel = useMemo(() => {
     if (cardio.state.mode !== 'walk_run' || cardio.state.phase === 'idle') return 'RUN PHASE';

@@ -31,6 +31,8 @@ export type ScheduleEntry = {
 export type DerivedState = {
   sessionId: string | null;
   mode: CardioMode | null;
+  // Expose original params so UI can reflect correct values on restore/navigation
+  params: CardioParams | null;
   phase: CardioPhase;
   isPaused: boolean;
   currentIndex: number;
@@ -175,6 +177,7 @@ export function useCardioSession() {
       return {
         sessionId,
         mode,
+  params,
         phase: 'idle',
         isPaused,
         currentIndex: 0,
@@ -205,6 +208,7 @@ export function useCardioSession() {
     return {
       sessionId,
       mode,
+  params,
       phase: current.phase,
       isPaused,
       currentIndex: idx,
@@ -219,7 +223,7 @@ export function useCardioSession() {
       currentRound,
       currentLap,
     };
-  }, [sessionId, mode, isPaused, startedAt, schedule, pausedAt]);
+  }, [sessionId, mode, params, isPaused, startedAt, schedule, pausedAt]);
 
   // Persist snapshot
   const persist = useCallback(async () => {

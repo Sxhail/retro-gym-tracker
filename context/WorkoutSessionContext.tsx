@@ -165,7 +165,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
         timerRef.current = null;
       }
     };
-  }, [isWorkoutActive, isPaused, lastResumeTime, accumulatedTime]);
+  }, [isWorkoutActive, isPaused, lastResumeTime, accumulatedTime, sessionStartTime]);
 
   // Global rest timer effect - simplified, background persistence handled by hook
   const globalRestTimerRef = useRef<any>(null);
@@ -326,7 +326,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       try {
         const { backgroundSessionService } = await import('../services/backgroundSession');
         const { db } = await import('../db/client');
-        const { active_session_timers } = await import('../db/schema');
+        const { active_session_timers, active_workout_sessions } = await import('../db/schema');
         const { eq } = await import('drizzle-orm');
         
         // Clear all active rest timers from background storage
@@ -341,6 +341,15 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
         
         if (restTimers.length > 0) {
           console.log('🧹 Cleared', restTimers.length, 'active rest timers during workout end');
+        }
+
+        // Also clear any lingering active workout session records to avoid accidental restoration
+        const sessions = await db.select().from(active_workout_sessions);
+        for (const s of sessions) {
+          await backgroundSessionService.clearSessionData(s.session_id);
+        }
+        if (sessions.length > 0) {
+          console.log('🧹 Cleared', sessions.length, 'active workout background sessions during workout end');
         }
       } catch (error) {
         console.error('Failed to clear rest timer background data during end workout:', error);
@@ -483,7 +492,7 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     try {
       const { backgroundSessionService } = await import('../services/backgroundSession');
       const { db } = await import('../db/client');
-      const { active_session_timers } = await import('../db/schema');
+      const { active_session_timers, active_workout_sessions } = await import('../db/schema');
       const { eq } = await import('drizzle-orm');
       
       // Clear all active rest timers from background storage
@@ -498,6 +507,15 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       
       if (restTimers.length > 0) {
         console.log('🧹 Cleared', restTimers.length, 'active rest timers during session reset');
+      }
+
+      // Clear any lingering active workout sessions to prevent restore racing a fresh session
+      const sessions = await db.select().from(active_workout_sessions);
+      for (const s of sessions) {
+        await backgroundSessionService.clearSessionData(s.session_id);
+      }
+      if (sessions.length > 0) {
+        console.log('🧹 Cleared', sessions.length, 'active workout background sessions during session reset');
       }
     } catch (error) {
       console.error('Failed to clear rest timer background data during reset:', error);

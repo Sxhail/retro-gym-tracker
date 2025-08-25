@@ -581,8 +581,11 @@ export function useCardioSession() {
   useEffect(() => {
     if (derived.phase === 'completed') {
       clearTick();
+      // Auto-finish silently to persist history and clear notifications/state
+      // Do this once; if sessionId becomes null finish() no-ops
+      finish().catch(() => {});
     }
-  }, [derived.phase, clearTick]);
+  }, [derived.phase, clearTick, finish]);
 
   return {
     state: derived,

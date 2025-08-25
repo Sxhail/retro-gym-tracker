@@ -18,7 +18,6 @@ import CustomSplashScreen from '../components/CustomSplashScreen';
 import { GlobalRestTimerNotification } from '../components/GlobalRestTimerNotification';
 import NotificationService from '../services/notifications';
 import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
-import GlobalCardioCompletion from '../components/GlobalCardioCompletion';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -84,7 +83,6 @@ export default function Layout() {
                   />
                   {false && <></>}
                   <GlobalRestTimerNotification />
-                  <GlobalCardioCompletion />
                 </AppLayout>
                 </BackgroundCardioSessionPersistence>
               </BackgroundRestTimerPersistence>

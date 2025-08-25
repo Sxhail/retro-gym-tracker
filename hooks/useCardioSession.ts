@@ -243,6 +243,7 @@ export function useCardioSession() {
   }, [sessionId, mode, params, schedule, derived.currentIndex, startedAt, pausedAt, accumPauseMs]);
 
   // Schedule notifications from entire schedule
+  // Debounced scheduler to avoid duplicate schedule calls
   const scheduleNotifications = useCallback(async () => {
     if (!sessionId || !schedule.length) return;
     await svc.scheduleNotifications(sessionId, schedule);
@@ -546,15 +547,16 @@ export function useCardioSession() {
 
   // AppState handling
   useEffect(() => {
-    const onChange = (state: AppStateStatus) => {
+  const onChange = (state: AppStateStatus) => {
       const wasActive = appStateRef.current === 'active';
       const nowActive = state === 'active';
       if (wasActive && !nowActive) {
         // backgrounding: persist and stop heavy ticks (we keep a light interval for index tracking)
         persist();
     // Ensure notifications are scheduled from current schedule (skip when paused)
-    if (sessionId && schedule.length && !isPaused) {
-          svc.scheduleNotifications(sessionId, schedule).catch(() => {});
+  if (sessionId && schedule.length && !isPaused) {
+      // Re-schedule once when backgrounding; service internally de-dupes
+      svc.scheduleNotifications(sessionId, schedule).catch(() => {});
         }
       } else if (!wasActive && nowActive) {
         // foreground: recompute phase index immediately (but not while paused)

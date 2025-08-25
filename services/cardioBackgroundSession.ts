@@ -56,6 +56,8 @@ export interface CardioSnapshot {
 }
 
 class CardioBackgroundSessionService {
+  // Prevent overlapping scheduling for the same session to avoid duplicate notifications
+  private schedulingLocks = new Set<string>();
   // Upsert active session snapshot
   async saveActiveSession(s: CardioSnapshot): Promise<void> {
     const record: NewActiveCardioSession = {
@@ -153,40 +155,41 @@ class CardioBackgroundSessionService {
 
   // Schedule notifications from a schedule and persist their IDs
   async scheduleNotifications(sessionId: string, schedule: ScheduleEntry[]): Promise<void> {
-    await this.cancelAllNotifications(sessionId);
+    if (this.schedulingLocks.has(sessionId)) return; // drop concurrent calls
+    this.schedulingLocks.add(sessionId);
+    try {
+      // Clear any previously queued notifications atomically for this session
+      await this.cancelAllNotifications(sessionId);
 
-    const now = Date.now();
-    for (const entry of schedule) {
-      // Only schedule phase transitions (endAt)
-      const fire = new Date(entry.endAt);
-      if (fire.getTime() <= now) continue;
+      const now = Date.now();
+      // Exclude the synthetic 'completed' marker from iteration; we will handle completion explicitly
+      const realPhases = schedule.filter((e) => e.phase !== 'completed');
+      for (let i = 0; i < realPhases.length; i++) {
+        const entry = realPhases[i];
+        const fire = new Date(entry.endAt);
+        if (fire.getTime() <= now) continue;
 
-      const nextLabel = this.getNextPhaseLabel(entry.phase);
-      const title = entry.phase === 'completed' ? 'Session complete' : nextLabel.title;
-      const body = entry.phase === 'completed' ? 'Great job!' : nextLabel.body(entry);
-
-      const id = await NotificationService.scheduleAbsolute(sessionId, fire, title, body);
-      if (id) {
-        await this.saveNotificationId(sessionId, id, fire.toISOString());
-      }
-
-      // Optional pre-cues for sufficiently long phases (≥4s remaining)
-      const remainingMs = fire.getTime() - now;
-      if (entry.phase !== 'completed' && remainingMs >= 4000) {
-        for (const t of [3000, 2000, 1000]) {
-          const cueAt = new Date(fire.getTime() - t);
-          if (cueAt.getTime() <= now) continue;
-          const cueId = await NotificationService.scheduleAbsolute(
-            sessionId,
-            cueAt,
-            'Get ready',
-            t === 3000 ? '3' : t === 2000 ? '2' : '1'
-          );
-          if (cueId) {
-            await this.saveNotificationId(sessionId, cueId, cueAt.toISOString());
-          }
+        // Determine if this is the last real phase
+        const isLast = i === realPhases.length - 1;
+        let title: string;
+        let body: string;
+        if (isLast) {
+          title = 'Workout complete';
+          body = 'Great job!';
+        } else {
+          const nextLabel = this.getNextPhaseLabel(entry.phase);
+          title = nextLabel.title;
+          body = nextLabel.body(entry);
         }
+
+        const id = await NotificationService.scheduleAbsolute(sessionId, fire, title, body);
+        if (id) {
+          await this.saveNotificationId(sessionId, id, fire.toISOString());
+        }
+        // Note: Removed 3-2-1 pre-cues to ensure only one notification per phase
       }
+    } finally {
+      this.schedulingLocks.delete(sessionId);
     }
   }
 

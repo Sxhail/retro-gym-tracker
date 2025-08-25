@@ -4,7 +4,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import { useCardioSession } from '../hooks/useCardioSession';
-import { Alert } from 'react-native';
+// Removed Alert-based popups for cardio continue/cancel flow
 import theme from '../styles/theme';
 import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
@@ -227,29 +227,9 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.startButton}
               onPress={() => {
-                Alert.alert(
-                  'Cardio in progress',
-                  'Continue your cardio session or cancel it?',
-                  [
-                    {
-                      text: 'Continue',
-                      onPress: () => {
-                        if (cardio.state.mode === 'hiit') router.push('/cardio/quick-hiit');
-                        else if (cardio.state.mode === 'walk_run') router.push('/cardio/walk-run');
-                      }
-                    },
-                    {
-                      text: 'Cancel',
-                      style: 'destructive',
-                      onPress: async () => {
-                        Alert.alert('Cancel cardio?', 'Are you sure you want to cancel the current session?', [
-                          { text: 'No', style: 'cancel' },
-                          { text: 'Yes', style: 'destructive', onPress: async () => { await cardio.cancel(); } }
-                        ]);
-                      }
-                    }
-                  ]
-                );
+                if (cardio.state.mode === 'hiit') router.push('/cardio/quick-hiit');
+                else if (cardio.state.mode === 'walk_run') router.push('/cardio/walk-run');
+                else router.push('/cardio');
               }}
             >
               <Text style={styles.startButtonText}>CONTINUE CARDIO</Text>

@@ -115,7 +115,7 @@ export default function QuickHiitScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+  <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>QUICK HIIT</Text>

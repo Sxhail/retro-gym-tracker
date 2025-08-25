@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
@@ -44,36 +44,10 @@ export default function CardioScreen() {
   const handleCardioSelection = (option: any) => {
     const active = !!cardio.state.sessionId && cardio.state.phase !== 'completed' && cardio.state.phase !== 'idle';
     if (active) {
-      // If any cardio is already running, prompt to continue or cancel
-      const goToCurrent = () => {
-        if (cardio.state.mode === 'hiit') router.push('/cardio/quick-hiit');
-        else if (cardio.state.mode === 'walk_run') router.push('/cardio/walk-run');
-      };
-      Alert.alert(
-        'Cardio in progress',
-        'A cardio session is currently running.',
-        [
-          { text: 'Continue', onPress: goToCurrent },
-          {
-            text: 'Cancel Session',
-            style: 'destructive',
-            onPress: () => {
-              Alert.alert('Cancel cardio?', 'Are you sure you want to cancel the current session?', [
-                { text: 'No', style: 'cancel' },
-                {
-                  text: 'Yes',
-                  style: 'destructive',
-                  onPress: async () => {
-                    await cardio.reset();
-                    router.push('/');
-                  }
-                }
-              ]);
-            }
-          },
-          { text: 'Close', style: 'cancel' }
-        ]
-      );
+      // If a cardio session is running, navigate directly back to it
+      if (cardio.state.mode === 'hiit') router.push('/cardio/quick-hiit');
+      else if (cardio.state.mode === 'walk_run') router.push('/cardio/walk-run');
+      else router.push('/cardio');
       return;
     }
     // No active session: go to requested option

@@ -17,9 +17,11 @@ let initialized = false;
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     // Show alerts/sounds only when app is NOT foregrounded (lock screen / other apps)
-    shouldShowAlert: !isAppForeground,
-    shouldPlaySound: !isAppForeground,
-    shouldSetBadge: false,
+  shouldShowAlert: !isAppForeground,
+  shouldShowBanner: !isAppForeground,
+  shouldShowList: !isAppForeground,
+  shouldPlaySound: !isAppForeground,
+  shouldSetBadge: false,
   }),
 });
 
@@ -113,7 +115,8 @@ export const NotificationService = {
       content: {
         title,
         body,
-        sound: true,
+        // On iOS, provide a sound name or 'default' to ensure audible alert when backgrounded
+        sound: Platform.OS === 'ios' ? 'default' : (true as any),
     data: { sessionId, fireAt: fireAt.toISOString() },
         ...(Platform.OS === 'android'
           ? { channelId: 'default', priority: Notifications.AndroidNotificationPriority.MAX }

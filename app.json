@@ -25,8 +25,12 @@
       "supportsTablet": true,
       "requireFullScreen": false,
       "icon": "./app/assets/icon.png",
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+  "NSUserNotificationUsageDescription": "We use notifications to alert you when rest periods and cardio phases end, even if the app is in the background.",
         "UIBackgroundModes": [
           "audio",
           "fetch"

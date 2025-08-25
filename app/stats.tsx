@@ -1,6 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, SafeAreaView } from 'react-native';
 import ProgressChart from '../components/ProgressChart';
+import VolumeOverTimeChart from '../components/stats/VolumeOverTimeChart';
+import WorkoutFrequencyChart from '../components/stats/WorkoutFrequencyChart';
+import PRTimelineChart from '../components/stats/PRTimelineChart';
+import Estimated1RMChart from '../components/stats/Estimated1RMChart';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import theme from '../styles/theme';
@@ -201,8 +205,14 @@ export default function ProgressOverview() {
       ) : (
         <ScrollView style={styles.list}>
           {charts.filter(c => c.title === selectedExercise).map((c, i) => (
-            <ProgressChart key={i} title={c.title} maxGain={c.maxGain} percentGain={c.percentGain} sessions={c.sessions} data={c.data} labels={c.labels} />
+            <ProgressChart key={`pc-${i}`} title={c.title} maxGain={c.maxGain} percentGain={c.percentGain} sessions={c.sessions} data={c.data} labels={c.labels} />
           ))}
+
+          {/* New Stats Charts */}
+          <VolumeOverTimeChart initialRange={'30d'} />
+          <WorkoutFrequencyChart initialRange={'30d'} showRollingAvg />
+          <PRTimelineChart initialRange={'all'} />
+          <Estimated1RMChart initialRange={'all'} />
         </ScrollView>
       )}
     </SafeAreaView>

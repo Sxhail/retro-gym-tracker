@@ -35,6 +35,19 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
+  
+  // Debug: Test notification function
+  const testNotifications = async () => {
+    try {
+      console.log('Testing notifications...');
+      const NotificationService = (await import('../services/notifications')).default;
+      await NotificationService.scheduleTestNotification();
+      console.log('Test notification scheduled');
+    } catch (e) {
+      console.error('Failed to test notification:', e);
+    }
+  };
+  
   // Handler for deleting a program from dashboard
   const handleDeleteProgram = async (programId: number) => {
     try {
@@ -249,6 +262,14 @@ export default function HomeScreen() {
           </TouchableOpacity>
         );
       })()}
+      
+      {/* Debug: Test Notification Button */}
+      <TouchableOpacity 
+        style={[styles.startButton, { backgroundColor: theme.colors.secondary, marginTop: 8 }]} 
+        onPress={testNotifications}
+      >
+        <Text style={[styles.startButtonText, { fontSize: 12 }]}>TEST NOTIFICATIONS</Text>
+      </TouchableOpacity>
     </View>
 
       {/* Bottom Navigation */}

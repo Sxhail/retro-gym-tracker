@@ -260,9 +260,14 @@ class CardioBackgroundSessionService {
           body = nextLabel.body(d.entry);
         }
 
+        console.log(`[CardioBackgroundSession] Scheduling notification: "${title}" - "${body}" at ${iso} for session ${sessionId}`);
         const id = await NotificationService.scheduleAbsolute(sessionId, new Date(d.fireAt), title, body);
+        console.log(`[CardioBackgroundSession] Notification scheduled with ID: ${id}`);
         if (id) {
           await this.saveNotificationId(sessionId, id, iso);
+          console.log(`[CardioBackgroundSession] Notification ID saved to database`);
+        } else {
+          console.warn(`[CardioBackgroundSession] Failed to schedule notification for ${title}`);
         }
       }
     } finally {

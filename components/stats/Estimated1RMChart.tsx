@@ -31,10 +31,13 @@ export default function Estimated1RMChart({ initialRange = 'all', selectedExerci
     if (selectedExercise) setExercise(selectedExercise);
   }, [selectedExercise]);
 
-  const width = Math.max(40 + data.length*(12+6) + 10, 360);
-  const height = 220;
-  const maxY = Math.max(10, Math.max(...data.map(d=>d.value), 0));
-  const yScale = (v: number) => { const top=16; const bottom=height-24; return bottom - (v/maxY) * (bottom-top); };
+  const left = 48; const right = 16; const stepX = 22;
+  const minWidthByRange: Record<DateRangePreset, number> = { '7d': 520, '30d': 640, 'all': 800 };
+  const width = Math.max(left + data.length * stepX + right, minWidthByRange[range] || 640);
+  const height = 240;
+  const rawMax = Math.max(0, ...data.map(d => d.value));
+  const maxY = Math.max(10, niceCeil(rawMax));
+  const yScale = (v: number) => { const top=16; const bottom=height-28; return bottom - (v/maxY) * (bottom-top); };
   const ticksY = niceTicks(0, maxY, 4);
 
   return (
@@ -51,19 +54,21 @@ export default function Estimated1RMChart({ initialRange = 'all', selectedExerci
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <Svg width={width} height={height}>
             {ticksY.map((t, i) => (
-              <Line key={i} x1={40} y1={yScale(t)} x2={width-10} y2={yScale(t)} stroke={theme.colors.neon} strokeOpacity={0.15} />
+              <Line key={i} x1={left} y1={yScale(t)} x2={width-right} y2={yScale(t)} stroke={theme.colors.neon} strokeOpacity={0.15} />
             ))}
             {ticksY.map((t,i)=> (
-              <SvgText key={i} x={4} y={yScale(t)+4} fill={theme.colors.neon} fontSize={10}>{Math.round(t)}</SvgText>
+              <SvgText key={i} x={6} y={yScale(t)+4} fill={theme.colors.neon} fontSize={10}>{Math.round(t)}</SvgText>
             ))}
+            {/* X-axis baseline at y=0 */}
+            <Line x1={left} y1={yScale(0)} x2={width-right} y2={yScale(0)} stroke={theme.colors.neon} strokeOpacity={0.25} />
             <Polyline
-              points={data.map((p,i)=>`${40 + i*(12+6)},${yScale(p.value)}`).join(' ')}
+              points={data.map((p,i)=>`${left + i*stepX},${yScale(p.value)}`).join(' ')}
               fill="none"
               stroke={theme.colors.neon}
               strokeWidth={2}
             />
             {data.map((p,i)=> {
-              const cx = 40 + i*(12+6);
+              const cx = left + i*stepX;
               const cy = yScale(p.value);
               return (
                 <G key={i}>
@@ -72,6 +77,14 @@ export default function Estimated1RMChart({ initialRange = 'all', selectedExerci
                     cy={cy}
                     r={p.isPeak? 4:2.5}
                     fill={p.isPeak? theme.colors.neonBright: theme.colors.neon}
+                    onPress={() => setTipIndex(tipIndex===i? null : i)}
+                  />
+                  {/* Larger invisible hit area for easier tapping */}
+                  <Circle
+                    cx={cx}
+                    cy={cy}
+                    r={12}
+                    fill="transparent"
                     onPress={() => setTipIndex(tipIndex===i? null : i)}
                   />
                   {tipIndex===i && (
@@ -108,4 +121,16 @@ function formatDate(d: Date) {
   } catch {
     return '';
   }
+}
+
+function niceCeil(max: number): number {
+  if (max <= 0) return 0;
+  const pow = Math.pow(10, Math.floor(Math.log10(max)));
+  const mult = max / pow;
+  let nice;
+  if (mult <= 1) nice = 1;
+  else if (mult <= 2) nice = 2;
+  else if (mult <= 5) nice = 5;
+  else nice = 10;
+  return nice * pow;
 }

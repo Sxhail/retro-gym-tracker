@@ -16,6 +16,7 @@ let initialized = false;
 // Register a notification handler ASAP at module load so foreground presentation is correct
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
+    // Show alerts/sounds only when app is NOT foregrounded (lock screen / other apps)
     shouldShowAlert: !isAppForeground,
     shouldPlaySound: !isAppForeground,
     shouldSetBadge: false,
@@ -88,15 +89,16 @@ export const NotificationService = {
     } catch {}
     // Ensure permission at schedule time as well
     try {
-      const perm = await Notifications.getPermissionsAsync();
+      let perm = await Notifications.getPermissionsAsync();
       if (perm.status !== 'granted') {
         const req = await Notifications.requestPermissionsAsync({
           ios: { allowAlert: true, allowSound: true, allowBadge: false },
         });
-        if (req.status !== 'granted') {
-          console.warn('[Notifications] Permission denied when scheduling. Skipping schedule for', title);
-          return null;
-        }
+        perm = req;
+      }
+      if (perm.status !== 'granted') {
+        console.warn('[Notifications] Permission denied when scheduling. Skipping schedule for', title);
+        return null;
       }
     } catch (e) {
       console.warn('[Notifications] Permission check/request failed', e);

@@ -201,7 +201,7 @@ class CardioBackgroundSessionService {
       const realPhases = schedule.filter((e) => e.phase !== 'completed');
       const desired = realPhases
         .map((e, i) => ({ idx: i, fireAt: new Date(e.endAt).getTime(), entry: e }))
-        .filter((d) => d.fireAt > now - 250); // keep slightly past-due to avoid double scheduling during race
+        .filter((d) => d.fireAt > now - 2000); // allow small catch-up window to ensure we schedule missed items
       const desiredIsoSet = new Set(desired.map((d) => new Date(d.fireAt).toISOString()));
 
       // Existing persisted notifications for session
@@ -217,10 +217,13 @@ class CardioBackgroundSessionService {
         const queued = await Notifications.getAllScheduledNotificationsAsync();
         for (const q of queued) {
           const sid = (q.content?.data as any)?.sessionId;
-          const t = (q.trigger as any)?.date ?? (q.trigger as any)?.timestamp;
-          if (sid === sessionId && t) {
-            const iso = new Date(typeof t === 'number' ? t : t).toISOString();
-            queuedTimes.add(iso);
+          const trig: any = q.trigger as any;
+          const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
+          if (sid === sessionId && raw) {
+            const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : new Date(raw));
+            if (!isNaN(d.getTime())) {
+              queuedTimes.add(d.toISOString());
+            }
           }
         }
       } catch {}

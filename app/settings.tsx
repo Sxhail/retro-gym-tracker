@@ -1,14 +1,62 @@
-import React from 'react';
-import { SafeAreaView, View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 
 export default function SettingsScreen() {
+  const router = useRouter();
+  const [query, setQuery] = useState('');
+
+  const items = [
+    { key: 'account', label: 'Account' },
+    { key: 'notifications', label: 'Notifications' },
+    { key: 'appearance', label: 'Appearance' },
+    { key: 'privacy', label: 'Privacy & Security' },
+    { key: 'help', label: 'Help and Support' },
+    { key: 'about', label: 'About' },
+  ];
+
+  const filtered = items.filter(i => i.label.toLowerCase().includes(query.toLowerCase()));
+
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.container}>
-        <Text style={styles.title}>SETTINGS</Text>
-        <Text style={styles.subtitle}>Placeholder screen</Text>
-      </View>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.backButton}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>SETTINGS</Text>
+          <View style={{ width: 36 }} />
+        </View>
+
+        {/* Search */}
+        <View style={styles.searchBox}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search for a setting..."
+            placeholderTextColor={theme.colors.textSecondary}
+            style={styles.searchInput}
+          />
+        </View>
+
+        {/* Options */}
+        <View style={{ marginTop: theme.spacing.md }}>
+          {filtered.map(item => (
+            <TouchableOpacity key={item.key} style={styles.row} activeOpacity={0.7}>
+              <Text style={styles.rowLabel}>{item.label}</Text>
+              <Text style={styles.rowChevron}>›</Text>
+            </TouchableOpacity>
+          ))}
+          {filtered.length === 0 && (
+            <Text style={styles.empty}>No results</Text>
+          )}
+        </View>
+
+        {/* Bottom spacer so floating elements never overlap */}
+        <View style={{ height: theme.spacing.xxl }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -18,23 +66,80 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  container: {
-    flex: 1,
+  scroll: {
+    paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.xl,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.neon,
   },
-  title: {
+  backButton: {
     color: theme.colors.neon,
-    fontFamily: theme.fonts.display,
-    fontSize: 24,
+    fontFamily: theme.fonts.body,
+    fontSize: 28,
     fontWeight: 'bold',
-    letterSpacing: 2,
   },
-  subtitle: {
-    color: theme.colors.textSecondary,
+  headerTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  searchBox: {
+    marginTop: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,0,0.15)',
+    backgroundColor: 'rgba(0,255,0,0.04)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    color: theme.colors.neon,
     fontFamily: theme.fonts.body,
     fontSize: 14,
-    marginTop: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,0,0.15)',
+    backgroundColor: 'rgba(0,255,0,0.04)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: theme.spacing.sm,
+    shadowColor: '#00FF00',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  rowLabel: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  rowChevron: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 18,
+    opacity: 0.9,
+  },
+  empty: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.body,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: theme.spacing.md,
   },
 });

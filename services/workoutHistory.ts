@@ -190,42 +190,32 @@ export async function saveWorkout(sessionData: WorkoutSessionData): Promise<numb
  */
 export async function getWorkoutHistory(limit: number = 10, offset: number = 0): Promise<WorkoutHistoryItem[]> {
   try {
-    const workoutHistory = await db
+    // Single query with aggregates to avoid N+1 per workout
+    const results = await db
       .select({
         id: workouts.id,
         name: workouts.name,
         date: workouts.date,
         duration: workouts.duration,
+        exerciseCount: sql<number>`COUNT(DISTINCT ${workout_exercises.id})`,
+        totalSets: sql<number>`COUNT(${sets.id})`,
       })
       .from(workouts)
+      .leftJoin(workout_exercises, eq(workouts.id, workout_exercises.workout_id))
+      .leftJoin(sets, eq(workout_exercises.id, sets.workout_exercise_id))
+      .groupBy(workouts.id)
       .orderBy(desc(workouts.date))
       .limit(limit)
       .offset(offset);
 
-    // Get exercise and set counts for each workout
-    const workoutHistoryWithCounts = await Promise.all(
-      workoutHistory.map(async (workout) => {
-        const exerciseCount = await db
-          .select({ count: workout_exercises.id })
-          .from(workout_exercises)
-          .where(eq(workout_exercises.workout_id, workout.id));
-
-        const totalSets = await db
-          .select({ count: sets.id })
-          .from(sets)
-          .innerJoin(workout_exercises, eq(sets.workout_exercise_id, workout_exercises.id))
-          .where(eq(workout_exercises.workout_id, workout.id));
-
-        return {
-          ...workout,
-          exerciseCount: exerciseCount.length,
-          totalSets: totalSets.length,
-        };
-      })
-    );
-
-    return workoutHistoryWithCounts;
-
+    return results.map(r => ({
+      id: r.id,
+      name: r.name,
+      date: r.date,
+      duration: r.duration,
+      exerciseCount: r.exerciseCount ?? 0,
+      totalSets: r.totalSets ?? 0,
+    }));
   } catch (error) {
     console.error('Error fetching workout history:', error);
     throw new Error(`Failed to fetch workout history: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -530,10 +520,10 @@ export async function deleteWorkout(workoutId: number): Promise<boolean> {
 export async function getWorkoutCount(): Promise<number> {
   try {
     const result = await db
-      .select({ count: workouts.id })
+      .select({ count: sql<number>`COUNT(*)` })
       .from(workouts);
 
-    return result.length;
+    return result[0]?.count ?? 0;
 
   } catch (error) {
     console.error('Error getting workout count:', error);
@@ -845,3 +835,92 @@ export async function getProgramWorkoutHistory(programId: number): Promise<Worko
     throw new Error('Failed to load program workout history');
   }
 } 
+
+/**
+ * Get workouts on a specific local date (YYYY-MM-DD), returning history items with counts.
+ * Uses date range to avoid loading all workouts and filtering in JS.
+ */
+export async function getWorkoutsOnDate(dateLocalYYYYMMDD: string): Promise<WorkoutHistoryItem[]> {
+  // Compute local day start/end as ISO for comparison with stored ISO strings
+  const [y, m, d] = dateLocalYYYYMMDD.split('-').map((n) => parseInt(n, 10));
+  const startIso = new Date(y, m - 1, d, 0, 0, 0, 0).toISOString();
+  const endIso = new Date(y, m - 1, d, 23, 59, 59, 999).toISOString();
+  try {
+    const rows = await db
+      .select({
+        id: workouts.id,
+        name: workouts.name,
+        date: workouts.date,
+        duration: workouts.duration,
+        exerciseCount: sql<number>`COUNT(DISTINCT ${workout_exercises.id})`,
+        totalSets: sql<number>`COUNT(${sets.id})`,
+      })
+      .from(workouts)
+      .leftJoin(workout_exercises, eq(workouts.id, workout_exercises.workout_id))
+      .leftJoin(sets, eq(workout_exercises.id, sets.workout_exercise_id))
+      .where(sql`${workouts.date} >= ${startIso} AND ${workouts.date} <= ${endIso}`)
+      .groupBy(workouts.id)
+      .orderBy(asc(workouts.date));
+
+    return rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      date: r.date,
+      duration: r.duration,
+      exerciseCount: r.exerciseCount ?? 0,
+      totalSets: r.totalSets ?? 0,
+    }));
+  } catch (err) {
+    console.error('Error fetching workouts for date:', err);
+    return [];
+  }
+}
+
+/**
+ * Efficient per-exercise max weight timeline for stats, without loading all workout details.
+ * Returns an array of { exerciseName, date, maxWeight } rows for a bounded time range or all-time.
+ */
+export async function getExerciseMaxTimeline(options?: { startDateIso?: string; endDateIso?: string; limitPerExercise?: number; }): Promise<Array<{ exerciseId: number; exerciseName: string; date: string; maxWeight: number }>> {
+  const whereClauses: any[] = [];
+  if (options?.startDateIso) {
+    whereClauses.push(sql`${workouts.date} >= ${options.startDateIso}`);
+  }
+  if (options?.endDateIso) {
+    whereClauses.push(sql`${workouts.date} <= ${options.endDateIso}`);
+  }
+  try {
+    // For each workout/exercise, compute max weight in that workout, then join exercise name
+    const rows = await db
+      .select({
+        exerciseId: workout_exercises.exercise_id,
+        exerciseName: exercises.name,
+        date: workouts.date,
+        maxWeight: sql<number>`MAX(${sets.weight})`,
+      })
+      .from(sets)
+      .innerJoin(workout_exercises, eq(sets.workout_exercise_id, workout_exercises.id))
+      .innerJoin(workouts, eq(workout_exercises.workout_id, workouts.id))
+      .innerJoin(exercises, eq(workout_exercises.exercise_id, exercises.id))
+      .where(whereClauses.length ? sql.join(whereClauses, sql` AND `) : sql`1=1`)
+      .groupBy(workout_exercises.exercise_id, workouts.id)
+      .orderBy(asc(workouts.date));
+
+    // Optionally cap per exercise series
+    if (options?.limitPerExercise && options.limitPerExercise > 0) {
+      const capped: typeof rows = [] as any;
+      const counts: Record<number, number> = {};
+      for (const r of rows) {
+        const c = counts[r.exerciseId] ?? 0;
+        if (c < options.limitPerExercise) {
+          capped.push(r);
+          counts[r.exerciseId] = c + 1;
+        }
+      }
+      return capped as any;
+    }
+    return rows as any;
+  } catch (err) {
+    console.error('Error building exercise max timeline:', err);
+    return [];
+  }
+}

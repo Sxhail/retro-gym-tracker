@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 import { getMonthlyAttendance, type AttendanceData } from '../services/workoutAttendance';
-import { getWorkoutHistory, formatDuration, formatDate, type WorkoutHistoryItem } from '../services/workoutHistory';
+import { getWorkoutsOnDate, formatDuration, formatDate, type WorkoutHistoryItem } from '../services/workoutHistory';
 import { getCardioSessionDates } from '../services/cardioTracking';
 
 interface AttendanceCalendarProps {
@@ -112,15 +112,8 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
     setShowWorkoutModal(true);
     
     try {
-      // Get all workouts and filter by date
-      const allWorkouts = await getWorkoutHistory(1000, 0); // Get a large number to ensure we get all
-      const dateWorkouts = allWorkouts.filter(workout => {
-        const workoutDate = new Date(workout.date);
-        const workoutDateString = workoutDate.getFullYear() + '-' + 
-          (workoutDate.getMonth() + 1).toString().padStart(2, '0') + '-' + 
-          workoutDate.getDate().toString().padStart(2, '0');
-        return workoutDateString === date;
-      });
+      // Fetch only this date's workouts via SQL date bounds
+      const dateWorkouts = await getWorkoutsOnDate(date);
       setWorkoutsForDate(dateWorkouts);
 
   // Load cardio sessions for this date (inclusive) using local timezone boundaries

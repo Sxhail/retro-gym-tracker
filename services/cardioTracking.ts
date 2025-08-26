@@ -1,6 +1,6 @@
 import { db } from '../db/client';
 import * as schema from '../db/schema';
-import { desc, eq, and, gte, lte } from 'drizzle-orm';
+import { desc, eq, and, gte, lte, sql } from 'drizzle-orm';
 
 export type CardioType = 'hiit' | 'walk_run' | 'casual_walk';
 
@@ -258,17 +258,17 @@ export async function getCardioSessionDates(year: number, month: number): Promis
  */
 export async function getTotalCardioStats() {
   try {
-    const sessions = await db
+    const rows = await db
       .select({
-        total_sessions: schema.cardio_sessions.id,
-        total_duration: schema.cardio_sessions.duration,
-        total_calories: schema.cardio_sessions.calories_burned,
+        totalSessions: sql<number>`COUNT(*)`,
+        totalDuration: sql<number>`SUM(${schema.cardio_sessions.duration})`,
+        totalCalories: sql<number>`SUM(COALESCE(${schema.cardio_sessions.calories_burned}, 0))`,
       })
       .from(schema.cardio_sessions);
 
-    const totalSessions = sessions.length;
-    const totalDuration = sessions.reduce((sum, session) => sum + session.total_duration, 0);
-    const totalCalories = sessions.reduce((sum, session) => sum + (session.total_calories || 0), 0);
+    const totalSessions = rows[0]?.totalSessions ?? 0;
+    const totalDuration = rows[0]?.totalDuration ?? 0;
+    const totalCalories = rows[0]?.totalCalories ?? 0;
 
     return {
       totalSessions,

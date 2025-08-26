@@ -8,7 +8,7 @@ import Estimated1RMChart from '../components/stats/Estimated1RMChart';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import theme from '../styles/theme';
-import { getWorkoutHistory, getWorkoutDetail, formatDate } from '../services/workoutHistory';
+import { getExerciseMaxTimeline } from '../services/workoutHistory';
 import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 
 export default function ProgressOverview() {
@@ -25,66 +25,45 @@ export default function ProgressOverview() {
       setLoading(true);
       setError(null);
       try {
-        // Fetch all workouts (increase limit as needed)
-        const workouts = await getWorkoutHistory(1000, 0);
-        // For each workout, get details
-        const details = await Promise.all(workouts.map(w => getWorkoutDetail(w.id)));
-        // Aggregate by exercise name with proper date sorting
+        // Pull pre-aggregated per-exercise max series
+  const rows = await getExerciseMaxTimeline({ limitPerExercise: 500 });
+        // Group into chart-ready series per exercise
         const exerciseMap: Record<string, { title: string; data: number[]; labels: string[]; dates: Date[]; maxGain: string; percentGain: string; sessions: number; }> = {};
-        
-        // First pass: collect all data with dates
-        details.forEach((workout, idx) => {
-          if (!workout) return;
-          const workoutDate = new Date(workout.date);
-          workout.exercises.forEach(ex => {
-            // Find max weight for this exercise in this workout
-            const maxWeight = Math.max(...ex.sets.map(s => s.weight));
-            if (!exerciseMap[ex.exerciseName]) {
-              exerciseMap[ex.exerciseName] = { 
-                title: ex.exerciseName, 
-                data: [], 
-                labels: [], 
-                dates: [],
-                maxGain: '', 
-                percentGain: '', 
-                sessions: 0 
-              };
-            }
-            exerciseMap[ex.exerciseName].data.push(maxWeight);
-            exerciseMap[ex.exerciseName].labels.push(formatDate(workout.date));
-            exerciseMap[ex.exerciseName].dates.push(workoutDate);
-          });
+        rows.forEach(r => {
+          const title = r.exerciseName;
+          if (!exerciseMap[title]) {
+            exerciseMap[title] = { title, data: [], labels: [], dates: [], maxGain: '', percentGain: '', sessions: 0 };
+          }
+          exerciseMap[title].data.push(r.maxWeight || 0);
+          exerciseMap[title].labels.push(new Date(r.date).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.'));
+          exerciseMap[title].dates.push(new Date(r.date));
         });
-        
-        // Second pass: sort each exercise's data by date (oldest to newest)
-        Object.values(exerciseMap).forEach(exercise => {
-          // Create array of indices sorted by date
-          const sortedIndices = exercise.dates
-            .map((date, index) => ({ date, index }))
-            .sort((a, b) => a.date.getTime() - b.date.getTime())
-            .map(item => item.index);
-          
-          // Reorder data, labels, and dates based on sorted indices
-          exercise.data = sortedIndices.map(i => exercise.data[i]);
-          exercise.labels = sortedIndices.map(i => exercise.labels[i]);
-          exercise.dates = sortedIndices.map(i => exercise.dates[i]);
+        // Sort each exercise series by date
+        Object.values(exerciseMap).forEach(series => {
+          const order = series.dates
+            .map((d, i) => ({ d, i }))
+            .sort((a, b) => a.d.getTime() - b.d.getTime())
+            .map(x => x.i);
+          series.data = order.map(i => series.data[i]);
+          series.labels = order.map(i => series.labels[i]);
+          series.dates = order.map(i => series.dates[i]);
         });
-        // Calculate stats for each exercise
-        Object.values(exerciseMap).forEach(chart => {
-          chart.sessions = chart.data.length;
-          if (chart.data.length > 1) {
-            const gain = chart.data[chart.data.length - 1] - chart.data[0];
-            chart.maxGain = (gain >= 0 ? '+' : '') + gain + 'kg';
-            chart.percentGain = (chart.data[0] !== 0 ? ((gain / chart.data[0]) * 100).toFixed(0) : '0') + '%';
+        // Compute stats
+        Object.values(exerciseMap).forEach(series => {
+          series.sessions = series.data.length;
+          if (series.data.length > 1) {
+            const gain = series.data[series.data.length - 1] - series.data[0];
+            series.maxGain = (gain >= 0 ? '+' : '') + gain + 'kg';
+            series.percentGain = (series.data[0] !== 0 ? ((gain / series.data[0]) * 100).toFixed(0) : '0') + '%';
           } else {
-            chart.maxGain = '+0kg';
-            chart.percentGain = '0%';
+            series.maxGain = '+0kg';
+            series.percentGain = '0%';
           }
         });
-        setCharts(Object.values(exerciseMap));
-        // Set default selected exercise
-        if (Object.values(exerciseMap).length > 0) {
-          setSelectedExercise(Object.values(exerciseMap)[0].title);
+        const chartsArray = Object.values(exerciseMap);
+        setCharts(chartsArray);
+        if (chartsArray.length > 0) {
+          setSelectedExercise(chartsArray[0].title);
         }
       } catch (err) {
         setError('Failed to load progress data');

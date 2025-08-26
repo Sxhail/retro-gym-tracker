@@ -11,10 +11,7 @@ import { backgroundSessionService } from '../services/backgroundSession';
 
 import { getExerciseMaxWeights, getPreviousSetForExerciseSetNumber } from '../services/workoutHistory';
 import { Swipeable } from 'react-native-gesture-handler';
-import PostSessionReportModal, { PostSessionReportHandle } from '../components/PostSessionReport/PostSessionReportModal';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import * as Print from 'expo-print';
+// Removed PostSessionReportModal and related sharing/print imports
 
 export type Exercise = typeof schema.exercises.$inferSelect;
 
@@ -547,9 +544,7 @@ export default function NewWorkoutScreen() {
   const [workoutDate, setWorkoutDate] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
-  const [reportVisible, setReportVisible] = useState(false);
-  const [lastSavedWorkoutId, setLastSavedWorkoutId] = useState<number | null>(null);
-  const reportRef = useRef<PostSessionReportHandle>(null);
+  // Removed post-session report state and ref
 
   // Add state for custom exercise modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1129,9 +1124,7 @@ export default function NewWorkoutScreen() {
       if (workoutId) {
         // Reset session immediately after successful save to prevent duplicate saves
         await resetSession();
-        // Show post-session report modal
-        setLastSavedWorkoutId(workoutId);
-        setReportVisible(true);
+        // Post-session report removed; no modal shown
       } else {
         throw new Error('Failed to save workout - no ID returned');
       }
@@ -1158,35 +1151,7 @@ export default function NewWorkoutScreen() {
     }
   };
 
-  // Share handlers (image/pdf) will be implemented after installing deps
-  const handleShareReport = async (format: 'image'|'pdf') => {
-    try {
-      if (!reportVisible || !reportRef.current) return;
-      if (format === 'image') {
-        const imageUri = await reportRef.current.captureToImage();
-        const available = await Sharing.isAvailableAsync();
-        if (available) {
-          await Sharing.shareAsync(imageUri, {
-            dialogTitle: 'Share Workout Report',
-            mimeType: 'image/png',
-          });
-        }
-      } else {
-        // Capture the report to image and embed into a single-page PDF
-        const imageUri = await reportRef.current.captureToImage();
-        const base64 = await FileSystem.readAsStringAsync(imageUri, { encoding: FileSystem.EncodingType.Base64 });
-        const html = `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Workout Report</title><style>html,body{margin:0;padding:0;} .wrap{padding:16px;font-family: -apple-system, Roboto, Helvetica;} img{width:100%; height:auto;}</style></head><body><div class="wrap"><h2>${workoutName}</h2><img src="data:image/png;base64,${base64}"/></div></body></html>`;
-        const { uri } = await Print.printToFileAsync({ html });
-        const available = await Sharing.isAvailableAsync();
-        if (available) {
-          await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: 'Share Workout Report' });
-        }
-      }
-    } catch (e) {
-      // non-blocking
-      console.warn('Share failed', e);
-    }
-  };
+  // Post-session report sharing removed
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -1659,16 +1624,7 @@ export default function NewWorkoutScreen() {
           </View>
         </View>
       </Modal>
-      <PostSessionReportModal
-        ref={reportRef}
-        workoutId={lastSavedWorkoutId ?? 0}
-        visible={!!lastSavedWorkoutId && reportVisible}
-        onClose={() => {
-          setReportVisible(false);
-          setLastSavedWorkoutId(null);
-        }}
-        onShare={handleShareReport}
-      />
+  {/* PostSessionReportModal removed */}
     </SafeAreaView>
   );
 }

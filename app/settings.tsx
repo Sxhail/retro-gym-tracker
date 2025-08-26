@@ -20,16 +20,16 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.backButton}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>SETTINGS</Text>
-          <View style={{ width: 36 }} />
-        </View>
+      {/* Full-width header (outside scroll) */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.backButton}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>SETTINGS</Text>
+        <View style={{ width: 36 }} />
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Search */}
         <View style={styles.searchBox}>
           <TextInput
@@ -54,8 +54,8 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        {/* Bottom spacer so floating elements never overlap */}
-        <View style={{ height: theme.spacing.xxl }} />
+  {/* Bottom spacer so floating elements never overlap */}
+  <View style={{ height: theme.spacing.xxl }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   scroll: {
-    paddingHorizontal: theme.spacing.xl,
+  paddingHorizontal: 16,
     paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing.xl,
   },
@@ -75,6 +75,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.neon,
@@ -82,13 +83,13 @@ const styles = StyleSheet.create({
   backButton: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.body,
-    fontSize: 28,
+  fontSize: 36,
     fontWeight: 'bold',
   },
   headerTitle: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.code,
-    fontSize: 16,
+  fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
@@ -114,8 +115,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,255,0,0.15)',
     backgroundColor: 'rgba(0,255,0,0.04)',
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+  paddingHorizontal: 16,
+  paddingVertical: 18,
+  minHeight: 56,
     marginBottom: theme.spacing.sm,
     shadowColor: '#00FF00',
     shadowOffset: { width: 0, height: 1 },

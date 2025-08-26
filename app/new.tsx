@@ -11,6 +11,7 @@ import { backgroundSessionService } from '../services/backgroundSession';
 
 import { getExerciseMaxWeights, getPreviousSetForExerciseSetNumber } from '../services/workoutHistory';
 import { Swipeable } from 'react-native-gesture-handler';
+import PostSessionReportModal from '../components/Report/PostSessionReportModal';
 // Removed PostSessionReportModal and related sharing/print imports
 
 export type Exercise = typeof schema.exercises.$inferSelect;
@@ -544,7 +545,8 @@ export default function NewWorkoutScreen() {
   const [workoutDate, setWorkoutDate] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
-  // Removed post-session report state and ref
+  const [reportVisible, setReportVisible] = useState(false);
+  const [reportWorkoutId, setReportWorkoutId] = useState<number | null>(null);
 
   // Add state for custom exercise modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1118,13 +1120,13 @@ export default function NewWorkoutScreen() {
       // Set saving state immediately to prevent double-clicks
       setIsSaving(true);
       
-      await endWorkout(); // End the workout session
-      const workoutId = await saveWorkout(); // Save to database
+  await endWorkout(); // End the workout session
+  const workoutId = await saveWorkout(); // Save to database
       
       if (workoutId) {
-        // Reset session immediately after successful save to prevent duplicate saves
-        await resetSession();
-        // Post-session report removed; no modal shown
+        // Show report modal (reset session when modal closes)
+        setReportWorkoutId(workoutId);
+        setReportVisible(true);
       } else {
         throw new Error('Failed to save workout - no ID returned');
       }
@@ -1151,7 +1153,16 @@ export default function NewWorkoutScreen() {
     }
   };
 
-  // Post-session report sharing removed
+  // Handle closing the post-session report
+  const handleCloseReport = async () => {
+    setReportVisible(false);
+    setReportWorkoutId(null);
+    try {
+      await resetSession();
+    } catch {}
+    // After reset, return to previous screen
+    router.back();
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -1624,7 +1635,11 @@ export default function NewWorkoutScreen() {
           </View>
         </View>
       </Modal>
-  {/* PostSessionReportModal removed */}
+      <PostSessionReportModal
+        visible={reportVisible}
+        workoutId={reportWorkoutId}
+        onClose={handleCloseReport}
+      />
     </SafeAreaView>
   );
 }

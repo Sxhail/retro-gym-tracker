@@ -53,6 +53,15 @@ export interface WorkoutDetail {
   }>;
 }
 
+// --- Post-Session Report types ---
+export type PRItem = {
+  type: 'weight' | 'repsAtWeight';
+  exerciseId: number;
+  exerciseName: string;
+  weight: number;
+  reps: number;
+};
+
 /**
  * Save a complete workout session to the database
  * Wraps all operations in a transaction for data integrity
@@ -317,6 +326,122 @@ export async function getWorkoutDetail(workoutId: number): Promise<WorkoutDetail
   }
   
   throw new Error('Failed to fetch workout detail after multiple attempts');
+}
+
+/**
+ * Get per-exercise max weight before a given workout (exclude that workout)
+ */
+export async function getExerciseMaxWeightBefore(excludeWorkoutId: number): Promise<Record<number, number>> {
+  try {
+    const rows = await db
+      .select({
+        exerciseId: workout_exercises.exercise_id,
+        maxWeight: sql<number>`MAX(${sets.weight})`,
+      })
+      .from(sets)
+      .innerJoin(workout_exercises, eq(sets.workout_exercise_id, workout_exercises.id))
+      .innerJoin(workouts, eq(workout_exercises.workout_id, workouts.id))
+      .where(sql`${workouts.id} != ${excludeWorkoutId}`)
+      .groupBy(workout_exercises.exercise_id);
+
+    const out: Record<number, number> = {};
+    for (const r of rows) {
+      out[r.exerciseId] = r.maxWeight ?? 0;
+    }
+    return out;
+  } catch (e) {
+    console.error('Error in getExerciseMaxWeightBefore:', e);
+    return {};
+  }
+}
+
+/**
+ * Get the max reps achieved for an exercise at an exact weight before a given workout (exclude that workout)
+ */
+export async function getMaxRepsForExerciseAtWeightBefore(
+  exerciseId: number,
+  weight: number,
+  excludeWorkoutId: number
+): Promise<number> {
+  try {
+    const rows = await db
+      .select({
+        maxReps: sql<number>`MAX(${sets.reps})`,
+      })
+      .from(sets)
+      .innerJoin(workout_exercises, eq(sets.workout_exercise_id, workout_exercises.id))
+      .innerJoin(workouts, eq(workout_exercises.workout_id, workouts.id))
+      .where(sql`${workout_exercises.exercise_id} = ${exerciseId} AND ${sets.weight} = ${weight} AND ${workouts.id} != ${excludeWorkoutId}`);
+
+    if (rows.length > 0 && rows[0].maxReps != null) {
+      return rows[0].maxReps;
+    }
+    return 0;
+  } catch (e) {
+    console.error('Error in getMaxRepsForExerciseAtWeightBefore:', e);
+    return 0;
+  }
+}
+
+/**
+ * Aggregate workout PRs (heaviest weight PR and reps-at-weight PRs)
+ */
+export async function getWorkoutPRs(workoutId: number): Promise<PRItem[]> {
+  try {
+    const workout = await getWorkoutDetail(workoutId);
+    if (!workout) return [];
+
+    const prevMaxByExercise = await getExerciseMaxWeightBefore(workoutId);
+    const prs: PRItem[] = [];
+
+    // Track best entry for each (exerciseId, weight) to avoid duplicates
+    const bestRepsAtWeight: Record<string, PRItem> = {};
+
+    for (const ex of workout.exercises) {
+      const prevMax = prevMaxByExercise[ex.exerciseId] ?? 0;
+
+      for (const s of ex.sets) {
+        const weight = Number(s.weight) || 0;
+        const reps = Number(s.reps) || 0;
+        if (weight <= 0 || reps <= 0) continue;
+
+        // Heaviest weight PR
+        if (weight > prevMax) {
+          prs.push({
+            type: 'weight',
+            exerciseId: ex.exerciseId,
+            exerciseName: ex.exerciseName,
+            weight,
+            reps,
+          });
+        }
+
+        // Most reps at given weight PR
+        const prevReps = await getMaxRepsForExerciseAtWeightBefore(ex.exerciseId, weight, workoutId);
+        if (reps > prevReps) {
+          const key = `${ex.exerciseId}-${weight}`;
+          const candidate: PRItem = {
+            type: 'repsAtWeight',
+            exerciseId: ex.exerciseId,
+            exerciseName: ex.exerciseName,
+            weight,
+            reps,
+          };
+          const existing = bestRepsAtWeight[key];
+          if (!existing || candidate.reps > existing.reps) {
+            bestRepsAtWeight[key] = candidate;
+          }
+        }
+      }
+    }
+
+    // Merge best reps-at-weight PRs
+    prs.push(...Object.values(bestRepsAtWeight));
+    return prs;
+  } catch (e) {
+    console.error('Error in getWorkoutPRs:', e);
+    return [];
+  }
 }
 
 /**

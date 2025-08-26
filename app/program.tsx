@@ -23,6 +23,11 @@ interface ProgramConfig {
 interface DayWorkout {
   day: string;
   workoutType: string;
+  cardio?: {
+    mode: 'hiit' | 'walk_run';
+    workSec?: number; restSec?: number; rounds?: number;
+    runSec?: number; walkSec?: number; laps?: number;
+  };
   exercises: Array<{
     id: number;
     name: string;
@@ -88,11 +93,26 @@ export default function ProgramScreen() {
       if (step === 4) {
         try {
           const tempWorkouts = await db.select().from(schema.temp_program_workouts);
-          const formattedWorkouts: DayWorkout[] = tempWorkouts.map(tw => ({
-            day: tw.day_name,
-            workoutType: tw.workout_type,
-            exercises: JSON.parse(tw.exercises_json)
-          }));
+          const formattedWorkouts: DayWorkout[] = tempWorkouts.map(tw => {
+            let exercises: any = [];
+            let cardio: DayWorkout['cardio'] | undefined = undefined;
+            try {
+              const parsed = JSON.parse(tw.exercises_json);
+              if (Array.isArray(parsed)) {
+                exercises = parsed;
+              } else if (parsed && parsed.cardio) {
+                const c = parsed.cardio;
+                if (c.mode === 'hiit') cardio = { mode: 'hiit', workSec: c.workSec, restSec: c.restSec, rounds: c.rounds };
+                if (c.mode === 'walk_run') cardio = { mode: 'walk_run', runSec: c.runSec, walkSec: c.walkSec, laps: c.laps };
+              }
+            } catch {}
+            return {
+              day: tw.day_name,
+              workoutType: tw.workout_type,
+              cardio,
+              exercises
+            };
+          });
           setWorkouts(formattedWorkouts);
           
           // Update assigned days based on saved workouts
@@ -112,8 +132,8 @@ export default function ProgramScreen() {
       case 2:
         return config.programName.trim() && config.duration && config.goal && config.frequency;
       case 3:
-        // At least one day must be assigned (can't have a program with all rest days)
-        return assignedDays.size >= 1;
+  // Validation handled in handleContinue to match frequency exactly
+  return true;
       case 4:
         return true; // For now, this step is always "complete"
       default:
@@ -174,6 +194,7 @@ export default function ProgramScreen() {
             dayName,
             dayOrder: index + 1,
             workoutType: workoutForDay.workoutType,
+            cardio: workoutForDay.cardio,
             exercises: workoutForDay.exercises,
             isRestDay: false,
           };
@@ -219,6 +240,15 @@ export default function ProgramScreen() {
     if (step === 2) {
       setStep(3);
     } else if (step === 3) {
+      const freq = parseInt(config.frequency || '0', 10);
+      const assigned = assignedDays.size;
+      if (!freq || assigned !== freq) {
+        Alert.alert(
+          'Assign exact days',
+          `You picked ${freq || 0} day(s)/week. Please assign workouts to exactly ${freq || 0} day(s) before continuing.`
+        );
+        return;
+      }
       setStep(4);
     }
   };
@@ -379,7 +409,13 @@ export default function ProgramScreen() {
             onChangeText={(text) => {
               // Only allow numbers
               const numericText = text.replace(/[^0-9]/g, '');
-              setConfig({ ...config, frequency: numericText });
+              // Clamp between 0 and 7
+              let clamped = numericText;
+              if (numericText) {
+                const n = Math.min(parseInt(numericText, 10) || 0, 7);
+                clamped = n.toString();
+              }
+              setConfig({ ...config, frequency: clamped });
             }}
             keyboardType="numeric"
           />
@@ -465,6 +501,13 @@ export default function ProgramScreen() {
                   {dayWorkout ? (
                     <>
                       <Text style={styles.scheduleWorkoutType}>{dayWorkout.workoutType}</Text>
+                      {dayWorkout.cardio ? (
+                        <Text style={styles.scheduleExercises}>
+                          {dayWorkout.cardio.mode === 'hiit'
+                            ? `HIIT ${dayWorkout.cardio.workSec || 0}s/${dayWorkout.cardio.restSec || 0}s x${dayWorkout.cardio.rounds || 0}`
+                            : `WALK-RUN ${dayWorkout.cardio.runSec || 0}s/${dayWorkout.cardio.walkSec || 0}s x${dayWorkout.cardio.laps || 0}`}
+                        </Text>
+                      ) : null}
                       {dayWorkout.exercises.length > 0 ? (
                         <>
                           <Text style={styles.scheduleExercises}>

@@ -26,7 +26,15 @@ export default function WorkoutEditorScreen() {
   }>();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [workoutType, setWorkoutType] = useState('');
-  const isCardioDay = workoutType.trim().toLowerCase() === 'cardio';
+  const [workoutCategory, setWorkoutCategory] = useState<'lift' | 'cardio' | ''>('');
+  const isCardioDay = workoutCategory === 'cardio';
+  // Cardio params state
+  const [hiitWorkSec, setHiitWorkSec] = useState(30);
+  const [hiitRestSec, setHiitRestSec] = useState(30);
+  const [hiitRounds, setHiitRounds] = useState(10);
+  const [wrRunSec, setWrRunSec] = useState(60);
+  const [wrWalkSec, setWrWalkSec] = useState(60);
+  const [wrLaps, setWrLaps] = useState(10);
   const [loading, setLoading] = useState(false);
   
   // Exercise picker modal states (same as new.tsx)
@@ -75,8 +83,35 @@ export default function WorkoutEditorScreen() {
           if (existingWorkout.length > 0) {
             const workout = existingWorkout[0];
             setWorkoutType(workout.workout_type);
-            const exercisesData = JSON.parse(workout.exercises_json);
-            setExercises(exercisesData);
+            setWorkoutCategory(['quick hiit','walk-run'].includes((workout.workout_type || '').toLowerCase()) ? 'cardio' : 'lift');
+            try {
+              const parsed = JSON.parse(workout.exercises_json);
+              if (parsed && !Array.isArray(parsed) && parsed.cardio) {
+                const cardio = parsed.cardio;
+                if (cardio.mode === 'hiit') {
+                  setWorkoutCategory('cardio');
+                  setWorkoutType('QUICK HIIT');
+                  setHiitWorkSec(cardio.workSec ?? 30);
+                  setHiitRestSec(cardio.restSec ?? 30);
+                  setHiitRounds(cardio.rounds ?? 10);
+                } else if (cardio.mode === 'walk_run') {
+                  setWorkoutCategory('cardio');
+                  setWorkoutType('WALK-RUN');
+                  setWrRunSec(cardio.runSec ?? 60);
+                  setWrWalkSec(cardio.walkSec ?? 60);
+                  setWrLaps(cardio.laps ?? 10);
+                }
+                setExercises([]);
+              } else if (Array.isArray(parsed)) {
+                setExercises(parsed);
+              }
+            } catch {
+              // fallback
+              try {
+                const exercisesData = JSON.parse(workout.exercises_json);
+                if (Array.isArray(exercisesData)) setExercises(exercisesData);
+              } catch {}
+            }
           }
         }
       } catch (error) {
@@ -101,11 +136,33 @@ export default function WorkoutEditorScreen() {
         .where(eq(schema.program_days.id, dayIdNum))
         .limit(1);
 
-      if (dayData.length > 0) {
+        if (dayData.length > 0) {
         const dayInfo = dayData[0];
         
         if (dayInfo.workout_templates) {
           setWorkoutType(dayInfo.workout_templates.name);
+          setWorkoutCategory((dayInfo.workout_templates.category || '').toLowerCase() === 'cardio' ? 'cardio' : 'lift');
+            // If cardio, try to load params from description JSON
+            if ((dayInfo.workout_templates.category || '').toLowerCase() === 'cardio') {
+              try {
+                const desc = dayInfo.workout_templates.description || '';
+                const parsed = JSON.parse(desc);
+                if (parsed && parsed.cardio) {
+                  const cardio = parsed.cardio;
+                  if (cardio.mode === 'hiit') {
+                    setWorkoutType('QUICK HIIT');
+                    setHiitWorkSec(cardio.workSec ?? 30);
+                    setHiitRestSec(cardio.restSec ?? 30);
+                    setHiitRounds(cardio.rounds ?? 10);
+                  } else if (cardio.mode === 'walk_run') {
+                    setWorkoutType('WALK-RUN');
+                    setWrRunSec(cardio.runSec ?? 60);
+                    setWrWalkSec(cardio.walkSec ?? 60);
+                    setWrLaps(cardio.laps ?? 10);
+                  }
+                }
+              } catch {}
+            }
           
           // Load exercises from template_exercises and template_sets
           const templateExercises = await db.select()
@@ -246,10 +303,20 @@ export default function WorkoutEditorScreen() {
   };
 
   const saveToTempStorage = async () => {
+    // For cardio days, persist params in a cardio object
+    let payload: any = exercises;
+    if (isCardioDay) {
+      const mode = (workoutType || '').toLowerCase().includes('walk') ? 'walk_run' : 'hiit';
+      payload = {
+        cardio: mode === 'hiit'
+          ? { mode: 'hiit', workSec: hiitWorkSec, restSec: hiitRestSec, rounds: hiitRounds }
+          : { mode: 'walk_run', runSec: wrRunSec, walkSec: wrWalkSec, laps: wrLaps }
+      };
+    }
     const workoutData = {
       day_name: (day as string).toUpperCase(),
       workout_type: workoutType,
-      exercises_json: JSON.stringify(isCardioDay ? [] : exercises)
+      exercises_json: JSON.stringify(payload)
     };
 
     // First, delete any existing temp data for this day
@@ -280,10 +347,22 @@ export default function WorkoutEditorScreen() {
 
   if (templateId) {
       // Update existing template
+      // Compute description: for cardio, store params JSON; else keep simple text
+      let description: string | null = null;
+      if (isCardioDay) {
+        const mode = (workoutType || '').toLowerCase().includes('walk') ? 'walk_run' : 'hiit';
+        const cardio = mode === 'hiit'
+          ? { mode: 'hiit', workSec: hiitWorkSec, restSec: hiitRestSec, rounds: hiitRounds }
+          : { mode: 'walk_run', runSec: wrRunSec, walkSec: wrWalkSec, laps: wrLaps };
+        description = JSON.stringify({ cardio });
+      } else {
+        description = `Template for ${day?.toUpperCase()}`;
+      }
       await db.update(schema.workout_templates)
         .set({
-      name: workoutType.trim(),
-      category: workoutType.trim().toLowerCase() === 'cardio' ? 'cardio' : 'Custom',
+          name: workoutType.trim(),
+          category: isCardioDay ? 'cardio' : 'strength',
+          description,
         })
         .where(eq(schema.workout_templates.id, templateId));
 
@@ -292,11 +371,21 @@ export default function WorkoutEditorScreen() {
         .where(eq(schema.template_exercises.template_id, templateId));
   } else {
       // Create new template
+      let description: string | null = null;
+      if (isCardioDay) {
+        const mode = (workoutType || '').toLowerCase().includes('walk') ? 'walk_run' : 'hiit';
+        const cardio = mode === 'hiit'
+          ? { mode: 'hiit', workSec: hiitWorkSec, restSec: hiitRestSec, rounds: hiitRounds }
+          : { mode: 'walk_run', runSec: wrRunSec, walkSec: wrWalkSec, laps: wrLaps };
+        description = JSON.stringify({ cardio });
+      } else {
+        description = `Template for ${day?.toUpperCase()}`;
+      }
       const newTemplate = await db.insert(schema.workout_templates)
         .values({
           name: workoutType.trim(),
-          description: `Template for ${day?.toUpperCase()}`,
-      category: workoutType.trim().toLowerCase() === 'cardio' ? 'cardio' : 'Custom',
+          description,
+          category: isCardioDay ? 'cardio' : 'strength',
           difficulty: 'intermediate',
           estimated_duration: 60,
         })
@@ -344,7 +433,7 @@ export default function WorkoutEditorScreen() {
   };
 
   // Check if save button should be enabled
-  const canSave = workoutType.trim().length > 0 && (isCardioDay || exercises.length > 0);
+  const canSave = (workoutCategory !== '') && workoutType.trim().length > 0 && (isCardioDay || exercises.length > 0);
 
   const handleCancel = () => {
     router.back();
@@ -361,35 +450,69 @@ export default function WorkoutEditorScreen() {
         <View style={{ width: 36 }} />
       </View>
 
-      {/* Workout Type Input */}
+      {/* Workout Selection Flow */}
       <View style={styles.workoutTypeSection}>
-        <Text style={styles.workoutTypeLabel}>WORKOUT TYPE:</Text>
-        <TextInput
-          style={[
-            styles.workoutTypeInput,
-            !workoutType.trim() && exercises.length === 0 && styles.inputWarning
-          ]}
-          value={workoutType}
-          onChangeText={setWorkoutType}
-          placeholder=""
-          placeholderTextColor="rgba(0, 255, 0, 0.5)"
-        />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-          <TouchableOpacity onPress={() => setWorkoutType('Lift')} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}>
+        <Text style={styles.workoutTypeLabel}>WORKOUT:</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <TouchableOpacity onPress={() => { setWorkoutCategory('lift'); setWorkoutType(''); }} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: workoutCategory === 'lift' ? 'rgba(0,255,0,0.15)' : 'transparent' }}>
             <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body }}>LIFT</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setWorkoutType('Cardio')} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}>
+          <TouchableOpacity onPress={() => { setWorkoutCategory('cardio'); setWorkoutType(''); setExercises([]); }} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: workoutCategory === 'cardio' ? 'rgba(0,255,0,0.15)' : 'transparent' }}>
             <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body }}>CARDIO</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setWorkoutType('Rest Day')} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body }}>REST</Text>
-          </TouchableOpacity>
         </View>
+
+        {/* Lift: free text workout type */}
+        {workoutCategory === 'lift' && (
+          <View style={{ marginTop: 12 }}>
+            <Text style={styles.workoutTypeLabel}>WORKOUT TYPE (ENTER):</Text>
+            <TextInput
+              style={[
+                styles.workoutTypeInput,
+                !workoutType.trim() && exercises.length === 0 && styles.inputWarning
+              ]}
+              value={workoutType}
+              onChangeText={setWorkoutType}
+              placeholder="e.g. Push, Pull, Legs"
+              placeholderTextColor="rgba(0, 255, 0, 0.5)"
+            />
+          </View>
+        )}
+
+        {/* Cardio: pick from options */}
+        {workoutCategory === 'cardio' && (
+          <View style={{ marginTop: 12 }}>
+            <Text style={styles.workoutTypeLabel}>WORKOUT TYPE:</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity onPress={() => setWorkoutType('QUICK HIIT')} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: workoutType === 'QUICK HIIT' ? 'rgba(0,255,0,0.15)' : 'transparent' }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body }}>QUICK HIIT</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setWorkoutType('WALK-RUN')} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: workoutType === 'WALK-RUN' ? 'rgba(0,255,0,0.15)' : 'transparent' }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body }}>WALK-RUN</Text>
+              </TouchableOpacity>
+            </View>
+            {/* Cardio Params */}
+            {workoutType === 'QUICK HIIT' && (
+              <View style={{ marginTop: 12, flexDirection: 'row', gap: 12 }}>
+                <ParamBox label="WORK" value={`${hiitWorkSec}s`} onDec={() => setHiitWorkSec(Math.max(5, hiitWorkSec - 5))} onInc={() => setHiitWorkSec(hiitWorkSec + 5)} />
+                <ParamBox label="REST" value={`${hiitRestSec}s`} onDec={() => setHiitRestSec(Math.max(5, hiitRestSec - 5))} onInc={() => setHiitRestSec(hiitRestSec + 5)} />
+                <ParamBox label="ROUNDS" value={`${hiitRounds}`} onDec={() => setHiitRounds(Math.max(1, hiitRounds - 1))} onInc={() => setHiitRounds(hiitRounds + 1)} />
+              </View>
+            )}
+            {workoutType === 'WALK-RUN' && (
+              <View style={{ marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                <ParamBox label="RUN" value={`${wrRunSec}s`} onDec={() => setWrRunSec(Math.max(10, wrRunSec - 10))} onInc={() => setWrRunSec(wrRunSec + 10)} />
+                <ParamBox label="WALK" value={`${wrWalkSec}s`} onDec={() => setWrWalkSec(Math.max(10, wrWalkSec - 10))} onInc={() => setWrWalkSec(wrWalkSec + 10)} />
+                <ParamBox label="LAPS" value={`${wrLaps}`} onDec={() => setWrLaps(Math.max(1, wrLaps - 1))} onInc={() => setWrLaps(wrLaps + 1)} />
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Exercise List */}
       <View style={styles.exerciseListSection}>
-        {isCardioDay ? (
+  {isCardioDay ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>CARDIO DAY - NO EXERCISES REQUIRED</Text>
           </View>
@@ -736,6 +859,23 @@ export default function WorkoutEditorScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+function ParamBox({ label, value, onDec, onInc }: { label: string; value: string; onDec: () => void; onInc: () => void }) {
+  return (
+    <View style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 8, padding: 10, alignItems: 'center', minWidth: 90 }}>
+      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, fontWeight: 'bold' }}>{label}</Text>
+      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 18, marginVertical: 4 }}>{value}</Text>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <TouchableOpacity onPress={onDec} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code }}>-</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onInc} style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+          <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code }}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 

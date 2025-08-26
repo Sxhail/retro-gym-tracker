@@ -10,6 +10,7 @@ interface ProgramProgressWidgetProps {
   nextWorkout: string;
   daysSinceLastWorkout: number;
   onStartWorkout: () => void;
+  nextWorkoutDetail?: string | null;
 }
 
 const ProgramProgressWidget: React.FC<ProgramProgressWidgetProps> = ({
@@ -19,7 +20,8 @@ const ProgramProgressWidget: React.FC<ProgramProgressWidgetProps> = ({
   progressPercentage,
   nextWorkout,
   daysSinceLastWorkout,
-  onStartWorkout
+  onStartWorkout,
+  nextWorkoutDetail
 }) => {
   return (
     <View style={styles.container}>
@@ -48,6 +50,9 @@ const ProgramProgressWidget: React.FC<ProgramProgressWidgetProps> = ({
       {/* Next Workout */}
       <TouchableOpacity style={styles.nextWorkoutContainer} onPress={onStartWorkout}>
         <Text style={styles.nextWorkoutLabel}>NEXT: {nextWorkout.toUpperCase()}</Text>
+        {nextWorkoutDetail ? (
+          <Text style={styles.nextWorkoutSubLabel}>{nextWorkoutDetail}</Text>
+        ) : null}
       </TouchableOpacity>
       
       {/* Days Since Last Workout */}
@@ -152,6 +157,13 @@ const styles = StyleSheet.create({
     fontSize: 18, // Match START TRAINING button size
     fontWeight: 'bold',
     letterSpacing: 1,
+  },
+  nextWorkoutSubLabel: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    opacity: 0.8,
+    marginTop: 4,
   },
   daysSinceText: {
     color: theme.colors.neon, // Match rest of app text color

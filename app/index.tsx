@@ -35,19 +35,6 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
-  
-  // Debug: Test notification function
-  const testNotifications = async () => {
-    try {
-      console.log('Testing notifications...');
-      const NotificationService = (await import('../services/notifications')).default;
-      await NotificationService.scheduleTestNotification();
-      console.log('Test notification scheduled');
-    } catch (e) {
-      console.error('Failed to test notification:', e);
-    }
-  };
-  
   // Handler for deleting a program from dashboard
   const handleDeleteProgram = async (programId: number) => {
     try {
@@ -82,7 +69,8 @@ export default function HomeScreen() {
       for (const program of allPrograms) {
   let nextWorkout = '';
   let nextWorkoutDayName = '';
-        let daysSinceLastWorkout = null;
+  let daysSinceLastWorkout = null;
+  let nextWorkoutDetail: string | null = null;
         let currentWeek = program.current_week;
         let totalWeeks = program.duration_weeks;
         let progressPercentage = program.completion_percentage;
@@ -113,6 +101,20 @@ export default function HomeScreen() {
             const parts = template.template.name.split(' - ');
             workoutName = parts.length > 1 ? parts[1] : template.template.name;
           }
+          // If cardio, try to parse params for a compact detail string
+          if (template?.template?.category?.toLowerCase() === 'cardio') {
+            try {
+              const desc = template.template.description || '';
+              const parsed = JSON.parse(desc);
+              if (parsed?.cardio?.mode === 'hiit') {
+                const p = parsed.cardio;
+                nextWorkoutDetail = `HIIT ${p.workSec}s/${p.restSec}s x${p.rounds}`;
+              } else if (parsed?.cardio?.mode === 'walk_run') {
+                const p = parsed.cardio;
+                nextWorkoutDetail = `WALK-RUN ${p.runSec}s/${p.walkSec}s x${p.laps}`;
+              }
+            } catch {}
+          }
           nextWorkout = workoutName;
         } else {
           nextWorkout = nextDay ? nextDay.day_name : 'Next Workout';
@@ -139,6 +141,7 @@ export default function HomeScreen() {
           currentWeek,
           totalWeeks,
           progressPercentage,
+          nextWorkoutDetail,
         };
       }
       setPrograms(allPrograms);
@@ -159,6 +162,21 @@ export default function HomeScreen() {
       // If the next day is a cardio day (category marked as 'cardio'), route to cardio
       // If next day is a cardio day, just route to cardio selection (timers removed for now)
       if (template?.template?.category && template.template.category.toLowerCase() === 'cardio') {
+        // Parse params and start appropriate cardio session
+        try {
+          const desc = template.template.description || '';
+          const parsed = JSON.parse(desc);
+          if (parsed?.cardio?.mode === 'hiit') {
+            await cardio.startHiit({ workSec: parsed.cardio.workSec, restSec: parsed.cardio.restSec, rounds: parsed.cardio.rounds });
+            router.push('/cardio/quick-hiit');
+            return;
+          } else if (parsed?.cardio?.mode === 'walk_run') {
+            await cardio.startWalkRun({ runSec: parsed.cardio.runSec, walkSec: parsed.cardio.walkSec, laps: parsed.cardio.laps });
+            router.push('/cardio/walk-run');
+            return;
+          }
+        } catch {}
+        // Fallback to cardio hub
         router.push('/cardio');
         return;
       }
@@ -220,6 +238,7 @@ export default function HomeScreen() {
                   nextWorkout={progress.nextWorkout || 'Inactive'}
                   daysSinceLastWorkout={progress.daysSinceLastWorkout ?? null}
                   onStartWorkout={() => handleStartProgramWorkout(program)}
+                  nextWorkoutDetail={progress.nextWorkoutDetail}
                 />
               </View>
             </Swipeable>
@@ -262,14 +281,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         );
       })()}
-      
-      {/* Debug: Test Notification Button */}
-      <TouchableOpacity 
-        style={[styles.startButton, { backgroundColor: theme.colors.secondary, marginTop: 8 }]} 
-        onPress={testNotifications}
-      >
-        <Text style={[styles.startButtonText, { fontSize: 12 }]}>TEST NOTIFICATIONS</Text>
-      </TouchableOpacity>
     </View>
 
       {/* Bottom Navigation */}

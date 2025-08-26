@@ -10,6 +10,7 @@ export interface ProgramData {
     dayName: string;
     dayOrder: number;
     workoutType: string;
+  cardio?: any; // optional cardio params persisted as JSON when present
     exercises: Array<{
       id: number;
       name: string;
@@ -47,10 +48,17 @@ export class ProgramManager {
           });
     } else {
           // Create a workout template for this day
-          const [template] = await db.insert(schema.workout_templates).values({
-      name: `${programData.name} - ${day.workoutType}`,
-      description: `${day.workoutType} workout for ${programData.name} program`,
-      category: (day.workoutType || '').toLowerCase() === 'cardio' ? 'cardio' : 'strength',
+      const wt = (day.workoutType || '').toLowerCase();
+      const impliedCardio = wt === 'cardio' || wt.includes('cardio') || ['quick hiit','walk-run','walk run','hiit','run','running','walk'].includes(wt);
+      // For cardio, embed params JSON in description
+      let description: string | null = `${day.workoutType} workout for ${programData.name} program`;
+      if (impliedCardio && day.cardio) {
+        try { description = JSON.stringify({ cardio: day.cardio }); } catch {}
+      }
+      const [template] = await db.insert(schema.workout_templates).values({
+    name: `${programData.name} - ${day.workoutType}`,
+    description,
+    category: impliedCardio ? 'cardio' : 'strength',
             estimated_duration: 60,
             created_at: new Date().toISOString(),
           }).returning();

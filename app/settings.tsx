@@ -44,7 +44,15 @@ export default function SettingsScreen() {
         {/* Options */}
         <View style={{ marginTop: theme.spacing.md }}>
           {filtered.map(item => (
-            <TouchableOpacity key={item.key} style={styles.row} activeOpacity={0.7}>
+            <TouchableOpacity
+              key={item.key}
+              style={styles.row}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (item.key === 'account') return router.push('/settings/account');
+                // Placeholders for future pages
+              }}
+            >
               <Text style={styles.rowLabel}>{item.label}</Text>
               <Text style={styles.rowChevron}>›</Text>
             </TouchableOpacity>

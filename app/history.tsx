@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, SafeAreaView, TextInput, Modal, FlatList, Alert, Animated, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import theme from '../styles/theme';
 import { getWorkoutHistory, getTotalWorkoutStats, formatDuration, formatDate, type WorkoutHistoryItem } from '../services/workoutHistory';
@@ -83,6 +83,7 @@ export default function HistoryListScreen() {
   const [importSummary, setImportSummary] = useState<any>(null);
   const [pendingImportData, setPendingImportData] = useState<any>(null);
   const router = useRouter();
+  const params = useLocalSearchParams<{ action?: string }>();
   const [successMessage, setSuccessMessage] = useState('');
 
   // For editable new exercises
@@ -602,6 +603,15 @@ export default function HistoryListScreen() {
     setTimeout(() => setSuccessMessage(''), 4000);
   };
 
+  // If navigated with action=import, trigger the import flow once on mount
+  useEffect(() => {
+    if (params?.action === 'import') {
+      // Slight delay to allow screen to mount fully
+      setTimeout(() => handleImportCsv(), 150);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Delete all workout history handler
   const handleDeleteAllHistory = () => {
     Alert.alert(
@@ -655,20 +665,7 @@ export default function HistoryListScreen() {
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.pageTitle}>HISTORY</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <TouchableOpacity
-            onPress={() => handleImportCsv()}
-            style={{ borderWidth: 1, borderColor: theme.colors.neon, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 12, backgroundColor: 'transparent' }}
-          >
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14 }}>IMPORT</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={handleDeleteAllHistory}
-            style={{ borderWidth: 1, borderColor: '#FF4444', borderRadius: 6, paddingVertical: 4, paddingHorizontal: 8, backgroundColor: 'transparent' }}
-          >
-            <Text style={{ color: '#FF4444', fontFamily: theme.fonts.body, fontSize: 16, fontWeight: 'bold' }}>✕</Text>
-          </TouchableOpacity>
-        </View>
+        <View style={{ width: 36 }} />
       </View>
 
       {/* Refined Slider Toggle - Now only 2 tabs */}

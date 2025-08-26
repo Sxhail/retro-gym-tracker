@@ -14,18 +14,22 @@ import { useFocusEffect } from '@react-navigation/native';
 const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (tab: string) => void }) => (
   <SafeAreaView style={styles.bottomNavContainer}>
     <View style={styles.bottomNav}>
-      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('program')}>
-        <Text style={[styles.navTabLabel, activeTab === 'program' && styles.navTabLabelActive]}>Program</Text>
+      {/* Top full-width Settings button */}
+      <TouchableOpacity style={styles.settingsTab} onPress={() => onTabPress('settings')}>
+        <Text style={[styles.navTabLabel, activeTab === 'settings' && styles.navTabLabelActive]}>SETTINGS</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('history')}>
-        <Text style={[styles.navTabLabel, activeTab === 'history' && styles.navTabLabelActive]}>History</Text>
-      </TouchableOpacity>
-      {/* <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('exercises')}>
-        <Text style={[styles.navTabLabel, activeTab === 'exercises' && styles.navTabLabelActive]}>Exercises</Text>
-      </TouchableOpacity> */}
-      <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
-        <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>Stats</Text>
-      </TouchableOpacity>
+      {/* Bottom row of three tabs */}
+      <View style={styles.bottomRow}>
+        <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('program')}>
+          <Text style={[styles.navTabLabel, activeTab === 'program' && styles.navTabLabelActive]}>Program</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('history')}>
+          <Text style={[styles.navTabLabel, activeTab === 'history' && styles.navTabLabelActive]}>History</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
+          <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>Stats</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   </SafeAreaView>
 );
@@ -292,6 +296,7 @@ export default function HomeScreen() {
           if (tab === 'history') router.push('/history');
           // if (tab === 'exercises') router.push('/exercises');
           if (tab === 'progress') router.push('/stats');
+          if (tab === 'settings') router.push('/settings');
         }}
       />
 
@@ -559,17 +564,22 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'stretch',
     backgroundColor: theme.colors.background,
     borderTopWidth: 1,
     borderTopColor: theme.colors.neonDim,
-    paddingVertical: 8,
-    paddingBottom: 8,
+    paddingVertical: 12,
+    paddingBottom: 14,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     marginHorizontal: 0,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
   },
   navTab: {
     flex: 1,
@@ -579,6 +589,24 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     paddingVertical: 8,
     // Add a subtle border and background for clickable look
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,0,0.15)',
+    backgroundColor: 'rgba(0,255,0,0.04)',
+    shadowColor: '#00FF00',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  settingsTab: {
+    // Full-width button above other tabs
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    marginHorizontal: 0,
+    marginBottom: 8,
+    paddingVertical: 10,
+    width: '100%',
     borderWidth: 1,
     borderColor: 'rgba(0,255,0,0.15)',
     backgroundColor: 'rgba(0,255,0,0.04)',

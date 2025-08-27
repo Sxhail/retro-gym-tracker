@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, A
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import theme from '../styles/theme';
-import { getWorkoutHistory, getTotalWorkoutStats, formatDuration, formatDate, type WorkoutHistoryItem } from '../services/workoutHistory';
-import { getCardioHistory, getTotalCardioStats, formatCardioDate, getCardioTypeDisplayName, type CardioSessionWithStats } from '../services/cardioTracking';
+import { getWorkoutHistory, getTotalWorkoutStats, formatDuration, formatDate, type WorkoutHistoryItem, getWorkoutsOnDate } from '../services/workoutHistory';
+import { getCardioHistory, getTotalCardioStats, formatCardioDate, getCardioTypeDisplayName, type CardioSessionWithStats, getCardioSessionsForDateRange } from '../services/cardioTracking';
 import * as DocumentPicker from 'expo-document-picker';
 import Papa from 'papaparse';
 import * as FileSystem from 'expo-file-system';
@@ -97,6 +97,11 @@ export default function HistoryListScreen() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
+
+  // Date filter state (when selecting a day on the calendar)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null); // YYYY-MM-DD
+  const [dateSessions, setDateSessions] = useState<any[]>([]);
+  const [dateLoading, setDateLoading] = useState(false);
 
   // Slider state - now only 2 options
   const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = calendar, 1 = list
@@ -584,6 +589,17 @@ export default function HistoryListScreen() {
     ];
     // Sort by date descending
     allSessions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // If we have an active date filter, filter by local day match
+    if (selectedDate) {
+      const toLocalYMD = (iso: string) => {
+        const d = new Date(iso);
+        const y = d.getFullYear();
+        const m = (d.getMonth() + 1).toString().padStart(2, '0');
+        const dd = d.getDate().toString().padStart(2, '0');
+        return `${y}-${m}-${dd}`;
+      };
+      return allSessions.filter(item => toLocalYMD(item.date) === selectedDate);
+    }
     if (!searchQuery.trim()) return allSessions;
     return allSessions.filter(item =>
       (item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -738,8 +754,32 @@ export default function HistoryListScreen() {
             year={currentYear}
             month={currentMonth}
             onDatePress={(date) => {
-              // Filter workouts for the selected date
-              setSearchQuery(date);
+              // Select specific date and load its sessions (lift + cardio)
+              setSelectedDate(date);
+              setSearchQuery('');
+              const loadForDate = async () => {
+                setDateLoading(true);
+                try {
+                  const lift = await getWorkoutsOnDate(date);
+                  const [y, m, d] = date.split('-').map(n => parseInt(n, 10));
+                  const startIso = new Date(y, m - 1, d, 0, 0, 0, 0).toISOString();
+                  const endIso = new Date(y, m - 1, d, 23, 59, 59, 999).toISOString();
+                  const cardio = await getCardioSessionsForDateRange(startIso, endIso);
+                  const cardioNormalized = cardio.map(session => ({
+                    ...session,
+                    isCardio: true,
+                    name: session.name || getCardioTypeDisplayName(session.type as any),
+                    exerciseCount: 1,
+                    totalSets: session.rounds || session.laps || session.total_laps || 0,
+                  }));
+                  const liftNormalized = lift.map(w => ({ ...w, isCardio: false, type: '', calories_burned: 0 }));
+                  const combined = [...liftNormalized, ...cardioNormalized].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                  setDateSessions(combined);
+                } finally {
+                  setDateLoading(false);
+                }
+              };
+              loadForDate();
               animateToView(1); // Switch to list view
             }}
             onMonthChange={(year, month) => {
@@ -756,10 +796,10 @@ export default function HistoryListScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-                {searchQuery ? filteredWorkoutsCount : totalStats.totalWorkouts}
+                {selectedDate ? dateSessions.length : (searchQuery ? filteredWorkoutsCount : totalStats.totalWorkouts)}
               </Text>
               <Text style={styles.statLabel}>
-                {searchQuery ? 'FOUND' : 'WORKOUTS'}
+                {selectedDate ? 'FOUND' : (searchQuery ? 'FOUND' : 'WORKOUTS')}
               </Text>
             </View>
             <View style={styles.statItem}>
@@ -771,6 +811,27 @@ export default function HistoryListScreen() {
               <Text style={styles.statLabel}>TOTAL SETS</Text>
             </View>
           </View>
+
+          {selectedDate && (
+            <View style={{
+              marginHorizontal: CARD_MARGIN,
+              marginBottom: 12,
+              borderWidth: 1,
+              borderColor: theme.colors.neon,
+              borderRadius: 8,
+              padding: 10,
+              backgroundColor: 'rgba(0,255,0,0.05)'
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 12 }}>
+                  Showing sessions for {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                </Text>
+                <TouchableOpacity onPress={() => { setSelectedDate(null); setDateSessions([]); animateToView(0); }}>
+                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 12, fontWeight: 'bold' }}>CLEAR</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Workout List */}
           <ScrollView 
@@ -786,6 +847,7 @@ export default function HistoryListScreen() {
               />
             }
             onScroll={({ nativeEvent }) => {
+              if (selectedDate) return; // disable infinite scroll when date filter active
               const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
               const paddingToBottom = 20;
               if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
@@ -809,7 +871,64 @@ export default function HistoryListScreen() {
           </View>
         ) : null}
 
-        {mergedSessions.length === 0 && !loading && !error ? (
+        {selectedDate ? (
+          dateLoading ? (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color={GREEN} />
+              <Text style={styles.loadingMoreText}>LOADING...</Text>
+            </View>
+          ) : (
+            dateSessions.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>NO SESSIONS THIS DAY</Text>
+                <Text style={styles.emptyText}>Try another date from calendar.</Text>
+              </View>
+            ) : (
+              dateSessions.map((item) => (
+                <TouchableOpacity 
+                  key={item.id || `${item.name}-${item.date}`}
+                  style={[styles.workoutCard, item.isCardio && styles.cardioCard]}
+                  activeOpacity={0.8}
+                  onPress={() => item.isCardio ? router.push(`/cardio/history/${item.id}`) : handleWorkoutPress(item.id)}
+                >
+                  <View style={styles.workoutHeader}>
+                    <Text style={styles.workoutTitle}>{item.name}</Text>
+                    <Text style={styles.workoutDate}>{formatDate(item.date)}</Text>
+                  </View>
+                  <View style={styles.workoutDetails}>
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>DURATION</Text>
+                      <Text style={styles.detailValue}>{formatDurationAsHrMin(item.duration)}</Text>
+                    </View>
+                    {item.isCardio ? (
+                      <>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>TYPE</Text>
+                          <Text style={styles.detailValue}>{getCardioTypeDisplayName(item.type as any)}</Text>
+                        </View>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>CALORIES</Text>
+                          <Text style={styles.detailValue}>{item.calories_burned}</Text>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>EXERCISES</Text>
+                          <Text style={styles.detailValue}>{item.exerciseCount}</Text>
+                        </View>
+                        <View style={styles.detailItem}>
+                          <Text style={styles.detailLabel}>SETS</Text>
+                          <Text style={styles.detailValue}>{item.totalSets}</Text>
+                        </View>
+                      </>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))
+            )
+          )
+        ) : mergedSessions.length === 0 && !loading && !error ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>NO SESSIONS YET</Text>
             <TouchableOpacity 

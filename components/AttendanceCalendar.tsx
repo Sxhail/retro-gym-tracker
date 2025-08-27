@@ -219,6 +219,7 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
       <View style={styles.calendarGrid}>
         {calendarDays.map((day, index) => {
           const hasCardio = cardioSessionDates.includes(day.dateString);
+          const hasLift = day.workoutCount > 0;
           
           return (
             <TouchableOpacity
@@ -232,7 +233,21 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
               activeOpacity={0.7}
             >
               <View style={styles.dayContent}>
-                {day.workoutCount > 0 ? (
+                {hasLift && hasCardio ? (
+                  <View style={styles.dayWithBoth}>
+                    <View style={[styles.half, { backgroundColor: getIntensityColor(day.workoutCount), borderTopLeftRadius: 20, borderBottomLeftRadius: 20 }]} />
+                    <View style={[styles.half, { backgroundColor: 'rgba(255, 68, 68, 0.8)', borderTopRightRadius: 20, borderBottomRightRadius: 20 }]} />
+                    <Text style={[
+                      styles.dayText,
+                      styles.dayTextOverlay,
+                      !day.isCurrentMonth && styles.otherMonthText,
+                      day.isToday && styles.todayText,
+                      { color: 'white' }
+                    ]}>
+                      {day.date.getDate()}
+                    </Text>
+                  </View>
+                ) : hasLift ? (
                   <View style={[
                     styles.dayWithWorkout,
                     { backgroundColor: getIntensityColor(day.workoutCount) }
@@ -249,7 +264,7 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
                 ) : hasCardio ? (
                   <View style={[
                     styles.dayWithCardio,
-                    { backgroundColor: 'rgba(255, 68, 68, 0.8)' } // Red for cardio
+                    { backgroundColor: 'rgba(255, 68, 68, 0.8)' }
                   ]}>
                     <Text style={[
                       styles.dayText,
@@ -460,6 +475,24 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     width: 32,
     height: 32,
+  },
+  dayWithBoth: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 20,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  half: {
+    width: 16,
+    height: 32,
+  },
+  dayTextOverlay: {
+    position: 'absolute',
+    textAlign: 'center',
   },
   attendanceIndicator: {
     position: 'absolute',

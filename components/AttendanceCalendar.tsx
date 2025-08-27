@@ -242,7 +242,7 @@ export default function AttendanceCalendar({ year, month, onDatePress, onMonthCh
                       styles.dayTextOverlay,
                       !day.isCurrentMonth && styles.otherMonthText,
                       day.isToday && styles.todayText,
-                      { color: 'white' }
+                      { color: 'black' }
                     ]}>
                       {day.date.getDate()}
                     </Text>

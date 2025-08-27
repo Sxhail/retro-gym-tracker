@@ -723,10 +723,10 @@ export default function NewWorkoutScreen() {
           { 
             ...ex, 
             sets: [
-              { reps: 0, weight: 0, completed: false, restDuration: 120 },
-              { reps: 0, weight: 0, completed: false, restDuration: 120 },
-              { reps: 0, weight: 0, completed: false, restDuration: 120 }
-            ] 
+              { reps: 0, weight: '', completed: false, restDuration: 120 },
+              { reps: 0, weight: '', completed: false, restDuration: 120 },
+              { reps: 0, weight: '', completed: false, restDuration: 120 }
+            ],
           }
         ]);
       }
@@ -774,7 +774,7 @@ export default function NewWorkoutScreen() {
         } else {
           // No deleted sets to restore, create a new one
           const lastRest = currentSets.length > 0 ? currentSets[currentSets.length - 1].restDuration ?? 120 : 120;
-          const newSet = { reps: 0, weight: 0, completed: false, restDuration: lastRest };
+          const newSet = { reps: 0, weight: '', completed: false, restDuration: lastRest };
           return { ...ex, sets: [...currentSets, newSet] };
         }
       }

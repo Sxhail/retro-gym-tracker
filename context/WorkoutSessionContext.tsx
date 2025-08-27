@@ -7,7 +7,7 @@ export interface Exercise {
   name: string;
   sets?: Array<{ 
     reps: number; 
-    weight: number; 
+  weight: number | string; 
     notes?: string; 
     completed?: boolean;
     restDuration?: number;

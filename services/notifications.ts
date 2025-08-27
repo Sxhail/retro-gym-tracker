@@ -15,14 +15,23 @@ let initialized = false;
 
 // Register a notification handler ASAP at module load so foreground presentation is correct
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    // Show alerts/sounds only when app is NOT foregrounded (lock screen / other apps)
-  shouldShowAlert: !isAppForeground,
-  shouldShowBanner: !isAppForeground,
-  shouldShowList: !isAppForeground,
-  shouldPlaySound: !isAppForeground,
-  shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const fg = isAppForeground;
+    if (fg) {
+      try {
+        const title = (notification as any)?.request?.content?.title;
+        console.log('[Notifications] Suppressing foreground notification:', title);
+      } catch {}
+    }
+    return {
+      // Present notifications only when the app is NOT in the foreground
+      shouldShowAlert: !fg,
+      shouldShowBanner: !fg,
+      shouldShowList: !fg,
+      shouldPlaySound: !fg,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 // Track app foreground/background state for handler

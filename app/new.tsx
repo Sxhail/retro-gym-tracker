@@ -430,7 +430,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestCh
                 <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 14, marginBottom: 2 }}>KG</Text>
                 <TextInput
                   style={{ borderRadius: 4, color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 18, width: 80, padding: 2, backgroundColor: 'rgba(0, 255, 0, 0.05)', textAlign: 'center' }}
-                  value={set.weight && set.weight > 0 ? set.weight.toString() : ''}
+                  value={(set.weight !== undefined && set.weight !== null && set.weight !== '') ? String(set.weight) : ''}
                   onChangeText={v => handleSetFieldChange(exerciseId, setIdx, 'weight', v)}
                   placeholder=""
                   placeholderTextColor={theme.colors.neon}

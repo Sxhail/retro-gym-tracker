@@ -148,6 +148,7 @@ export const NotificationService = {
   },
 
   async cancelAllForSession(sessionId: SessionId) {
+    // Cancel any IDs we tracked in-memory for this logical session
     const ids = sessionMap.get(sessionId) ?? [];
     for (const id of ids) {
       try {
@@ -155,6 +156,40 @@ export const NotificationService = {
       } catch {}
     }
     sessionMap.delete(sessionId);
+
+    // Also scan the OS queue for any notifications tagged with this sessionId
+    // This works even after an app reload where the in-memory map is empty.
+    try {
+      const queued = await Notifications.getAllScheduledNotificationsAsync();
+      for (const q of queued) {
+        const sid = (q.content?.data as any)?.sessionId;
+        if (sid === sessionId && q.identifier) {
+          try { await Notifications.cancelScheduledNotificationAsync(q.identifier); } catch {}
+        }
+      }
+    } catch {}
+  },
+
+  // Convenience: cancel any notifications whose sessionId begins with a prefix
+  async cancelBySessionPrefix(sessionIdPrefix: string) {
+    // In-memory first
+    for (const [sid, ids] of sessionMap.entries()) {
+      if (!sid.startsWith(sessionIdPrefix)) continue;
+      for (const id of ids) {
+        try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+      }
+      sessionMap.delete(sid);
+    }
+    // OS queue scan
+    try {
+      const queued = await Notifications.getAllScheduledNotificationsAsync();
+      for (const q of queued) {
+        const sid = (q.content?.data as any)?.sessionId;
+        if (typeof sid === 'string' && sid.startsWith(sessionIdPrefix) && q.identifier) {
+          try { await Notifications.cancelScheduledNotificationAsync(q.identifier); } catch {}
+        }
+      }
+    } catch {}
   },
 
   async cancelAllPending() {

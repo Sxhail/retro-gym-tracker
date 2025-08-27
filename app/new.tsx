@@ -228,6 +228,8 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestCh
       // Reschedule local notification
       try {
         const NotificationService = (await import('../services/notifications')).default;
+        // Proactively clear any stale rest notifications (e.g., after app reload)
+        try { await NotificationService.cancelBySessionPrefix(`lift-rest-${exerciseId}-${setIdx}-`); } catch {}
         if (sessionWorkout.restNotificationSessionId) {
           await NotificationService.cancelAllForSession(sessionWorkout.restNotificationSessionId);
           sessionWorkout.setRestNotificationSessionId(null);
@@ -292,6 +294,17 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestCh
     setTimerPaused(false);
     // Clear background state when timer is skipped
     clearRestTimerState();
+    // Cancel any scheduled local notifications for rest timers to avoid wrong-time alerts
+    (async () => {
+      try {
+        const NotificationService = (await import('../services/notifications')).default;
+        try { await NotificationService.cancelBySessionPrefix('lift-rest-'); } catch {}
+        if (sessionWorkout.restNotificationSessionId) {
+          await NotificationService.cancelAllForSession(sessionWorkout.restNotificationSessionId);
+          sessionWorkout.setRestNotificationSessionId(null);
+        }
+      } catch {}
+    })();
   };
 
   // Background-persistent rest timer (timestamp-based like main workout timer)
@@ -838,6 +851,8 @@ export default function NewWorkoutScreen() {
         // iOS local notification for rest completion (pre-scheduled so it fires in background/locked/force-quit)
         try {
           const NotificationService = (await import('../services/notifications')).default;
+          // Remove any stale notifications with the common rest prefix to avoid duplicates
+          try { await NotificationService.cancelBySessionPrefix('lift-rest-'); } catch {}
           // Cancel any previously scheduled rest notification session to avoid overlap
           if (restNotificationSessionId) {
             await NotificationService.cancelAllForSession(restNotificationSessionId);
@@ -860,8 +875,9 @@ export default function NewWorkoutScreen() {
         setGlobalRestTimer(null);
         // Cancel the scheduled rest notification for this session if present
         try {
+          const NotificationService = (await import('../services/notifications')).default;
+          try { await NotificationService.cancelBySessionPrefix('lift-rest-'); } catch {}
           if (restNotificationSessionId) {
-            const NotificationService = (await import('../services/notifications')).default;
             await NotificationService.cancelAllForSession(restNotificationSessionId);
             setRestNotificationSessionId(null);
           }

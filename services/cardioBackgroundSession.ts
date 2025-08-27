@@ -9,8 +9,7 @@ import {
   type NewActiveCardioNotification,
 } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import NotificationService from './notifications';
-import * as Notifications from 'expo-notifications';
+import IOSLocalNotifications from './iosNotifications';
 
 export type CardioMode = 'hiit' | 'walk_run';
 
@@ -139,76 +138,15 @@ class CardioBackgroundSessionService {
     }));
   }
 
-  // Persist notification IDs for a session
-  async saveNotificationId(sessionId: string, notificationId: string, fireAt: string) {
-    const rec: NewActiveCardioNotification = {
-      session_id: sessionId,
-      notification_id: notificationId,
-      fire_at: fireAt,
-    } as any;
-    await db.insert(active_cardio_notifications).values(rec);
-  }
-
-  // Cancel and clear all notifications for a session (works after restarts)
+  // Cancel and clear all notifications for a session
   async cancelAllNotifications(sessionId: string): Promise<void> {
+    await IOSLocalNotifications.cancelAllForSession(sessionId);
+    // Best-effort: clear any persisted rows if they exist from previous versions
     try {
-      const cutoff = Date.now(); // race-safe cutoff
-      // Cancel using persisted IDs (works even if NotificationService lost in-memory map)
-      const rows = await db
-        .select()
-        .from(active_cardio_notifications)
-        .where(eq(active_cardio_notifications.session_id, sessionId));
-
-      // Preload identifier -> time for persisted IDs to honor cutoff
-      let idToTime = new Map<string, number>();
-      try {
-        const queued = await Notifications.getAllScheduledNotificationsAsync();
-        for (const q of queued) {
-          const sid = (q.content?.data as any)?.sessionId;
-          const trig: any = q.trigger as any;
-          const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
-          const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : (raw ? new Date(raw) : null));
-          if (sid === sessionId && d && !isNaN(d.getTime()) && q.identifier) {
-            idToTime.set(q.identifier, d.getTime());
-          }
-        }
-      } catch {}
-
-      for (const row of rows as ActiveCardioNotification[]) {
-        const ts = idToTime.get(row.notification_id);
-        if (ts && ts > cutoff) continue; // skip newly scheduled items
-        try { await Notifications.cancelScheduledNotificationAsync(row.notification_id); } catch {}
-      }
-
-      // Also clear NotificationService in-memory mapping if present
-      try {
-        await NotificationService.cancelAllForSession(sessionId);
-      } catch {}
-
-      // Defensive: scan all scheduled notifications and cancel those tagged with this sessionId,
-      // but only those scheduled at or before the cutoff to avoid racing with fresh ones.
-      try {
-        const queued = await Notifications.getAllScheduledNotificationsAsync();
-        for (const q of queued) {
-          const sid = (q.content?.data as any)?.sessionId;
-          if (sid !== sessionId || !q.identifier) continue;
-          const trig: any = q.trigger as any;
-          const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
-          const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : (raw ? new Date(raw) : null));
-          const ms = d && !isNaN(d.getTime()) ? d.getTime() : undefined;
-          if (ms === undefined || ms <= cutoff) {
-            try { await Notifications.cancelScheduledNotificationAsync(q.identifier); } catch {}
-          }
-        }
-      } catch {}
-
-      // Remove records
       await db
         .delete(active_cardio_notifications)
         .where(eq(active_cardio_notifications.session_id, sessionId));
-    } catch (e) {
-      console.warn('Failed to cancel cardio notifications', e);
-    }
+    } catch {}
   }
 
   // Schedule notifications from a schedule and persist their IDs
@@ -216,66 +154,33 @@ class CardioBackgroundSessionService {
     if (this.schedulingLocks.has(sessionId)) return; // drop concurrent calls
     this.schedulingLocks.add(sessionId);
     try {
-      const now = Date.now();
-      const KEEP_GRACE_MS = 500; // don't cancel imminently-firing notifications
+  const now = Date.now();
+  const KEEP_GRACE_MS = 500; // don't cancel imminently-firing notifications
 
       // Desired notifications (exclude synthetic 'completed')
       const realPhases = schedule.filter((e) => e.phase !== 'completed');
       const desired = realPhases
         .map((e, i) => ({ idx: i, fireAt: new Date(e.endAt).getTime(), entry: e }))
-        .filter((d) => d.fireAt > now - 2000); // allow small catch-up window to ensure we schedule missed items
+        .filter((d) => d.fireAt > now - 10000); // expanded catch-up window (10s) for background reliability per spec
       const desiredIsoSet = new Set(desired.map((d) => new Date(d.fireAt).toISOString()));
 
-      // Existing persisted notifications for session
-      const existingRows = (await db
-        .select()
-        .from(active_cardio_notifications)
-        .where(eq(active_cardio_notifications.session_id, sessionId))) as ActiveCardioNotification[];
-      const existingByIso = new Map(existingRows.map((r) => [r.fire_at, r.notification_id] as const));
-
-      // Also check OS queue for this session to avoid re-adding duplicates not in DB
-      let queuedTimes = new Set<string>();
-      try {
-        const queued = await Notifications.getAllScheduledNotificationsAsync();
-        for (const q of queued) {
-          const sid = (q.content?.data as any)?.sessionId;
-          const trig: any = q.trigger as any;
-          const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
-          if (sid === sessionId && raw) {
-            const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : new Date(raw));
-            if (!isNaN(d.getTime())) {
-              queuedTimes.add(d.toISOString());
-            }
-          }
-        }
-      } catch {}
-
-      // Cancel obsolete: existing rows not in desired set and far enough in future
-      for (const row of existingRows) {
-        const fireTime = new Date(row.fire_at).getTime();
-        const shouldKeep = desiredIsoSet.has(row.fire_at);
-        if (!shouldKeep && fireTime > now + KEEP_GRACE_MS) {
-          try { await Notifications.cancelScheduledNotificationAsync(row.notification_id); } catch {}
-          try {
-            await db
-              .delete(active_cardio_notifications)
-              .where(eq(active_cardio_notifications.notification_id, row.notification_id as any));
-          } catch {}
-        }
-      }
-
-      // Schedule missing desired times
+      // Fully pre-schedule for iOS at session start (or when schedule changes)
       for (const d of desired) {
         const iso = new Date(d.fireAt).toISOString();
-        if (existingByIso.has(iso)) continue; // already persisted
-        if (queuedTimes.has(iso)) continue; // already queued by OS (orphan without DB row)
 
         const isLast = d.idx === realPhases.length - 1;
+        const isHiit = realPhases.some((p) => p.phase === 'work' || p.phase === 'rest');
         let title: string;
         let body: string;
         if (isLast) {
-          title = 'Workout complete';
-          body = 'Great job!';
+          // Session complete message varies by mode per spec
+          if (isHiit) {
+            title = 'HIIT session complete 🎉';
+            body = 'Well done!';
+          } else {
+            title = 'Walk/Run session complete 🎉';
+            body = 'Great job!';
+          }
         } else {
           const nextLabel = this.getNextPhaseLabel(d.entry.phase);
           title = nextLabel.title;
@@ -283,14 +188,7 @@ class CardioBackgroundSessionService {
         }
 
         console.log(`[CardioBackgroundSession] Scheduling notification: "${title}" - "${body}" at ${iso} for session ${sessionId}`);
-        const id = await NotificationService.scheduleAbsolute(sessionId, new Date(d.fireAt), title, body);
-        console.log(`[CardioBackgroundSession] Notification scheduled with ID: ${id}`);
-        if (id) {
-          await this.saveNotificationId(sessionId, id, iso);
-          console.log(`[CardioBackgroundSession] Notification ID saved to database`);
-        } else {
-          console.warn(`[CardioBackgroundSession] Failed to schedule notification for ${title}`);
-        }
+        await IOSLocalNotifications.scheduleAbsolute(sessionId, new Date(d.fireAt), title, body);
       }
     } finally {
       this.schedulingLocks.delete(sessionId);
@@ -300,15 +198,19 @@ class CardioBackgroundSessionService {
   private getNextPhaseLabel(phase: CardioPhase): { title: string; body: (e: ScheduleEntry) => string } {
     switch (phase) {
       case 'work':
-        return { title: 'Work → Rest', body: (e) => `Round ${e.cycleIndex + 1} complete. Rest starts.` };
+        // HIIT: Work phase finished → time to rest
+        return { title: 'Work phase done ✅', body: () => 'Time to rest.' };
       case 'rest':
-        return { title: 'Rest → Work', body: (e) => `Round ${e.cycleIndex + 1} rest over. Work starts.` };
+        // HIIT: Rest finished → time to work
+        return { title: 'Rest over 💥', body: () => 'Get moving!' };
       case 'run':
-        return { title: 'Run → Walk', body: (e) => `Lap ${e.cycleIndex + 1} run over. Walk starts.` };
+        // Walk/Run: Run finished → start walking
+        return { title: 'Run done 🏃', body: () => 'Switch to walking.' };
       case 'walk':
-        return { title: 'Walk → Run', body: (e) => `Lap ${e.cycleIndex + 1} walk over. Run starts.` };
+        // Walk/Run: Walk finished → start running
+        return { title: 'Walk done 🚶', body: () => 'Time to run!' };
       case 'completed':
-        return { title: 'Workout complete', body: () => 'Great job!' };
+        return { title: 'Session complete 🎉', body: () => 'Great job!' };
       default:
         return { title: 'Phase complete', body: () => '' };
     }

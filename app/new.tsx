@@ -227,19 +227,17 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestCh
       });
       setRestTime(newRemaining);
 
-      // Reschedule local notification
+      // Reschedule local iOS notification
       try {
-        const NotificationService = (await import('../services/notifications')).default;
-        // Proactively clear any stale rest notifications (e.g., after app reload)
-        try { await NotificationService.cancelBySessionPrefix(`lift-rest-${exerciseId}-${setIdx}-`); } catch {}
+        const IOSLocalNotifications = (await import('../services/iosNotifications')).default;
         if (sessionWorkout.restNotificationSessionId) {
-          await NotificationService.cancelAllForSession(sessionWorkout.restNotificationSessionId);
+          await IOSLocalNotifications.cancelAllForSession(sessionWorkout.restNotificationSessionId);
           sessionWorkout.setRestNotificationSessionId(null);
         }
         if (newRemaining > 0) {
           const newFireAt = new Date(now.getTime() + newRemaining * 1000);
           const sessionId = `lift-rest-${exerciseId}-${setIdx}-${grt.startTime.getTime()}`;
-          await NotificationService.scheduleAbsolute(sessionId, newFireAt, 'Rest over', 'Time for your next set!');
+          await IOSLocalNotifications.scheduleAbsolute(sessionId, newFireAt, 'Rest over ⏱', 'Time for your next set!');
           sessionWorkout.setRestNotificationSessionId(sessionId);
         }
       } catch {}
@@ -299,10 +297,9 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestCh
     // Cancel any scheduled local notifications for rest timers to avoid wrong-time alerts
     (async () => {
       try {
-        const NotificationService = (await import('../services/notifications')).default;
-        try { await NotificationService.cancelBySessionPrefix('lift-rest-'); } catch {}
+        const IOSLocalNotifications = (await import('../services/iosNotifications')).default;
         if (sessionWorkout.restNotificationSessionId) {
-          await NotificationService.cancelAllForSession(sessionWorkout.restNotificationSessionId);
+          await IOSLocalNotifications.cancelAllForSession(sessionWorkout.restNotificationSessionId);
           sessionWorkout.setRestNotificationSessionId(null);
         }
       } catch {}
@@ -852,20 +849,18 @@ export default function NewWorkoutScreen() {
 
         // iOS local notification for rest completion (pre-scheduled so it fires in background/locked/force-quit)
         try {
-          const NotificationService = (await import('../services/notifications')).default;
-          // Remove any stale notifications with the common rest prefix to avoid duplicates
-          try { await NotificationService.cancelBySessionPrefix('lift-rest-'); } catch {}
+          const IOSLocalNotifications = (await import('../services/iosNotifications')).default;
           // Cancel any previously scheduled rest notification session to avoid overlap
           if (restNotificationSessionId) {
-            await NotificationService.cancelAllForSession(restNotificationSessionId);
+            await IOSLocalNotifications.cancelAllForSession(restNotificationSessionId);
             setRestNotificationSessionId(null);
           }
           const sessionId = `lift-rest-${exerciseId}-${setIdx}-${now.getTime()}`;
           const fireAt = new Date(now.getTime() + restDuration * 1000);
-          await NotificationService.scheduleAbsolute(
+          await IOSLocalNotifications.scheduleAbsolute(
             sessionId,
             fireAt,
-            'Rest over',
+            'Rest over ⏱',
             'Time for your next set!'
           );
           setRestNotificationSessionId(sessionId);
@@ -877,10 +872,9 @@ export default function NewWorkoutScreen() {
         setGlobalRestTimer(null);
         // Cancel the scheduled rest notification for this session if present
         try {
-          const NotificationService = (await import('../services/notifications')).default;
-          try { await NotificationService.cancelBySessionPrefix('lift-rest-'); } catch {}
+          const IOSLocalNotifications = (await import('../services/iosNotifications')).default;
           if (restNotificationSessionId) {
-            await NotificationService.cancelAllForSession(restNotificationSessionId);
+            await IOSLocalNotifications.cancelAllForSession(restNotificationSessionId);
             setRestNotificationSessionId(null);
           }
         } catch {}

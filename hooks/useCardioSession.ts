@@ -468,13 +468,8 @@ export function useCardioSession() {
         isCompleted: derived.phase === 'completed',
       }, derived.phase !== 'completed');
     }
-    await svc.cancelAllNotifications(sessionId);
-    await svc.clearActiveSession(sessionId);
-    try {
-      // Re-init NotificationService channel/permissions in case they were altered
-      const NotificationService = (await import('../services/notifications')).default;
-      await NotificationService.initialize();
-    } catch {}
+  await svc.cancelAllNotifications(sessionId);
+  await svc.clearActiveSession(sessionId);
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -492,10 +487,6 @@ export function useCardioSession() {
     try {
       await svc.cancelAllNotifications(sessionId);
       await svc.clearActiveSession(sessionId);
-      try {
-        const NotificationService = (await import('../services/notifications')).default;
-        await NotificationService.initialize();
-      } catch {}
     } catch {}
     setSessionId(null);
     setMode(null);
@@ -514,10 +505,6 @@ export function useCardioSession() {
     try {
       await svc.cancelAllNotifications(sessionId);
       await svc.clearActiveSession(sessionId);
-      try {
-        const NotificationService = (await import('../services/notifications')).default;
-        await NotificationService.initialize();
-      } catch {}
     } catch {}
     setSessionId(null);
     setMode(null);

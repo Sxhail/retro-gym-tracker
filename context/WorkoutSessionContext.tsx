@@ -314,12 +314,12 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
 
       // iOS: cancel all pending local notifications
       try {
-        const NotificationService = (await import('../services/notifications')).default;
+        const IOSLocalNotifications = (await import('../services/iosNotifications')).default;
         if (restNotificationSessionId) {
-          await NotificationService.cancelAllForSession(restNotificationSessionId);
+          await IOSLocalNotifications.cancelAllForSession(restNotificationSessionId);
           setRestNotificationSessionId(null);
         }
-        await NotificationService.cancelAllPending();
+        await IOSLocalNotifications.cancelAllPending();
       } catch {}
       
       // Clear any background rest timer data as well
@@ -480,12 +480,12 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     
     // iOS: cancel all pending local notifications
     try {
-      const NotificationService = (await import('../services/notifications')).default;
+      const IOSLocalNotifications = (await import('../services/iosNotifications')).default;
       if (restNotificationSessionId) {
-        await NotificationService.cancelAllForSession(restNotificationSessionId);
+        await IOSLocalNotifications.cancelAllForSession(restNotificationSessionId);
         setRestNotificationSessionId(null);
       }
-      await NotificationService.cancelAllPending();
+      await IOSLocalNotifications.cancelAllPending();
     } catch {}
 
     // Clear any background rest timer data as well

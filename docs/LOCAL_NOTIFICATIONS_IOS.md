@@ -6,12 +6,12 @@ This document captures the design for implementing iOS-only local notifications 
 
 General Requirements
 
-1. Use local notifications only (no remote push).
-2. Notifications must fire while the app is backgrounded (screen off or app switched out).
-3. Pre-schedule all notifications at workout start to maximize reliability.
-4. Cancel all pending notifications if the session ends or is canceled early.
-5. Notifications include title, body, and default sound.
-6. Foreground notifications are ignored; only background behavior is relevant.
+1. ✓ Use local notifications only (no remote push).
+2. ✓ Notifications must fire while the app is backgrounded (screen off or app switched out).
+3. ✓ Pre-schedule all notifications at workout start to maximize reliability.
+4. ✓ Cancel all pending notifications if the session ends or is canceled early.
+5. ✓ Notifications include title, body, and default sound.
+6. ✓ Foreground notifications are ignored; only background behavior is relevant.
 
 
 iOS force-quit behavior:
@@ -33,48 +33,48 @@ Scenarios
 Lift Session – Rest Timer
 
 1. Rest timer between sets finished
-   1. Schedule at rest start.
-   2. Fires at rest end while app is backgrounded.
-   3. Message: “Rest over ⏱ Time for your next set!”
+   1. ✓ Schedule at rest start.
+   2. ✓ Fires at rest end while app is backgrounded.
+   3. ✓ Message: “Rest over ⏱ Time for your next set!”
 
 
 Cardio – HIIT Sessions
 
 1. Work phase finished → time to rest
-   1. Pre-schedule notifications for every work interval end.
-   2. Message: “Work phase done ✅ Time to rest.”
+   1. ✓ Pre-schedule notifications for every work interval end.
+   2. ✓ Message: “Work phase done ✅ Time to rest.”
 
 2. Rest phase finished → time to work
-   1. Pre-schedule notifications for every rest interval end.
-   2. Message: “Rest over 💥 Get moving!”
+   1. ✓ Pre-schedule notifications for every rest interval end.
+   2. ✓ Message: “Rest over 💥 Get moving!”
 
 3. HIIT session complete
-   1. Pre-schedule final notification at session end.
-   2. Message: “HIIT session complete 🎉 Well done!”
+   1. ✓ Pre-schedule final notification at session end.
+   2. ✓ Message: “HIIT session complete 🎉 Well done!”
 
 
 Cardio – Walk/Run Sessions
 
 1. Run finished → start walking
-   1. Pre-schedule notifications for each run interval end.
-   2. Message: “Run done 🏃 Switch to walking.”
+   1. ✓ Pre-schedule notifications for each run interval end.
+   2. ✓ Message: “Run done 🏃 Switch to walking.”
 
 2. Walk finished → start running
-   1. Pre-schedule notifications for each walk interval end.
-   2. Message: “Walk done 🚶 Time to run!”
+   1. ✓ Pre-schedule notifications for each walk interval end.
+   2. ✓ Message: “Walk done 🚶 Time to run!”
 
 3. Walk/Run session complete
-   1. Pre-schedule final notification at session end.
-   2. Message: “Walk/Run session complete 🎉 Great job!”
+   1. ✓ Pre-schedule final notification at session end.
+   2. ✓ Message: “Walk/Run session complete 🎉 Great job!”
 
 
 Constraints & Edge Cases
 
-1. Foreground handling is ignored.
-2. Force-quit limitations: new notifications cannot be scheduled until the app is reopened; only already scheduled notifications may fire.
-3. Pre-schedule the entire session at start to ensure reliability.
-4. Cancel pending notifications when session ends or is canceled early.
-5. Prevent overlapping sessions by clearing previous session notifications.
+1. ✓ Foreground handling is ignored.
+2. ✓ Force-quit limitations: new notifications cannot be scheduled until the app is reopened; only already scheduled notifications may fire.
+3. ✓ Pre-schedule the entire session at start to ensure reliability.
+4. ✓ Cancel pending notifications when session ends or is canceled early.
+5. ✓ Prevent overlapping sessions by clearing previous session notifications.
 
 
 Changes / rationale:
@@ -115,15 +115,15 @@ Time	Event	Notification
 
 Implementation Notes
 
-1. Use expo-notifications with Date-based triggers for background reliability.
-2. Request permissions on app start; confirm alerts are allowed in iOS Settings.
-3. Pre-schedule all notifications at workout start:
-   1. Cardio: pre-schedule entire session.
-   2. Lift: schedule rest notification at start of rest.
-4. Cancel all notifications for the session if ended or canceled early.
-5. Prevent overlapping sessions by clearing previously scheduled notifications when starting a new session.
-6. Use sound: 'default' to ensure notifications play reliably on iOS.
-7. Expand scheduling catch-up window to 5–10s to handle minor delays when the device is asleep.
+1. ✓ Use expo-notifications with Date-based triggers for background reliability.
+2. ✓ Request permissions on app start; confirm alerts are allowed in iOS Settings.
+3. ✓ Pre-schedule all notifications at workout start:
+   1. ✓ Cardio: pre-schedule entire session.
+   2. ✓ Lift: schedule rest notification at start of rest.
+4. ✓ Cancel all notifications for the session if ended or canceled early.
+5. ✓ Prevent overlapping sessions by clearing previously scheduled notifications when starting a new session.
+6. ✓ Use sound: 'default' to ensure notifications play reliably on iOS.
+7. ✓ Expand scheduling catch-up window to 5–10s to handle minor delays when the device is asleep.
 
 
 Changes / rationale:

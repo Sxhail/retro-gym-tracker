@@ -15,7 +15,7 @@ import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
 import BackgroundRestTimerPersistence from '../components/BackgroundRestTimerPersistence';
 import CustomSplashScreen from '../components/CustomSplashScreen';
-import NotificationService from '../services/notifications';
+import IOSLocalNotifications from '../services/iosNotifications';
 import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
 
 // Keep the splash screen visible while we fetch resources
@@ -24,7 +24,7 @@ SplashScreen.preventAutoHideAsync();
 export default function Layout() {
   // Initialize iOS notifications once
   useEffect(() => {
-    NotificationService.initialize().catch(console.warn);
+  IOSLocalNotifications.initialize().catch(console.warn);
   }, []);
   const [orbitronLoaded] = useOrbitron({ Orbitron_700Bold });
   const [pressStart2PLoaded] = usePressStart2P({ PressStart2P_400Regular });

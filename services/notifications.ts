@@ -15,23 +15,14 @@ let initialized = false;
 
 // Register a notification handler ASAP at module load so foreground presentation is correct
 Notifications.setNotificationHandler({
-  handleNotification: async (notification) => {
-    const fg = isAppForeground;
-    if (fg) {
-      try {
-        const title = (notification as any)?.request?.content?.title;
-        console.log('[Notifications] Suppressing foreground notification:', title);
-      } catch {}
-    }
-    return {
-      // Present notifications only when the app is NOT in the foreground
-      shouldShowAlert: !fg,
-      shouldShowBanner: !fg,
-      shouldShowList: !fg,
-      shouldPlaySound: !fg,
-      shouldSetBadge: false,
-    };
-  },
+  handleNotification: async () => ({
+    // Show alerts/sounds only when app is NOT foregrounded (lock screen / other apps)
+    shouldShowAlert: !isAppForeground,
+    shouldShowBanner: !isAppForeground,
+    shouldShowList: !isAppForeground,
+    shouldPlaySound: !isAppForeground,
+    shouldSetBadge: false,
+  }),
 });
 
 // Track app foreground/background state for handler
@@ -40,6 +31,15 @@ AppState.addEventListener('change', (state: AppStateStatus) => {
 });
 
 export const NotificationService = {
+  async getPermissionStatus(): Promise<Notifications.PermissionStatus> {
+    try {
+      const settings = await Notifications.getPermissionsAsync();
+      return settings.status;
+    } catch {
+      return 'undetermined' as Notifications.PermissionStatus;
+    }
+  },
+
   async initialize() {
   if (initialized) return;
 
@@ -60,7 +60,7 @@ export const NotificationService = {
       }
     }
 
-    // Permission request (idempotent) – iOS and Android 13+
+  // Permission request (idempotent) – iOS and Android 13+
     try {
       const settings = await Notifications.getPermissionsAsync();
       let status = settings.status;
@@ -115,17 +115,17 @@ export const NotificationService = {
       console.warn('[Notifications] Permission check/request failed', e);
     }
 
-    // Clamp past times to near-future to ensure delivery
-    const now = Date.now();
-    const fireAt = when.getTime() <= now ? new Date(now + 500) : when;
+  // Clamp past times to near-future to ensure delivery
+  const now = Date.now();
+  const fireAt: Date = when.getTime() <= now ? new Date(now + 500) : when;
 
     // Use date-based trigger for precise delivery even if app is killed
   const payload: Notifications.NotificationRequestInput = {
       content: {
         title,
         body,
-        // On iOS, provide a sound name or 'default' to ensure audible alert when backgrounded
-        sound: Platform.OS === 'ios' ? 'default' : (true as any),
+        // Use default sound on both platforms
+        sound: true as any,
     data: { sessionId, fireAt: fireAt.toISOString() },
         ...(Platform.OS === 'android'
           ? { channelId: 'default', priority: Notifications.AndroidNotificationPriority.MAX }
@@ -157,22 +157,50 @@ export const NotificationService = {
   },
 
   async cancelAllForSession(sessionId: SessionId) {
-    // Cancel any IDs we tracked in-memory for this logical session
-    const ids = sessionMap.get(sessionId) ?? [];
-    for (const id of ids) {
-      try {
-        await Notifications.cancelScheduledNotificationAsync(id);
-      } catch {}
-    }
-    sessionMap.delete(sessionId);
+    // Race-safe cutoff: only cancel notifications scheduled before this call started
+    const cutoff = Date.now();
 
-    // Also scan the OS queue for any notifications tagged with this sessionId
-    // This works even after an app reload where the in-memory map is empty.
+    // Build a quick map of identifier -> trigger time for this session
+    let idToTime = new Map<string, number>();
     try {
       const queued = await Notifications.getAllScheduledNotificationsAsync();
       for (const q of queued) {
         const sid = (q.content?.data as any)?.sessionId;
-        if (sid === sessionId && q.identifier) {
+        const trig: any = q.trigger as any;
+        const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
+        const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : (raw ? new Date(raw) : null));
+        if (sid === sessionId && d && !isNaN(d.getTime()) && q.identifier) {
+          idToTime.set(q.identifier, d.getTime());
+        }
+      }
+    } catch {}
+
+    // Cancel any IDs we tracked in-memory for this logical session, but only if they existed before cutoff
+    const ids = sessionMap.get(sessionId) ?? [];
+    const kept: string[] = [];
+    for (const id of ids) {
+      const ts = idToTime.get(id);
+      if (ts && ts > cutoff) {
+        // Newer than cutoff; keep it
+        kept.push(id);
+        continue;
+      }
+      try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+    }
+    if (kept.length) sessionMap.set(sessionId, kept); else sessionMap.delete(sessionId);
+
+    // Also scan the OS queue for any notifications tagged with this sessionId (works after reload),
+    // but only cancel those scheduled at or before the cutoff to avoid racing with freshly added ones.
+    try {
+      const queued = await Notifications.getAllScheduledNotificationsAsync();
+      for (const q of queued) {
+        const sid = (q.content?.data as any)?.sessionId;
+        if (sid !== sessionId || !q.identifier) continue;
+        const trig: any = q.trigger as any;
+        const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
+        const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : (raw ? new Date(raw) : null));
+        const ms = d && !isNaN(d.getTime()) ? d.getTime() : undefined;
+        if (ms === undefined || ms <= cutoff) {
           try { await Notifications.cancelScheduledNotificationAsync(q.identifier); } catch {}
         }
       }
@@ -181,20 +209,44 @@ export const NotificationService = {
 
   // Convenience: cancel any notifications whose sessionId begins with a prefix
   async cancelBySessionPrefix(sessionIdPrefix: string) {
-    // In-memory first
-    for (const [sid, ids] of sessionMap.entries()) {
-      if (!sid.startsWith(sessionIdPrefix)) continue;
-      for (const id of ids) {
-        try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
-      }
-      sessionMap.delete(sid);
-    }
-    // OS queue scan
+    const cutoff = Date.now();
+    // Preload id->time for targeted cancellations
+    let idToTime = new Map<string, number>();
     try {
       const queued = await Notifications.getAllScheduledNotificationsAsync();
       for (const q of queued) {
         const sid = (q.content?.data as any)?.sessionId;
-        if (typeof sid === 'string' && sid.startsWith(sessionIdPrefix) && q.identifier) {
+        const trig: any = q.trigger as any;
+        const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
+        const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : (raw ? new Date(raw) : null));
+        if (typeof sid === 'string' && sid.startsWith(sessionIdPrefix) && d && !isNaN(d.getTime()) && q.identifier) {
+          idToTime.set(q.identifier, d.getTime());
+        }
+      }
+    } catch {}
+
+    // In-memory first (race-safe)
+    for (const [sid, ids] of sessionMap.entries()) {
+      if (!sid.startsWith(sessionIdPrefix)) continue;
+      const kept: string[] = [];
+      for (const id of ids) {
+        const ts = idToTime.get(id);
+        if (ts && ts > cutoff) { kept.push(id); continue; }
+        try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+      }
+      if (kept.length) sessionMap.set(sid, kept); else sessionMap.delete(sid);
+    }
+    // OS queue scan (race-safe)
+    try {
+      const queued = await Notifications.getAllScheduledNotificationsAsync();
+      for (const q of queued) {
+        const sid = (q.content?.data as any)?.sessionId;
+        if (!q.identifier || typeof sid !== 'string' || !sid.startsWith(sessionIdPrefix)) continue;
+        const trig: any = q.trigger as any;
+        const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
+        const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : (raw ? new Date(raw) : null));
+        const ms = d && !isNaN(d.getTime()) ? d.getTime() : undefined;
+        if (ms === undefined || ms <= cutoff) {
           try { await Notifications.cancelScheduledNotificationAsync(q.identifier); } catch {}
         }
       }

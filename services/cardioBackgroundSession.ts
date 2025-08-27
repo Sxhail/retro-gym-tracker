@@ -152,16 +152,32 @@ class CardioBackgroundSessionService {
   // Cancel and clear all notifications for a session (works after restarts)
   async cancelAllNotifications(sessionId: string): Promise<void> {
     try {
+      const cutoff = Date.now(); // race-safe cutoff
       // Cancel using persisted IDs (works even if NotificationService lost in-memory map)
       const rows = await db
         .select()
         .from(active_cardio_notifications)
         .where(eq(active_cardio_notifications.session_id, sessionId));
 
+      // Preload identifier -> time for persisted IDs to honor cutoff
+      let idToTime = new Map<string, number>();
+      try {
+        const queued = await Notifications.getAllScheduledNotificationsAsync();
+        for (const q of queued) {
+          const sid = (q.content?.data as any)?.sessionId;
+          const trig: any = q.trigger as any;
+          const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
+          const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : (raw ? new Date(raw) : null));
+          if (sid === sessionId && d && !isNaN(d.getTime()) && q.identifier) {
+            idToTime.set(q.identifier, d.getTime());
+          }
+        }
+      } catch {}
+
       for (const row of rows as ActiveCardioNotification[]) {
-        try {
-          await Notifications.cancelScheduledNotificationAsync(row.notification_id);
-        } catch {}
+        const ts = idToTime.get(row.notification_id);
+        if (ts && ts > cutoff) continue; // skip newly scheduled items
+        try { await Notifications.cancelScheduledNotificationAsync(row.notification_id); } catch {}
       }
 
       // Also clear NotificationService in-memory mapping if present
@@ -169,12 +185,18 @@ class CardioBackgroundSessionService {
         await NotificationService.cancelAllForSession(sessionId);
       } catch {}
 
-      // Defensive: scan all scheduled notifications and cancel those tagged with this sessionId
+      // Defensive: scan all scheduled notifications and cancel those tagged with this sessionId,
+      // but only those scheduled at or before the cutoff to avoid racing with fresh ones.
       try {
         const queued = await Notifications.getAllScheduledNotificationsAsync();
         for (const q of queued) {
           const sid = (q.content?.data as any)?.sessionId;
-          if (sid === sessionId && q.identifier) {
+          if (sid !== sessionId || !q.identifier) continue;
+          const trig: any = q.trigger as any;
+          const raw = trig?.date ?? trig?.timestamp ?? trig?.value ?? null;
+          const d = typeof raw === 'number' ? new Date(raw) : (raw instanceof Date ? raw : (raw ? new Date(raw) : null));
+          const ms = d && !isNaN(d.getTime()) ? d.getTime() : undefined;
+          if (ms === undefined || ms <= cutoff) {
             try { await Notifications.cancelScheduledNotificationAsync(q.identifier); } catch {}
           }
         }

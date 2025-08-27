@@ -21,7 +21,9 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestCh
   // Remove PanResponder and Animated pan logic
 
   // Only allow marking as complete if both KG and REPS are positive numbers
-  const canComplete = !!set.weight && !!set.reps && Number(set.weight) > 0 && Number(set.reps) > 0;
+  // Allow weight to be 0, but reps must be > 0. Blank weight is not allowed.
+  const hasWeightValue = set.weight !== '' && set.weight !== null && set.weight !== undefined;
+  const canComplete = hasWeightValue && Number(set.weight) >= 0 && Number(set.reps) > 0;
 
   // Rest timer state (per set) - timestamp-based for background persistence
   const [restTime, setRestTime] = useState(set.restDuration ?? 120);

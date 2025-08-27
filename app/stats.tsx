@@ -9,7 +9,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import theme from '../styles/theme';
 import { getExerciseMaxTimeline } from '../services/workoutHistory';
-import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 
 export default function ProgressOverview() {
   const router = useRouter();
@@ -76,7 +75,6 @@ export default function ProgressOverview() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <GlobalRestTimerDisplay />
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.back}>←</Text>

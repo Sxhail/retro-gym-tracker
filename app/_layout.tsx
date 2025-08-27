@@ -15,7 +15,6 @@ import AppLayout from '../components/AppLayout';
 import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersistence';
 import BackgroundRestTimerPersistence from '../components/BackgroundRestTimerPersistence';
 import CustomSplashScreen from '../components/CustomSplashScreen';
-import { GlobalRestTimerNotification } from '../components/GlobalRestTimerNotification';
 import NotificationService from '../services/notifications';
 import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
 
@@ -82,7 +81,6 @@ export default function Layout() {
                     }}
                   />
                   {false && <></>}
-                  <GlobalRestTimerNotification />
                 </AppLayout>
                 </BackgroundCardioSessionPersistence>
               </BackgroundRestTimerPersistence>

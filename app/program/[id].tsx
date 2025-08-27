@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Ale
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import theme from '../../styles/theme';
 import { ProgramManager } from '../../services/programManager';
-import { GlobalRestTimerDisplay } from '../../components/GlobalRestTimerDisplay';
 
 interface ProgramStats {
   totalWorkouts: number;
@@ -95,7 +94,6 @@ export default function ProgramDetailsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <GlobalRestTimerDisplay />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={styles.backButton}>←</Text>
@@ -113,7 +111,6 @@ export default function ProgramDetailsScreen() {
   if (!program) {
     return (
       <SafeAreaView style={styles.container}>
-        <GlobalRestTimerDisplay />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Text style={styles.backButton}>←</Text>
@@ -131,7 +128,6 @@ export default function ProgramDetailsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2000 }}>
-        <GlobalRestTimerDisplay />
       </View>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>

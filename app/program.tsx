@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Tex
 import { useRouter } from 'expo-router';
 import { eq } from 'drizzle-orm';
 import theme from '../styles/theme';
-import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 import { db } from '../db/client';
 import * as schema from '../db/schema';
 import { ProgramManager, ProgramData } from '../services/programManager';
@@ -281,7 +280,6 @@ export default function ProgramScreen() {
   const renderHeader = () => (
     <View>
   {/* Rest timer line bar above arrow and title */}
-  <GlobalRestTimerDisplay />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>

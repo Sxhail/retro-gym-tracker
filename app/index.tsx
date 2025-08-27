@@ -6,7 +6,6 @@ import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import { useCardioSession } from '../hooks/useCardioSession';
 // Removed Alert-based popups for cardio continue/cancel flow
 import theme from '../styles/theme';
-import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
 import { ProgramManager } from '../services/programManager';
 import { useFocusEffect } from '@react-navigation/native';

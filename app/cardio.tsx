@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
-import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 import { useCardioSession } from '../hooks/useCardioSession';
 
 export default function CardioScreen() {
@@ -57,7 +56,6 @@ export default function CardioScreen() {
 
   return (
   <SafeAreaView style={styles.container}>
-      <GlobalRestTimerDisplay />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

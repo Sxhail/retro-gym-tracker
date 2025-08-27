@@ -5,7 +5,6 @@ import theme from '../../styles/theme';
 import { db } from '../../db/client';
 import * as schema from '../../db/schema';
 import { checkTemplateNameExists } from '../../services/workoutTemplates';
-import { GlobalRestTimerDisplay } from '../../components/GlobalRestTimerDisplay';
 
 export type Exercise = typeof schema.exercises.$inferSelect;
 
@@ -157,7 +156,6 @@ export default function CreateTemplateScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <GlobalRestTimerDisplay />
       {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>

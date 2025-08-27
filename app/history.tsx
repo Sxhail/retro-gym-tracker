@@ -13,7 +13,6 @@ import * as schema from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { Picker } from '@react-native-picker/picker';
 import AttendanceCalendar from '../components/AttendanceCalendar';
-import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 
 const GREEN = '#00FF00';
 const LIGHT_GREEN = '#39FF14';
@@ -657,7 +656,7 @@ export default function HistoryListScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Global Rest Timer Display */}
-      <GlobalRestTimerDisplay />
+      
       
       {/* Header Row */}
       <View style={styles.headerRow}>

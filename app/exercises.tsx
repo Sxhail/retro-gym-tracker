@@ -5,7 +5,6 @@ import theme from '../styles/theme';
 import { db } from '../db/client';
 import * as schema from '../db/schema';
 import { getExerciseMaxWeights } from '../services/workoutHistory';
-import { GlobalRestTimerDisplay } from '../components/GlobalRestTimerDisplay';
 
 export type Exercise = typeof schema.exercises.$inferSelect;
 
@@ -106,8 +105,7 @@ export default function ExercisesScreen() {
   }, [search, selectedMuscleGroup, selectedEquipment, sortBy]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <GlobalRestTimerDisplay />
+  <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>

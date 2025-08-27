@@ -382,22 +382,31 @@ export async function getWorkoutPRs(workoutId: number): Promise<PRItem[]> {
     if (!workout) return [];
 
     const prevMaxByExercise = await getExerciseMaxWeightBefore(workoutId);
-    const prs: PRItem[] = [];
-
-    // Track best entry for each (exerciseId, weight) to avoid duplicates
-    const bestRepsAtWeight: Record<string, PRItem> = {};
+    const byExercise = new Map<number, PRItem>();
 
     for (const ex of workout.exercises) {
       const prevMax = prevMaxByExercise[ex.exerciseId] ?? 0;
+      // Find the top set by weight in this workout for this exercise (tie-breaker: reps)
+      const sets = ex.sets ?? [];
+      if (sets.length === 0) continue;
+      const top = sets.reduce((best, s) => {
+        const bw = Number(best.weight) || 0;
+        const br = Number(best.reps) || 0;
+        const cw = Number(s.weight) || 0;
+        const cr = Number(s.reps) || 0;
+        if (cw > bw) return s;
+        if (cw === bw && cr > br) return s;
+        return best;
+      }, sets[0]);
 
-      for (const s of ex.sets) {
-        const weight = Number(s.weight) || 0;
-        const reps = Number(s.reps) || 0;
-        if (weight <= 0 || reps <= 0) continue;
+      const weight = Number(top.weight) || 0;
+      const reps = Number(top.reps) || 0;
+      if (weight <= 0 || reps <= 0) continue;
 
-        // Heaviest weight PR
-        if (weight > prevMax) {
-          prs.push({
+      if (weight > prevMax) {
+        const existing = byExercise.get(ex.exerciseId);
+        if (!existing || weight > existing.weight) {
+          byExercise.set(ex.exerciseId, {
             type: 'weight',
             exerciseId: ex.exerciseId,
             exerciseName: ex.exerciseName,
@@ -405,29 +414,10 @@ export async function getWorkoutPRs(workoutId: number): Promise<PRItem[]> {
             reps,
           });
         }
-
-        // Most reps at given weight PR
-        const prevReps = await getMaxRepsForExerciseAtWeightBefore(ex.exerciseId, weight, workoutId);
-        if (reps > prevReps) {
-          const key = `${ex.exerciseId}-${weight}`;
-          const candidate: PRItem = {
-            type: 'repsAtWeight',
-            exerciseId: ex.exerciseId,
-            exerciseName: ex.exerciseName,
-            weight,
-            reps,
-          };
-          const existing = bestRepsAtWeight[key];
-          if (!existing || candidate.reps > existing.reps) {
-            bestRepsAtWeight[key] = candidate;
-          }
-        }
       }
     }
 
-    // Merge best reps-at-weight PRs
-    prs.push(...Object.values(bestRepsAtWeight));
-    return prs;
+    return Array.from(byExercise.values());
   } catch (e) {
     console.error('Error in getWorkoutPRs:', e);
     return [];

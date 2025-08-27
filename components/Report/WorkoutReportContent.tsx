@@ -26,13 +26,22 @@ export const WorkoutReportContent = forwardRef<View, Props>(({ workout, prs }, r
   const durH = Math.floor(durMinTotal / 60).toString().padStart(2, '0');
   const durM = (durMinTotal % 60).toString().padStart(2, '0');
 
-  const exerciseLines = exercises.map((ex, idx) => {
+  const exerciseLines = exercises.map((ex) => {
     const sets = ex.sets ?? [];
-    const setCount = sets.length;
-    const repCount = sets.reduce((sum, s) => sum + (Number(s.reps) || 0), 0);
-    const volume = Math.round(sets.reduce((sum, s) => sum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0));
-    const maxWeight = sets.reduce((mx, s) => Math.max(mx, Number(s.weight) || 0), 0);
-    return `${idx + 1}.\t${ex.exerciseName} — ${setCount} × ${repCount} @ ${maxWeight} → ${volume}`;
+    if (sets.length === 0) return `${ex.exerciseName}: —`;
+    // Top set: choose the set with highest weight; tie-breaker by highest reps
+    const top = sets.reduce((best, s) => {
+      const bw = Number(best.weight) || 0;
+      const br = Number(best.reps) || 0;
+      const cw = Number(s.weight) || 0;
+      const cr = Number(s.reps) || 0;
+      if (cw > bw) return s;
+      if (cw === bw && cr > br) return s;
+      return best;
+    }, sets[0]);
+    const w = Number(top.weight) || 0;
+    const r = Number(top.reps) || 0;
+    return `${ex.exerciseName}: ${w} × ${r}`;
   });
 
   return (
@@ -53,9 +62,17 @@ export const WorkoutReportContent = forwardRef<View, Props>(({ workout, prs }, r
 
       <Text style={styles.line}>{`\n⸻\n`}</Text>
       <Text style={styles.line}>Personal Records (PRs)</Text>
-      {prs.map((pr, i) => (
-        <Text key={i} style={styles.lineIndented}>{`•\t${pr.exerciseName}: ${pr.weight} × ${pr.reps} (New PR!)`}</Text>
-      ))}
+      {(() => {
+        // Ensure only one PR per exercise, keeping the highest weight
+        const byExercise = new Map<number, PRItem>();
+        for (const pr of prs) {
+          const existing = byExercise.get(pr.exerciseId);
+          if (!existing || pr.weight > existing.weight) byExercise.set(pr.exerciseId, pr);
+        }
+        return Array.from(byExercise.values()).map((pr, i) => (
+          <Text key={i} style={styles.lineIndented}>{`•\t${pr.exerciseName}: ${pr.weight} × ${pr.reps}`}</Text>
+        ));
+      })()}
 
   <Text style={styles.line}>{`\n⸻\n`}</Text>
     </View>

@@ -35,17 +35,31 @@ export default function PostSessionReportModal({ visible, workoutId, onClose }: 
     const durH = Math.floor(durMinTotal / 60).toString().padStart(2, '0');
     const durM = (durMinTotal % 60).toString().padStart(2, '0');
     const volStr = `${Math.round(totalVolume).toLocaleString()} kg`;
-    const exerciseLines = exercises.map((ex, idx) => {
+    const exerciseLines = exercises.map((ex) => {
       const sets = ex.sets ?? [];
-      const setCount = sets.length;
-      const repCount = sets.reduce((sum, s) => sum + (Number(s.reps) || 0), 0);
-      const volume = Math.round(sets.reduce((sum, s) => sum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0));
-      const maxWeight = sets.reduce((mx, s) => Math.max(mx, Number(s.weight) || 0), 0);
-      return `\t${idx + 1}.\t${ex.exerciseName} — ${setCount} × ${repCount} @ ${maxWeight} → ${volume}`;
+      if (sets.length === 0) return `\t${ex.exerciseName}: —`;
+      const top = sets.reduce((best, s) => {
+        const bw = Number(best.weight) || 0;
+        const br = Number(best.reps) || 0;
+        const cw = Number(s.weight) || 0;
+        const cr = Number(s.reps) || 0;
+        if (cw > bw) return s;
+        if (cw === bw && cr > br) return s;
+        return best;
+      }, sets[0]);
+      const wv = Number(top.weight) || 0;
+      const rp = Number(top.reps) || 0;
+      return `\t${ex.exerciseName}: ${wv} × ${rp}`;
     });
-    const prLines = (p && p.length > 0)
-      ? p.map((pr) => `\t•\t${pr.exerciseName}: ${pr.weight} × ${pr.reps} (New PR!)`)
-      : [];
+    const prLines = (() => {
+      if (!p || p.length === 0) return [] as string[];
+      const byExercise = new Map<number, PRItem>();
+      for (const pr of p) {
+        const existing = byExercise.get(pr.exerciseId);
+        if (!existing || pr.weight > existing.weight) byExercise.set(pr.exerciseId, pr);
+      }
+      return Array.from(byExercise.values()).map((pr) => `\t•\t${pr.exerciseName}: ${pr.weight} × ${pr.reps}`);
+    })();
 
     return [
       `LIFT ${w.id} — Session Report`,

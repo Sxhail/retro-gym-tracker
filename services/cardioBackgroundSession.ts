@@ -143,6 +143,8 @@ class CardioBackgroundSessionService {
     try {
       console.log(`[CardioBackgroundSession] Cancelling all notifications for session ${sessionId}`);
       await IOSLocalNotifications.cancelAllForSession(sessionId);
+  // Extra safety: also clear any stray cardio notifications regardless of session
+  await IOSLocalNotifications.cancelAllCardio();
       
       // Best-effort: clear any persisted rows if they exist from previous versions
       try {
@@ -207,7 +209,7 @@ class CardioBackgroundSessionService {
     this.schedulingLocks.add(sessionId);
     try {
       const now = Date.now();
-      const MIN_NOTIFICATION_SPACING_MS = 2000; // minimum 2 seconds between notifications
+  // No artificial spacing; rely on schedule gaps so phases stay exact
 
   // Cancel existing notifications for this session to avoid duplicates
   await this.cancelAllNotifications(sessionId);
@@ -224,7 +226,7 @@ class CardioBackgroundSessionService {
         .filter((d) => d.fireAt > now + 500); // only schedule >500ms in the future
 
       // Space out notifications that are too close together
-      const spacedDesired = this.spaceOutNotifications(desired, MIN_NOTIFICATION_SPACING_MS);
+  const spacedDesired = desired; // keep original times as precomputed by schedule
 
       // Add final completion notification
     if (schedule.length > 0) {
@@ -353,7 +355,8 @@ class CardioBackgroundSessionService {
 
   // Clear all active data
   async clearActiveSession(sessionId: string): Promise<void> {
-    await this.cancelAllNotifications(sessionId);
+  await this.cancelAllNotifications(sessionId);
+  await IOSLocalNotifications.cancelAllCardio();
     await db
       .delete(active_cardio_sessions)
       .where(eq(active_cardio_sessions.session_id, sessionId));

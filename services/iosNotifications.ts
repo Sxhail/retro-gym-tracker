@@ -114,6 +114,29 @@ export const IOSLocalNotifications = {
     }
   },
 
+  async cancelAllCardio() {
+    if (Platform.OS !== 'ios') return;
+    try {
+      console.log('[IOSNotifications] Aggressively clearing all cardio notifications');
+      const queued = await Notifications.getAllScheduledNotificationsAsync();
+      let cancelled = 0;
+      for (const q of queued) {
+        const type = (q.content?.data as any)?.notificationType;
+        if (type === 'cardio_phase_transition' && q.identifier) {
+          try {
+            await Notifications.cancelScheduledNotificationAsync(q.identifier);
+            cancelled++;
+          } catch (e) {
+            console.warn('[IOSNotifications] Failed to cancel cardio notification', q.identifier, e);
+          }
+        }
+      }
+      console.log(`[IOSNotifications] Cleared ${cancelled} cardio notifications`);
+    } catch (e) {
+      console.warn('[IOSNotifications] Failed to clear cardio notifications', e);
+    }
+  },
+
   async cancelAllPending() {
     if (Platform.OS !== 'ios') return;
     try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch {}

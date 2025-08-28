@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { cardioBackgroundSessionService as svc } from '../services/cardioBackgroundSession';
+import IOSLocalNotifications from '../services/iosNotifications';
 
 export type CardioMode = 'hiit' | 'walk_run';
 export type CardioPhase = 'work' | 'rest' | 'run' | 'walk' | 'completed' | 'idle';
@@ -508,7 +509,9 @@ export function useCardioSession() {
     } catch (error) {
       console.warn('Failed to handle complete state change:', error);
     }
-    
+  // Aggressively clear any cardio notifications
+  try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
+
     await svc.clearActiveSession(sessionId);
     setSessionId(null);
     setMode(null);
@@ -533,6 +536,7 @@ export function useCardioSession() {
     } catch (error) {
       console.warn('Failed to reset session:', error);
     }
+  try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
     
     setSessionId(null);
     setMode(null);
@@ -557,6 +561,7 @@ export function useCardioSession() {
     } catch (error) {
       console.warn('Failed to cancel session:', error);
     }
+  try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
     
     setSessionId(null);
     setMode(null);

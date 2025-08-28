@@ -26,17 +26,8 @@ export default function BackgroundCardioSessionPersistence({ children }: Props) 
         }
       } catch (e) {}
     })();
-    const sub = AppState.addEventListener('change', async (state) => {
-      // Do not reschedule on every foreground; avoid bursts when user returns to app
-      if (state === 'background') {
-        try {
-          const list = await svc.listActiveSessions();
-          if (!list.length) return;
-          const latest = list.reduce((a, b) => (new Date(a.startedAt).getTime() > new Date(b.startedAt).getTime() ? a : b));
-          await svc.clearStaleSessions(latest.sessionId);
-          await svc.scheduleNotifications(latest.sessionId, latest.schedule);
-        } catch {}
-      }
+    const sub = AppState.addEventListener('change', () => {
+      // No-op: avoid any rescheduling on background/foreground transitions
     });
     return () => {
       mounted = false;

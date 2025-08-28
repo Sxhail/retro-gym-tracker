@@ -391,13 +391,12 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestCh
     }
   }
 
-  // Show rest timer ONLY for the set that owns the global timer
+  // Show rest timer based on global rest timer state only (don't depend on local restActive)
   const showRestTimer = (
-    restActive &&
-    restTime > 0 &&
     sessionWorkout.globalRestTimer?.isActive &&
     sessionWorkout.globalRestTimer.exerciseId === exerciseId &&
-    sessionWorkout.globalRestTimer.setIdx === setIdx
+    sessionWorkout.globalRestTimer.setIdx === setIdx &&
+    sessionWorkout.globalRestTimer.timeRemaining > 0
   );
 
   // Render right action for swipe-to-delete (transparent, allows row to slide left)
@@ -511,7 +510,7 @@ function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestCh
             
             {/* Timer display */}
             <Text style={{ color: timerPaused ? '#FFA500' : theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 20, fontWeight: 'bold', letterSpacing: 1.2 }}>
-              {formatRestTimer(restTime)}
+              {formatRestTimer(sessionWorkout.globalRestTimer?.timeRemaining || 0)}
             </Text>
             
             {/* Connecting line */}

@@ -142,9 +142,15 @@ class CardioBackgroundSessionService {
   async cancelAllNotifications(sessionId: string): Promise<void> {
     try {
       console.log(`[CardioBackgroundSession] Cancelling all notifications for session ${sessionId}`);
+      
+      // First: Cancel session-specific notifications
       await IOSLocalNotifications.cancelAllForSession(sessionId);
-  // Extra safety: also clear any stray cardio notifications regardless of session
-  await IOSLocalNotifications.cancelAllCardio();
+      
+      // Second: Aggressively cancel ALL cardio notifications (safety net)
+      await IOSLocalNotifications.cancelAllCardio();
+      
+      // Third: Cancel all pending notifications (nuclear option)
+      await IOSLocalNotifications.cancelAllPending();
       
       // Best-effort: clear any persisted rows if they exist from previous versions
       try {

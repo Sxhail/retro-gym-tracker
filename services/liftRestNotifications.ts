@@ -81,7 +81,7 @@ class LiftRestNotificationService {
   // Get notification content
   private getRestNotificationContent(state: RestTimerState): { title: string; body: string } {
     return {
-      title: '**REST OVER**',
+      title: 'REST OVER',
       body: `Time for your next set`
     };
   }

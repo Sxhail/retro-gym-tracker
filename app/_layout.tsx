@@ -16,15 +16,21 @@ import BackgroundWorkoutPersistence from '../components/BackgroundWorkoutPersist
 import BackgroundRestTimerPersistence from '../components/BackgroundRestTimerPersistence';
 import CustomSplashScreen from '../components/CustomSplashScreen';
 import IOSLocalNotifications from '../services/iosNotifications';
+import { cardioNotificationReliability } from '../services/cardioNotificationReliability';
 import BackgroundCardioSessionPersistence from '../components/BackgroundCardioSessionPersistence';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function Layout() {
-  // Initialize iOS notifications once
+  // Initialize iOS notifications and cardio notification reliability service
   useEffect(() => {
-  IOSLocalNotifications.initialize().catch(console.warn);
+    IOSLocalNotifications.initialize().catch(console.warn);
+    cardioNotificationReliability.initialize().catch(console.warn);
+    
+    return () => {
+      cardioNotificationReliability.shutdown().catch(console.warn);
+    };
   }, []);
   const [orbitronLoaded] = useOrbitron({ Orbitron_700Bold });
   const [pressStart2PLoaded] = usePressStart2P({ PressStart2P_400Regular });

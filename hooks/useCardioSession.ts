@@ -339,11 +339,18 @@ export function useCardioSession() {
 
   const pause = useCallback(async () => {
     if (!sessionId || isPaused) return;
+    console.log(`[useCardioSession] Pausing session ${sessionId}`);
     setIsPaused(true);
     const pAt = nowUtcIso();
     setPausedAt(pAt);
-  // While paused, cancel all scheduled notifications to avoid premature cues
-  try { await svc.cancelAllNotifications(sessionId); } catch {}
+    
+    // Use the enhanced session state change handler
+    try { 
+      await svc.handleSessionStateChange(sessionId, 'pause'); 
+    } catch (error) {
+      console.warn('Failed to handle pause state change:', error);
+    }
+    
     await persist();
     // Stop ticking while paused
     clearTick();
@@ -351,12 +358,14 @@ export function useCardioSession() {
 
   const resume = useCallback(async () => {
     if (!sessionId || !pausedAt) return;
+    console.log(`[useCardioSession] Resuming session ${sessionId}`);
     const delta = Date.now() - new Date(pausedAt).getTime();
     const newSched = shiftSchedule(schedule, delta, derived.currentIndex);
     setSchedule(newSched);
     setIsPaused(false);
     setPausedAt(null);
     setAccumPauseMs(accum => accum + delta);
+    
     await svc.saveActiveSession({
       sessionId,
       mode: mode!,
@@ -371,12 +380,20 @@ export function useCardioSession() {
       schedule: newSched,
       isCompleted: false,
     });
-    await svc.scheduleNotifications(sessionId, newSched);
-  ensureTick();
+    
+    // Use the enhanced session state change handler
+    try {
+      await svc.handleSessionStateChange(sessionId, 'resume', newSched);
+    } catch (error) {
+      console.warn('Failed to handle resume state change:', error);
+    }
+    
+    ensureTick();
   }, [sessionId, pausedAt, schedule, derived.currentIndex, mode, params, startedAt, accumPauseMs, ensureTick]);
 
   const skipPhase = useCallback(async () => {
     if (!sessionId || !schedule.length) return;
+    console.log(`[useCardioSession] Skipping phase for session ${sessionId}`);
     const now = Date.now();
     const idx = clamp(indexAt(schedule, now), 0, schedule.length - 2);
     // Advance to next phase; rebuild remaining schedule from now with same durations
@@ -393,6 +410,7 @@ export function useCardioSession() {
     const newSched = [...schedule.slice(0, idx + 1), ...rebuilt];
     setSchedule(newSched);
     setPhaseIndex(idx + 1);
+    
     await svc.saveActiveSession({
       sessionId,
       mode: mode!,
@@ -407,12 +425,19 @@ export function useCardioSession() {
       schedule: newSched,
       isCompleted: newSched[idx + 1].phase === 'completed',
     });
-    await svc.scheduleNotifications(sessionId, newSched);
+    
+    // Use the enhanced session state change handler
+    try {
+      await svc.handleSessionStateChange(sessionId, 'skip', newSched);
+    } catch (error) {
+      console.warn('Failed to handle skip state change:', error);
+    }
   }, [sessionId, schedule, mode, params, startedAt, pausedAt, accumPauseMs]);
 
   // Add seconds to the current phase and shift future phases accordingly
   const addSecondsToCurrentPhase = useCallback(async (seconds: number) => {
     if (!sessionId || !schedule.length || seconds <= 0) return;
+    console.log(`[useCardioSession] Adding ${seconds} seconds to current phase for session ${sessionId}`);
     const now = Date.now();
     const idx = clamp(indexAt(schedule, now), 0, schedule.length - 1);
     const cur = schedule[idx];
@@ -446,11 +471,19 @@ export function useCardioSession() {
       schedule: updated,
       isCompleted: false,
     });
-    await svc.scheduleNotifications(sessionId, updated);
+    
+    // Use the enhanced session state change handler
+    try {
+      await svc.handleSessionStateChange(sessionId, 'modify', updated);
+    } catch (error) {
+      console.warn('Failed to handle modify state change:', error);
+    }
   }, [sessionId, schedule, mode, params, startedAt, pausedAt, accumPauseMs]);
 
   const finish = useCallback(async () => {
     if (!sessionId) return;
+    console.log(`[useCardioSession] Finishing session ${sessionId}`);
+    
     // Save historical record before clearing
     if (mode && params && startedAt) {
       await svc.saveHistoricalFromSnapshot({
@@ -468,8 +501,15 @@ export function useCardioSession() {
         isCompleted: derived.phase === 'completed',
       }, derived.phase !== 'completed');
     }
-  await svc.cancelAllNotifications(sessionId);
-  await svc.clearActiveSession(sessionId);
+    
+    // Use the enhanced session state change handler
+    try {
+      await svc.handleSessionStateChange(sessionId, 'complete');
+    } catch (error) {
+      console.warn('Failed to handle complete state change:', error);
+    }
+    
+    await svc.clearActiveSession(sessionId);
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -479,15 +519,21 @@ export function useCardioSession() {
     setAccumPauseMs(0);
     setStartedAt(null);
     clearTick();
-  }, [sessionId, clearTick]);
+  }, [sessionId, mode, params, startedAt, derived, pausedAt, accumPauseMs, schedule, clearTick]);
 
   const reset = useCallback(async () => {
     // Reset should NOT save to history; just clear active state
     if (!sessionId) return;
+    console.log(`[useCardioSession] Resetting session ${sessionId}`);
+    
     try {
-      await svc.cancelAllNotifications(sessionId);
+      // Use the enhanced session state change handler
+      await svc.handleSessionStateChange(sessionId, 'cancel');
       await svc.clearActiveSession(sessionId);
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to reset session:', error);
+    }
+    
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -502,10 +548,16 @@ export function useCardioSession() {
   // Cancel without saving to history
   const cancel = useCallback(async () => {
     if (!sessionId) return;
+    console.log(`[useCardioSession] Cancelling session ${sessionId}`);
+    
     try {
-      await svc.cancelAllNotifications(sessionId);
+      // Use the enhanced session state change handler
+      await svc.handleSessionStateChange(sessionId, 'cancel');
       await svc.clearActiveSession(sessionId);
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to cancel session:', error);
+    }
+    
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -542,37 +594,51 @@ export function useCardioSession() {
 
   // AppState handling
   useEffect(() => {
-  const onChange = (state: AppStateStatus) => {
+    const onChange = (state: AppStateStatus) => {
       const wasActive = appStateRef.current === 'active';
       const nowActive = state === 'active';
+      
       if (wasActive && !nowActive) {
-        // backgrounding: persist and stop heavy ticks (we keep a light interval for index tracking)
+        // Backgrounding: persist and ensure notifications are scheduled
+        console.log(`[useCardioSession] App backgrounding, persisting session ${sessionId}`);
         persist();
-    // Ensure notifications are scheduled from current schedule (skip when paused)
-  if (sessionId && schedule.length && !isPaused) {
-      // Re-schedule once when backgrounding; service internally de-dupes
-      svc.scheduleNotifications(sessionId, schedule).catch(() => {});
+        
+        // Ensure notifications are scheduled from current schedule (skip when paused)
+        if (sessionId && schedule.length && !isPaused) {
+          // Use enhanced notification scheduling that handles spacing and deduplication
+          svc.rescheduleNotifications(sessionId, schedule).catch((error) => {
+            console.warn('Failed to reschedule notifications on background:', error);
+          });
         }
       } else if (!wasActive && nowActive) {
-        // foreground: recompute phase index immediately (but not while paused)
-        if (!isPaused && schedule.length) setPhaseIndex(indexAt(schedule, Date.now()));
+        // Foregrounding: recompute phase index immediately (but not while paused)
+        console.log(`[useCardioSession] App foregrounding, refreshing session ${sessionId}`);
+        if (!isPaused && schedule.length) {
+          setPhaseIndex(indexAt(schedule, Date.now()));
+        }
       }
-  appStateRef.current = state;
-  if (nowActive && !isPaused) ensureTick(); else clearTick();
+      
+      appStateRef.current = state;
+      if (nowActive && !isPaused) ensureTick(); 
+      else clearTick();
     };
+    
     const sub = AppState.addEventListener('change', onChange);
     return () => sub.remove();
-  }, [persist, schedule, isPaused, ensureTick, clearTick]);
+  }, [persist, schedule, isPaused, sessionId, ensureTick, clearTick]);
 
   // Stop ticking entirely once session reaches completed state
   useEffect(() => {
     if (derived.phase === 'completed') {
+      console.log(`[useCardioSession] Session ${sessionId} completed`);
       clearTick();
       // Auto-finish silently to persist history and clear notifications/state
       // Do this once; if sessionId becomes null finish() no-ops
-      finish().catch(() => {});
+      finish().catch((error) => {
+        console.warn('Failed to auto-finish completed session:', error);
+      });
     }
-  }, [derived.phase, clearTick, finish]);
+  }, [derived.phase, sessionId, clearTick, finish]);
 
   return {
     state: derived,

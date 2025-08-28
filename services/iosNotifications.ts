@@ -55,31 +55,58 @@ export const IOSLocalNotifications = {
 
     // Catch-up window: clamp past times to a few seconds in the future
     const now = Date.now();
-    const fireAt = when.getTime() <= now ? new Date(now + 1000) : when;
+    const fireAt = when.getTime() <= now ? new Date(now + 2000) : when; // 2 second minimum delay for past times
 
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        sound: 'default' as any,
-        data: { sessionId, fireAt: fireAt.toISOString() },
-      },
-      trigger: { date: fireAt } as any,
-    });
-    return id;
+    try {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          sound: 'default' as any,
+          data: { 
+            sessionId, 
+            fireAt: fireAt.toISOString(),
+            originalFireAt: when.toISOString(),
+            notificationType: 'cardio_phase_transition'
+          },
+          // Ensure notifications don't get grouped together
+          categoryIdentifier: `cardio_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        },
+        trigger: { date: fireAt } as any,
+      });
+      
+      console.log(`[IOSNotifications] Scheduled notification with ID: ${id} for session ${sessionId} at ${fireAt.toISOString()}`);
+      return id;
+    } catch (error) {
+      console.warn(`[IOSNotifications] Failed to schedule notification:`, error);
+      return null;
+    }
   },
 
   async cancelAllForSession(sessionId: SessionId) {
     if (Platform.OS !== 'ios') return;
+    
     try {
+      console.log(`[IOSNotifications] Cancelling all notifications for session: ${sessionId}`);
       const queued = await Notifications.getAllScheduledNotificationsAsync();
+      let cancelledCount = 0;
+      
       for (const q of queued) {
         const sid = (q.content?.data as any)?.sessionId;
         if (sid === sessionId && q.identifier) {
-          try { await Notifications.cancelScheduledNotificationAsync(q.identifier); } catch {}
+          try { 
+            await Notifications.cancelScheduledNotificationAsync(q.identifier); 
+            cancelledCount++;
+          } catch (error) {
+            console.warn(`[IOSNotifications] Failed to cancel notification ${q.identifier}:`, error);
+          }
         }
       }
-    } catch {}
+      
+      console.log(`[IOSNotifications] Cancelled ${cancelledCount} notifications for session ${sessionId}`);
+    } catch (error) {
+      console.warn(`[IOSNotifications] Failed to cancel notifications for session ${sessionId}:`, error);
+    }
   },
 
   async cancelAllPending() {

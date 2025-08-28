@@ -140,13 +140,65 @@ class CardioBackgroundSessionService {
 
   // Cancel and clear all notifications for a session
   async cancelAllNotifications(sessionId: string): Promise<void> {
-    await IOSLocalNotifications.cancelAllForSession(sessionId);
-    // Best-effort: clear any persisted rows if they exist from previous versions
     try {
-      await db
-        .delete(active_cardio_notifications)
-        .where(eq(active_cardio_notifications.session_id, sessionId));
-    } catch {}
+      console.log(`[CardioBackgroundSession] Cancelling all notifications for session ${sessionId}`);
+      await IOSLocalNotifications.cancelAllForSession(sessionId);
+      
+      // Best-effort: clear any persisted rows if they exist from previous versions
+      try {
+        await db
+          .delete(active_cardio_notifications)
+          .where(eq(active_cardio_notifications.session_id, sessionId));
+      } catch (error) {
+        console.warn('Failed to clear notification records from database:', error);
+      }
+    } catch (error) {
+      console.warn('Failed to cancel notifications:', error);
+    }
+  }
+
+  // Cancel notifications and immediately reschedule them (useful for session changes)
+  async rescheduleNotifications(sessionId: string, schedule: ScheduleEntry[]): Promise<void> {
+    console.log(`[CardioBackgroundSession] Rescheduling notifications for session ${sessionId}`);
+    
+    // Cancel existing notifications first
+    await this.cancelAllNotifications(sessionId);
+    
+    // Small delay to ensure cancellation is processed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Schedule new notifications
+    await this.scheduleNotifications(sessionId, schedule);
+  }
+
+  // Handle session state changes (pause, resume, skip, etc.)
+  async handleSessionStateChange(sessionId: string, changeType: 'pause' | 'resume' | 'skip' | 'modify' | 'cancel' | 'complete', schedule?: ScheduleEntry[]): Promise<void> {
+    console.log(`[CardioBackgroundSession] Handling session state change: ${changeType} for session ${sessionId}`);
+    
+    switch (changeType) {
+      case 'pause':
+        // Cancel all notifications when pausing
+        await this.cancelAllNotifications(sessionId);
+        break;
+        
+      case 'resume':
+      case 'skip':
+      case 'modify':
+        // Reschedule all notifications with updated schedule
+        if (schedule) {
+          await this.rescheduleNotifications(sessionId, schedule);
+        }
+        break;
+        
+      case 'cancel':
+      case 'complete':
+        // Cancel all notifications when session ends
+        await this.cancelAllNotifications(sessionId);
+        break;
+        
+      default:
+        console.warn(`Unknown session state change type: ${changeType}`);
+    }
   }
 
   // Schedule notifications from a schedule and persist their IDs
@@ -154,65 +206,149 @@ class CardioBackgroundSessionService {
     if (this.schedulingLocks.has(sessionId)) return; // drop concurrent calls
     this.schedulingLocks.add(sessionId);
     try {
-  const now = Date.now();
-  const KEEP_GRACE_MS = 500; // don't cancel imminently-firing notifications
+      const now = Date.now();
+      const KEEP_GRACE_MS = 500; // don't cancel imminently-firing notifications
+      const MIN_NOTIFICATION_SPACING_MS = 2000; // minimum 2 seconds between notifications
+
+      // Cancel all existing notifications for this session first to prevent duplicates
+      await this.cancelAllNotifications(sessionId);
 
       // Desired notifications (exclude synthetic 'completed')
       const realPhases = schedule.filter((e) => e.phase !== 'completed');
       const desired = realPhases
-        .map((e, i) => ({ idx: i, fireAt: new Date(e.endAt).getTime(), entry: e }))
-        .filter((d) => d.fireAt > now - 10000); // expanded catch-up window (10s) for background reliability per spec
-      const desiredIsoSet = new Set(desired.map((d) => new Date(d.fireAt).toISOString()));
+        .map((e, i) => ({ 
+          idx: i, 
+          fireAt: new Date(e.endAt).getTime(), 
+          entry: e,
+          phaseId: `${sessionId}_${e.phase}_${e.cycleIndex}_${i}` // unique identifier for each phase
+        }))
+        .filter((d) => d.fireAt > now - 10000); // expanded catch-up window (10s) for background reliability
 
-      // Fully pre-schedule for iOS at session start (or when schedule changes)
-      for (const d of desired) {
-        const iso = new Date(d.fireAt).toISOString();
+      // Space out notifications that are too close together
+      const spacedDesired = this.spaceOutNotifications(desired, MIN_NOTIFICATION_SPACING_MS);
 
-        const isLast = d.idx === realPhases.length - 1;
-        const isHiit = realPhases.some((p) => p.phase === 'work' || p.phase === 'rest');
-        let title: string;
-        let body: string;
-        if (isLast) {
-          // Session complete message varies by mode per spec
-          if (isHiit) {
-            title = 'HIIT session complete 🎉';
-            body = 'Well done!';
-          } else {
-            title = 'Walk/Run session complete 🎉';
-            body = 'Great job!';
+      // Add final completion notification
+      if (schedule.length > 0) {
+        const lastPhase = schedule[schedule.length - 1];
+        if (lastPhase.phase === 'completed') {
+          const completionTime = new Date(lastPhase.startAt).getTime();
+          if (completionTime > now - 10000) {
+            spacedDesired.push({
+              idx: schedule.length - 1,
+              fireAt: completionTime,
+              entry: lastPhase,
+              phaseId: `${sessionId}_completed_final`
+            });
           }
-        } else {
-          const nextLabel = this.getNextPhaseLabel(d.entry.phase);
-          title = nextLabel.title;
-          body = nextLabel.body(d.entry);
         }
+      }
 
-        console.log(`[CardioBackgroundSession] Scheduling notification: "${title}" - "${body}" at ${iso} for session ${sessionId}`);
-        await IOSLocalNotifications.scheduleAbsolute(sessionId, new Date(d.fireAt), title, body);
+      // Schedule all notifications
+      for (const d of spacedDesired) {
+        const fireTime = new Date(d.fireAt);
+        const { title, body } = this.getNotificationContent(d.entry, d.idx === spacedDesired.length - 1, sessionId);
+
+        console.log(`[CardioBackgroundSession] Scheduling notification: "${title}" - "${body}" at ${fireTime.toISOString()} for session ${sessionId}`);
+        
+        try {
+          await IOSLocalNotifications.scheduleAbsolute(sessionId, fireTime, title, body);
+        } catch (error) {
+          console.warn(`Failed to schedule notification for ${d.phaseId}:`, error);
+        }
       }
     } finally {
       this.schedulingLocks.delete(sessionId);
     }
   }
 
+  // Space out notifications that are scheduled too close together
+  private spaceOutNotifications(notifications: any[], minSpacingMs: number): any[] {
+    if (notifications.length <= 1) return notifications;
+
+    const sorted = [...notifications].sort((a, b) => a.fireAt - b.fireAt);
+    const spaced = [sorted[0]]; // first notification keeps its time
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = spaced[spaced.length - 1];
+      const current = sorted[i];
+      const minFireTime = prev.fireAt + minSpacingMs;
+      
+      if (current.fireAt < minFireTime) {
+        // Push this notification later to maintain spacing
+        spaced.push({
+          ...current,
+          fireAt: minFireTime
+        });
+      } else {
+        spaced.push(current);
+      }
+    }
+
+    return spaced;
+  }
+
+  // Get notification content with clear, descriptive messages
+  private getNotificationContent(entry: ScheduleEntry, isLast: boolean, sessionId: string): { title: string; body: string } {
+    if (entry.phase === 'completed') {
+      const isHiit = sessionId.includes('hiit') || entry.cycleIndex >= 0; // determine from context
+      return {
+        title: isHiit ? 'HIIT Session Complete! 🎉' : 'Walk/Run Session Complete! 🎉',
+        body: isHiit ? 'Excellent work! Your HIIT session is finished.' : 'Great job! Your walk/run session is complete.'
+      };
+    }
+
+    if (isLast) {
+      // This is the last phase before completion
+      const isHiit = entry.phase === 'work' || entry.phase === 'rest';
+      return {
+        title: isHiit ? 'HIIT Session Complete! 🎉' : 'Walk/Run Session Complete! 🎉',
+        body: isHiit ? 'Excellent work! Your HIIT session is finished.' : 'Great job! Your walk/run session is complete.'
+      };
+    }
+
+    const nextLabel = this.getNextPhaseLabel(entry.phase);
+    return {
+      title: nextLabel.title,
+      body: nextLabel.body(entry)
+    };
+  }
+
   private getNextPhaseLabel(phase: CardioPhase): { title: string; body: (e: ScheduleEntry) => string } {
     switch (phase) {
       case 'work':
         // HIIT: Work phase finished → time to rest
-        return { title: 'Work phase done ✅', body: () => 'Time to rest.' };
+        return { 
+          title: 'Work Phase Complete! ✅', 
+          body: (e: ScheduleEntry) => `Round ${e.cycleIndex + 1} work done. Time to rest and recover.` 
+        };
       case 'rest':
         // HIIT: Rest finished → time to work
-        return { title: 'Rest over 💥', body: () => 'Get moving!' };
+        return { 
+          title: 'Rest Time Over! 💥', 
+          body: (e: ScheduleEntry) => `Round ${e.cycleIndex + 1} rest complete. Get ready to work!` 
+        };
       case 'run':
         // Walk/Run: Run finished → start walking
-        return { title: 'Run done 🏃', body: () => 'Switch to walking.' };
+        return { 
+          title: 'Run Phase Done! 🏃‍♂️', 
+          body: (e: ScheduleEntry) => `Lap ${e.cycleIndex + 1} run complete. Switch to walking pace.` 
+        };
       case 'walk':
         // Walk/Run: Walk finished → start running
-        return { title: 'Walk done 🚶', body: () => 'Time to run!' };
+        return { 
+          title: 'Walk Phase Done! 🚶‍♂️', 
+          body: (e: ScheduleEntry) => `Lap ${e.cycleIndex + 1} walk complete. Time to pick up the pace!` 
+        };
       case 'completed':
-        return { title: 'Session complete 🎉', body: () => 'Great job!' };
+        return { 
+          title: 'Session Complete! 🎉', 
+          body: () => 'Congratulations! You\'ve finished your cardio workout.' 
+        };
       default:
-        return { title: 'Phase complete', body: () => '' };
+        return { 
+          title: 'Phase Complete', 
+          body: () => 'Ready for the next phase.' 
+        };
     }
   }
 

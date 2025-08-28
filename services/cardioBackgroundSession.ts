@@ -230,7 +230,7 @@ class CardioBackgroundSessionService {
     if (entry.phase === 'completed') {
       const isHiit = sessionId.includes('hiit') || entry.cycleIndex >= 0; // determine from context
       return {
-        title: isHiit ? '**HIIT FINISHED**' : '**WALK-RUN FINISHED**',
+        title: isHiit ? 'HIIT FINISHED' : 'WALK-RUN FINISHED',
         body: isHiit ? 'Your HIIT session is complete' : 'Your walk-run session is complete'
       };
     }
@@ -239,7 +239,7 @@ class CardioBackgroundSessionService {
       // This is the last phase before completion
       const isHiit = entry.phase === 'work' || entry.phase === 'rest';
       return {
-        title: isHiit ? '**HIIT FINISHED**' : '**WALK-RUN FINISHED**',
+        title: isHiit ? 'HIIT FINISHED' : 'WALK-RUN FINISHED',
         body: isHiit ? 'Your HIIT session is complete' : 'Your walk-run session is complete'
       };
     }
@@ -256,35 +256,35 @@ class CardioBackgroundSessionService {
       case 'work':
         // HIIT: Work phase finished → time to rest
         return { 
-          title: '**WORK COMPLETE**', 
+          title: 'WORK COMPLETE', 
           body: (e: ScheduleEntry) => `Round ${e.cycleIndex + 1} finished. Time to rest` 
         };
       case 'rest':
         // HIIT: Rest finished → time to work
         return { 
-          title: '**REST OVER**', 
+          title: 'REST OVER', 
           body: (e: ScheduleEntry) => `Round ${e.cycleIndex + 1} rest done. Get ready to work` 
         };
       case 'run':
         // Walk/Run: Run finished → start walking
         return { 
-          title: '**RUN COMPLETE**', 
+          title: 'RUN COMPLETE', 
           body: (e: ScheduleEntry) => `Lap ${e.cycleIndex + 1} run done. Switch to walking` 
         };
       case 'walk':
         // Walk/Run: Walk finished → start running
         return { 
-          title: '**WALK COMPLETE**', 
+          title: 'WALK COMPLETE', 
           body: (e: ScheduleEntry) => `Lap ${e.cycleIndex + 1} walk done. Time to run` 
         };
       case 'completed':
         return { 
-          title: '**SESSION FINISHED**', 
+          title: 'SESSION FINISHED', 
           body: () => 'Your cardio workout is complete' 
         };
       default:
         return { 
-          title: '**PHASE COMPLETE**', 
+          title: 'PHASE COMPLETE', 
           body: () => 'Ready for next phase' 
         };
     }

@@ -312,15 +312,23 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
       setGlobalRestTimer(null);
       setOnRestTimerComplete(null);
 
-      // iOS: cancel all pending local notifications
+      // Cancel all lift rest notifications using the new service
+      try {
+        const { liftRestNotificationService } = await import('../services/liftRestNotifications');
+        await liftRestNotificationService.cancelAllRestNotifications();
+        setRestNotificationSessionId(null);
+      } catch (e) {
+        console.warn('Failed to cancel lift rest notifications:', e);
+      }
+
+      // iOS: cancel all pending local notifications (legacy cleanup)
       try {
         const IOSLocalNotifications = (await import('../services/iosNotifications')).default;
-        if (restNotificationSessionId) {
-          await IOSLocalNotifications.cancelAllForSession(restNotificationSessionId);
-          setRestNotificationSessionId(null);
-        }
+        await IOSLocalNotifications.cancelAllLiftRest();
         await IOSLocalNotifications.cancelAllPending();
-      } catch {}
+      } catch (e) {
+        console.warn('Failed to cancel legacy notifications:', e);
+      }
       
       // Clear any background rest timer data as well
       try {
@@ -478,15 +486,23 @@ export const WorkoutSessionProvider = ({ children }: { children: ReactNode }) =>
     setGlobalRestTimer(null);
     setOnRestTimerComplete(null);
     
-    // iOS: cancel all pending local notifications
+    // Cancel all lift rest notifications using the new service
+    try {
+      const { liftRestNotificationService } = await import('../services/liftRestNotifications');
+      await liftRestNotificationService.cancelAllRestNotifications();
+      setRestNotificationSessionId(null);
+    } catch (e) {
+      console.warn('Failed to cancel lift rest notifications:', e);
+    }
+    
+    // iOS: cancel all pending local notifications (legacy cleanup)
     try {
       const IOSLocalNotifications = (await import('../services/iosNotifications')).default;
-      if (restNotificationSessionId) {
-        await IOSLocalNotifications.cancelAllForSession(restNotificationSessionId);
-        setRestNotificationSessionId(null);
-      }
+      await IOSLocalNotifications.cancelAllLiftRest();
       await IOSLocalNotifications.cancelAllPending();
-    } catch {}
+    } catch (e) {
+      console.warn('Failed to cancel legacy notifications:', e);
+    }
 
     // Clear any background rest timer data as well
     try {

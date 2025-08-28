@@ -292,7 +292,8 @@ export function useCardioSession() {
       schedule: sched,
       isCompleted: false,
     });
-    await svc.scheduleNotifications(id, sched);
+  await svc.scheduleNotifications(id, sched);
+  try { await IOSLocalNotifications.listScheduledForSession(id); } catch {}
     ensureTick();
   }, [ensureTick]);
 
@@ -334,7 +335,8 @@ export function useCardioSession() {
       schedule: sched,
       isCompleted: false,
     });
-    await svc.scheduleNotifications(id, sched);
+  await svc.scheduleNotifications(id, sched);
+  try { await IOSLocalNotifications.listScheduledForSession(id); } catch {}
     ensureTick();
   }, [ensureTick]);
 

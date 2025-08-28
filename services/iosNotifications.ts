@@ -1,19 +1,24 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 
 type SessionId = string;
 
 let initialized = false;
 
-// Always show notifications - let iOS handle background/foreground behavior
+// Only show notifications when app is in background or inactive
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async () => {
+    const appState = AppState.currentState;
+    const shouldShow = appState === 'background' || appState === 'inactive';
+    
+    return {
+      shouldShowAlert: shouldShow,
+      shouldShowBanner: shouldShow,
+      shouldShowList: shouldShow,
+      shouldPlaySound: shouldShow,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 async function ensurePermission() {
@@ -45,6 +50,12 @@ export const IOSLocalNotifications = {
     const deltaMs = when.getTime() - now;
     const seconds = Math.max(1, Math.round(deltaMs / 1000));
 
+    // Determine notification type based on sessionId pattern
+    const isCardio = sessionId.includes('hiit') || sessionId.includes('walk');
+    const isLiftRest = sessionId.includes('lift-rest');
+    const notificationType = isCardio ? 'cardio_phase_transition' : 
+                            isLiftRest ? 'lift_rest_timer' : 'general';
+
     try {
       const id = await Notifications.scheduleNotificationAsync({
         content: {
@@ -53,7 +64,7 @@ export const IOSLocalNotifications = {
           sound: 'default',
           data: {
             sessionId,
-            notificationType: 'cardio_phase_transition',
+            notificationType,
           },
         },
         trigger: { type: 'timeInterval', seconds, repeats: false } as any,
@@ -111,6 +122,29 @@ export const IOSLocalNotifications = {
       console.log(`[IOSNotifications] Cleared ${cancelled} cardio notifications`);
     } catch (e) {
       console.warn('[IOSNotifications] Failed to clear cardio notifications', e);
+    }
+  },
+
+  async cancelAllLiftRest() {
+    if (Platform.OS !== 'ios') return;
+    try {
+      console.log('[IOSNotifications] Clearing all lift rest notifications');
+      const queued = await Notifications.getAllScheduledNotificationsAsync();
+      let cancelled = 0;
+      for (const q of queued) {
+        const type = (q.content?.data as any)?.notificationType;
+        if (type === 'lift_rest_timer' && q.identifier) {
+          try {
+            await Notifications.cancelScheduledNotificationAsync(q.identifier);
+            cancelled++;
+          } catch (e) {
+            console.warn('[IOSNotifications] Failed to cancel lift rest notification', q.identifier, e);
+          }
+        }
+      }
+      console.log(`[IOSNotifications] Cleared ${cancelled} lift rest notifications`);
+    } catch (e) {
+      console.warn('[IOSNotifications] Failed to clear lift rest notifications', e);
     }
   },
 

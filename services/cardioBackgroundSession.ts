@@ -207,11 +207,7 @@ class CardioBackgroundSessionService {
     this.schedulingLocks.add(sessionId);
     try {
       const now = Date.now();
-      const KEEP_GRACE_MS = 500; // don't cancel imminently-firing notifications
       const MIN_NOTIFICATION_SPACING_MS = 2000; // minimum 2 seconds between notifications
-
-      // Cancel all existing notifications for this session first to prevent duplicates
-      await this.cancelAllNotifications(sessionId);
 
       // Desired notifications (exclude synthetic 'completed')
       const realPhases = schedule.filter((e) => e.phase !== 'completed');
@@ -222,17 +218,17 @@ class CardioBackgroundSessionService {
           entry: e,
           phaseId: `${sessionId}_${e.phase}_${e.cycleIndex}_${i}` // unique identifier for each phase
         }))
-        .filter((d) => d.fireAt > now - 10000); // expanded catch-up window (10s) for background reliability
+        .filter((d) => d.fireAt > now + 500); // only schedule >500ms in the future
 
       // Space out notifications that are too close together
       const spacedDesired = this.spaceOutNotifications(desired, MIN_NOTIFICATION_SPACING_MS);
 
       // Add final completion notification
-      if (schedule.length > 0) {
+    if (schedule.length > 0) {
         const lastPhase = schedule[schedule.length - 1];
         if (lastPhase.phase === 'completed') {
           const completionTime = new Date(lastPhase.startAt).getTime();
-          if (completionTime > now - 10000) {
+      if (completionTime > now + 500) {
             spacedDesired.push({
               idx: schedule.length - 1,
               fireAt: completionTime,

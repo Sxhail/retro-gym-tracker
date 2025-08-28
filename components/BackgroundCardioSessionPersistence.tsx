@@ -27,7 +27,8 @@ export default function BackgroundCardioSessionPersistence({ children }: Props) 
       } catch (e) {}
     })();
     const sub = AppState.addEventListener('change', async (state) => {
-      if (state === 'active') {
+      // Do not reschedule on every foreground; avoid bursts when user returns to app
+      if (state === 'background') {
         try {
           const list = await svc.listActiveSessions();
           if (!list.length) return;

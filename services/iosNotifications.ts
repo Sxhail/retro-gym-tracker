@@ -53,9 +53,14 @@ export const IOSLocalNotifications = {
     const ok = await ensurePermission();
     if (!ok) return null;
 
-    // Catch-up window: clamp past times to a few seconds in the future
+    // Only schedule for future times; skip past or too-soon triggers to avoid burst notifications
     const now = Date.now();
-    const fireAt = when.getTime() <= now ? new Date(now + 2000) : when; // 2 second minimum delay for past times
+    const deltaMs = when.getTime() - now;
+    if (deltaMs <= 500) {
+      console.log(`[IOSNotifications] Skipping schedule for past/too-soon time: ${when.toISOString()} (delta ${deltaMs}ms)`);
+      return null;
+    }
+    const fireAt = when;
 
     try {
       const id = await Notifications.scheduleNotificationAsync({
@@ -72,7 +77,7 @@ export const IOSLocalNotifications = {
           // Ensure notifications don't get grouped together
           categoryIdentifier: `cardio_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         },
-        trigger: { date: fireAt } as any,
+  trigger: { date: fireAt } as any,
       });
       
       console.log(`[IOSNotifications] Scheduled notification with ID: ${id} for session ${sessionId} at ${fireAt.toISOString()}`);

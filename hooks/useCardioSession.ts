@@ -599,17 +599,9 @@ export function useCardioSession() {
       const nowActive = state === 'active';
       
       if (wasActive && !nowActive) {
-        // Backgrounding: persist and ensure notifications are scheduled
+        // Backgrounding: persist only; rescheduling handled by BackgroundCardioSessionPersistence
         console.log(`[useCardioSession] App backgrounding, persisting session ${sessionId}`);
         persist();
-        
-        // Ensure notifications are scheduled from current schedule (skip when paused)
-        if (sessionId && schedule.length && !isPaused) {
-          // Use enhanced notification scheduling that handles spacing and deduplication
-          svc.rescheduleNotifications(sessionId, schedule).catch((error) => {
-            console.warn('Failed to reschedule notifications on background:', error);
-          });
-        }
       } else if (!wasActive && nowActive) {
         // Foregrounding: recompute phase index immediately (but not while paused)
         console.log(`[useCardioSession] App foregrounding, refreshing session ${sessionId}`);

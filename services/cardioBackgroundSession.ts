@@ -205,87 +205,18 @@ class CardioBackgroundSessionService {
 
   // Schedule notifications from a schedule and persist their IDs
   async scheduleNotifications(sessionId: string, schedule: ScheduleEntry[]): Promise<void> {
-    if (this.schedulingLocks.has(sessionId)) return; // drop concurrent calls
-    this.schedulingLocks.add(sessionId);
     try {
+      await this.cancelAllNotifications(sessionId);
       const now = Date.now();
-  // No artificial spacing; rely on schedule gaps so phases stay exact
-
-  // Cancel existing notifications for this session to avoid duplicates
-  await this.cancelAllNotifications(sessionId);
-
-      // Desired notifications (exclude synthetic 'completed')
-      const realPhases = schedule.filter((e) => e.phase !== 'completed');
-      const desired = realPhases
-        .map((e, i) => ({ 
-          idx: i, 
-          fireAt: new Date(e.endAt).getTime(), 
-          entry: e,
-          phaseId: `${sessionId}_${e.phase}_${e.cycleIndex}_${i}` // unique identifier for each phase
-        }))
-        .filter((d) => d.fireAt > now + 500); // only schedule >500ms in the future
-
-      // Space out notifications that are too close together
-  const spacedDesired = desired; // keep original times as precomputed by schedule
-
-      // Add final completion notification
-    if (schedule.length > 0) {
-        const lastPhase = schedule[schedule.length - 1];
-        if (lastPhase.phase === 'completed') {
-          const completionTime = new Date(lastPhase.startAt).getTime();
-      if (completionTime > now + 500) {
-            spacedDesired.push({
-              idx: schedule.length - 1,
-              fireAt: completionTime,
-              entry: lastPhase,
-              phaseId: `${sessionId}_completed_final`
-            });
-          }
-        }
-      }
-
-      // Schedule all notifications
-      for (const d of spacedDesired) {
-        const fireTime = new Date(d.fireAt);
-        const { title, body } = this.getNotificationContent(d.entry, d.idx === spacedDesired.length - 1, sessionId);
-
-        console.log(`[CardioBackgroundSession] Scheduling notification: "${title}" - "${body}" at ${fireTime.toISOString()} for session ${sessionId}`);
-        
-        try {
-          await IOSLocalNotifications.scheduleAbsolute(sessionId, fireTime, title, body);
-        } catch (error) {
-          console.warn(`Failed to schedule notification for ${d.phaseId}:`, error);
-        }
-      }
-    } finally {
-      this.schedulingLocks.delete(sessionId);
-    }
-  }
-
-  // Space out notifications that are scheduled too close together
-  private spaceOutNotifications(notifications: any[], minSpacingMs: number): any[] {
-    if (notifications.length <= 1) return notifications;
-
-    const sorted = [...notifications].sort((a, b) => a.fireAt - b.fireAt);
-    const spaced = [sorted[0]]; // first notification keeps its time
-
-    for (let i = 1; i < sorted.length; i++) {
-      const prev = spaced[spaced.length - 1];
-      const current = sorted[i];
-      const minFireTime = prev.fireAt + minSpacingMs;
       
-      if (current.fireAt < minFireTime) {
-        // Push this notification later to maintain spacing
-        spaced.push({
-          ...current,
-          fireAt: minFireTime
-        });
-      } else {
-        spaced.push(current);
+      for (const entry of schedule) {
+        const fireAt = new Date(entry.endAt).getTime();
+        if (fireAt > now + 1000) {
+          const { title, body } = this.getNotificationContent(entry, false, sessionId);
+          await IOSLocalNotifications.scheduleAbsolute(sessionId, new Date(fireAt), title, body);
+        }
       }
-    }
-
-    return spaced;
+    } catch (error) {}
   }
 
   // Get notification content with clear, descriptive messages

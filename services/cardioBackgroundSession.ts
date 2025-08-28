@@ -209,6 +209,9 @@ class CardioBackgroundSessionService {
       const now = Date.now();
       const MIN_NOTIFICATION_SPACING_MS = 2000; // minimum 2 seconds between notifications
 
+  // Cancel existing notifications for this session to avoid duplicates
+  await this.cancelAllNotifications(sessionId);
+
       // Desired notifications (exclude synthetic 'completed')
       const realPhases = schedule.filter((e) => e.phase !== 'completed');
       const desired = realPhases

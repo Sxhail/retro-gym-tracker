@@ -230,8 +230,8 @@ class CardioBackgroundSessionService {
     if (entry.phase === 'completed') {
       const isHiit = sessionId.includes('hiit') || entry.cycleIndex >= 0; // determine from context
       return {
-        title: isHiit ? 'HIIT Session Complete! 🎉' : 'Walk/Run Session Complete! 🎉',
-        body: isHiit ? 'Excellent work! Your HIIT session is finished.' : 'Great job! Your walk/run session is complete.'
+        title: isHiit ? '**HIIT FINISHED**' : '**WALK-RUN FINISHED**',
+        body: isHiit ? 'Your HIIT session is complete' : 'Your walk-run session is complete'
       };
     }
 
@@ -239,8 +239,8 @@ class CardioBackgroundSessionService {
       // This is the last phase before completion
       const isHiit = entry.phase === 'work' || entry.phase === 'rest';
       return {
-        title: isHiit ? 'HIIT Session Complete! 🎉' : 'Walk/Run Session Complete! 🎉',
-        body: isHiit ? 'Excellent work! Your HIIT session is finished.' : 'Great job! Your walk/run session is complete.'
+        title: isHiit ? '**HIIT FINISHED**' : '**WALK-RUN FINISHED**',
+        body: isHiit ? 'Your HIIT session is complete' : 'Your walk-run session is complete'
       };
     }
 
@@ -256,36 +256,36 @@ class CardioBackgroundSessionService {
       case 'work':
         // HIIT: Work phase finished → time to rest
         return { 
-          title: 'Work Phase Complete! ✅', 
-          body: (e: ScheduleEntry) => `Round ${e.cycleIndex + 1} work done. Time to rest and recover.` 
+          title: '**WORK COMPLETE**', 
+          body: (e: ScheduleEntry) => `Round ${e.cycleIndex + 1} finished. Time to rest` 
         };
       case 'rest':
         // HIIT: Rest finished → time to work
         return { 
-          title: 'Rest Time Over! 💥', 
-          body: (e: ScheduleEntry) => `Round ${e.cycleIndex + 1} rest complete. Get ready to work!` 
+          title: '**REST OVER**', 
+          body: (e: ScheduleEntry) => `Round ${e.cycleIndex + 1} rest done. Get ready to work` 
         };
       case 'run':
         // Walk/Run: Run finished → start walking
         return { 
-          title: 'Run Phase Done! 🏃‍♂️', 
-          body: (e: ScheduleEntry) => `Lap ${e.cycleIndex + 1} run complete. Switch to walking pace.` 
+          title: '**RUN COMPLETE**', 
+          body: (e: ScheduleEntry) => `Lap ${e.cycleIndex + 1} run done. Switch to walking` 
         };
       case 'walk':
         // Walk/Run: Walk finished → start running
         return { 
-          title: 'Walk Phase Done! 🚶‍♂️', 
-          body: (e: ScheduleEntry) => `Lap ${e.cycleIndex + 1} walk complete. Time to pick up the pace!` 
+          title: '**WALK COMPLETE**', 
+          body: (e: ScheduleEntry) => `Lap ${e.cycleIndex + 1} walk done. Time to run` 
         };
       case 'completed':
         return { 
-          title: 'Session Complete! 🎉', 
-          body: () => 'Congratulations! You\'ve finished your cardio workout.' 
+          title: '**SESSION FINISHED**', 
+          body: () => 'Your cardio workout is complete' 
         };
       default:
         return { 
-          title: 'Phase Complete', 
-          body: () => 'Ready for the next phase.' 
+          title: '**PHASE COMPLETE**', 
+          body: () => 'Ready for next phase' 
         };
     }
   }

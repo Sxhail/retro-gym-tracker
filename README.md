@@ -1,4 +1,4 @@
-# Retro Gym Tracker
+# Protocol
 
 A modern, cyberpunk-styled fitness companion built with React Native, Expo, and SQLite. Designed for serious gym enthusiasts who want a beautiful, fast, and fully-featured offline experience for tracking strength training, cardio sessions, and workout programs with a unique retro terminal aesthetic.
 

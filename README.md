@@ -1,4 +1,4 @@
-# Retro Gym Tracker
+# Protocol
 
 A modern, retro-styled workout tracking app built with React Native, Expo, and SQLite. Designed for fitness enthusiasts who want a beautiful, fast, and customizable experience for logging workouts, visualizing progress, and importing data from other platforms.
 

@@ -13,6 +13,7 @@
     "@expo-google-fonts/press-start-2p": "^0.4.0",
     "@expo-google-fonts/share-tech-mono": "^0.4.0",
     "@expo-google-fonts/vt323": "^0.4.0",
+    "@expo/vector-icons": "^15.0.2",
     "@react-native-picker/picker": "2.11.1",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.3",
@@ -26,7 +27,9 @@
     "expo-font": "^13.3.2",
     "expo-linking": "~7.1.4",
     "expo-notifications": "~0.31.4",
+    "expo-print": "~14.1.4",
     "expo-router": "~5.1.4",
+    "expo-sharing": "~13.1.5",
     "expo-splash-screen": "~0.30.7",
     "expo-sqlite": "~15.2.14",
     "expo-status-bar": "~2.2.3",
@@ -40,10 +43,8 @@
     "react-native-screens": "~4.11.1",
     "react-native-snap-carousel": "^3.9.1",
     "react-native-svg": "15.11.2",
-    "sqlite3": "^5.1.7",
-    "expo-sharing": "~13.1.5",
-    "expo-print": "~14.1.4",
-    "react-native-view-shot": "4.0.3"
+    "react-native-view-shot": "4.0.3",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

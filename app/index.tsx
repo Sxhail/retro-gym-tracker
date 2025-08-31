@@ -9,33 +9,10 @@ import theme from '../styles/theme';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
 import { ProgramManager } from '../services/programManager';
 import { useFocusEffect } from '@react-navigation/native';
-
-const BottomNav = ({ activeTab, onTabPress }: { activeTab: string, onTabPress: (tab: string) => void }) => (
-  <SafeAreaView style={styles.bottomNavContainer}>
-    <View style={styles.bottomNav}>
-      {/* Top full-width Settings button */}
-      <TouchableOpacity style={styles.settingsTab} onPress={() => onTabPress('settings')}>
-        <Text style={[styles.navTabLabel, activeTab === 'settings' && styles.navTabLabelActive]}>SETTINGS</Text>
-      </TouchableOpacity>
-      {/* Bottom row of three tabs */}
-      <View style={styles.bottomRow}>
-        <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('program')}>
-          <Text style={[styles.navTabLabel, activeTab === 'program' && styles.navTabLabelActive]}>Program</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('history')}>
-          <Text style={[styles.navTabLabel, activeTab === 'history' && styles.navTabLabelActive]}>History</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navTab} onPress={() => onTabPress('progress')}>
-          <Text style={[styles.navTabLabel, activeTab === 'progress' && styles.navTabLabelActive]}>Stats</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </SafeAreaView>
-);
+import { BottomNav } from '../components/BottomNav';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('start');
   const [showTrainingModal, setShowTrainingModal] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
   // Handler for deleting a program from dashboard
@@ -287,17 +264,7 @@ export default function HomeScreen() {
     </View>
 
       {/* Bottom Navigation */}
-      <BottomNav
-        activeTab={activeTab}
-        onTabPress={(tab) => {
-          setActiveTab(tab);
-          if (tab === 'program') router.push('/program');
-          if (tab === 'history') router.push('/history');
-          // if (tab === 'exercises') router.push('/exercises');
-          if (tab === 'progress') router.push('/stats');
-          if (tab === 'settings') router.push('/settings');
-        }}
-      />
+      <BottomNav currentScreen="/" />
 
       {/* Training Selection Modal */}
       <Modal
@@ -546,98 +513,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     opacity: 0.8,
-  },
-  bottomNavContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
-    zIndex: 100,
-    // For iOS shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    // For Android elevation
-    elevation: 16,
-  },
-  bottomNav: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'stretch',
-    backgroundColor: theme.colors.background,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.neonDim,
-    paddingVertical: 12,
-    paddingBottom: 14,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    marginHorizontal: 0,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  navTab: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    marginHorizontal: 4,
-    paddingVertical: 8,
-    // Add a subtle border and background for clickable look
-    borderWidth: 1,
-    borderColor: 'rgba(0,255,0,0.15)',
-    backgroundColor: 'rgba(0,255,0,0.04)',
-    shadowColor: '#00FF00',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  settingsTab: {
-    // Full-width button above other tabs
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    marginHorizontal: 0,
-    marginBottom: 8,
-    paddingVertical: 10,
-    width: '100%',
-    borderWidth: 1,
-    borderColor: 'rgba(0,255,0,0.15)',
-    backgroundColor: 'rgba(0,255,0,0.04)',
-    shadowColor: '#00FF00',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  navTabIcon: {
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.code,
-    fontSize: 22,
-    marginBottom: 2,
-  },
-  navTabIconActive: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-  },
-  navTabLabel: {
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.body,
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  navTabLabelActive: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.body,
-    backgroundColor: 'rgba(0,255,0,0.10)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
   },
 });

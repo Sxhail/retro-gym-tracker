@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import theme from '../styles/theme';
 
 interface BottomNavProps {
@@ -8,13 +9,13 @@ interface BottomNavProps {
   currentScreen?: string;
 }
 
-export function BottomNav({ activeTab = 'start', currentScreen }: BottomNavProps) {
+export function BottomNav({ activeTab = 'settings', currentScreen }: BottomNavProps) {
   const router = useRouter();
 
   const handleTabPress = (tab: string) => {
     switch (tab) {
-      case 'start':
-        router.push('/');
+      case 'settings':
+        router.push('/settings');
         break;
       case 'program':
         router.push('/program');
@@ -22,7 +23,7 @@ export function BottomNav({ activeTab = 'start', currentScreen }: BottomNavProps
       case 'history':
         router.push('/history');
         break;
-      case 'progress':
+      case 'stats':
         router.push('/stats');
         break;
       default:
@@ -34,11 +35,11 @@ export function BottomNav({ activeTab = 'start', currentScreen }: BottomNavProps
     if (currentScreen) {
       // Map current screen paths to tab names
       const screenToTab: { [key: string]: string } = {
-        '/': 'start',
+        '/settings': 'settings',
         '/program': 'program',
         '/history': 'history',
-        '/stats': 'progress',
-        '/progress': 'progress',
+        '/stats': 'stats',
+        '/progress': 'stats',
       };
       return screenToTab[currentScreen] === tab;
     }
@@ -48,17 +49,52 @@ export function BottomNav({ activeTab = 'start', currentScreen }: BottomNavProps
   return (
     <View style={styles.bottomNavContainer}>
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('start')}>
-          <Text style={[styles.navTabLabel, isActive('start') && styles.navTabLabelActive]}>Home</Text>
+        {/* Settings Tab */}
+        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('settings')}>
+          <MaterialIcons 
+            name="settings" 
+            size={24} 
+            color={isActive('settings') ? theme.colors.neonBright : theme.colors.textSecondary} 
+          />
+          <Text style={[styles.navTabLabel, isActive('settings') && styles.navTabLabelActive]}>
+            Settings
+          </Text>
         </TouchableOpacity>
+
+        {/* Program Tab */}
         <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('program')}>
-          <Text style={[styles.navTabLabel, isActive('program') && styles.navTabLabelActive]}>Program</Text>
+          <MaterialIcons 
+            name="fitness-center" 
+            size={24} 
+            color={isActive('program') ? theme.colors.neonBright : theme.colors.textSecondary} 
+          />
+          <Text style={[styles.navTabLabel, isActive('program') && styles.navTabLabelActive]}>
+            Program
+          </Text>
         </TouchableOpacity>
+
+        {/* History Tab */}
         <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('history')}>
-          <Text style={[styles.navTabLabel, isActive('history') && styles.navTabLabelActive]}>History</Text>
+          <MaterialIcons 
+            name="history" 
+            size={24} 
+            color={isActive('history') ? theme.colors.neonBright : theme.colors.textSecondary} 
+          />
+          <Text style={[styles.navTabLabel, isActive('history') && styles.navTabLabelActive]}>
+            History
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('progress')}>
-          <Text style={[styles.navTabLabel, isActive('progress') && styles.navTabLabelActive]}>Stats</Text>
+
+        {/* Stats Tab */}
+        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('stats')}>
+          <Ionicons 
+            name="stats-chart" 
+            size={24} 
+            color={isActive('stats') ? theme.colors.neonBright : theme.colors.textSecondary} 
+          />
+          <Text style={[styles.navTabLabel, isActive('stats') && styles.navTabLabelActive]}>
+            Stats
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -70,7 +106,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
+    bottom: 20, // Moved up from bottom to avoid system swipe indicator
     backgroundColor: 'transparent',
     zIndex: 100,
     // For iOS shadow
@@ -84,7 +120,7 @@ const styles = StyleSheet.create({
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: theme.colors.background,
     borderTopWidth: 1,
     borderTopColor: theme.colors.neonDim,
@@ -93,37 +129,25 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     marginHorizontal: 0,
+    paddingHorizontal: 8,
   },
   navTab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
-    marginHorizontal: 4,
     paddingVertical: 8,
-    // Add a subtle border and background for clickable look
-    borderWidth: 1,
-    borderColor: 'rgba(0,255,0,0.15)',
-    backgroundColor: 'rgba(0,255,0,0.04)',
-    shadowColor: '#00FF00',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingHorizontal: 4,
   },
   navTabLabel: {
     color: theme.colors.textSecondary,
     fontFamily: theme.fonts.body,
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 4,
+    textAlign: 'center',
   },
   navTabLabelActive: {
-    color: theme.colors.neon,
+    color: theme.colors.neonBright,
     fontFamily: theme.fonts.body,
-    backgroundColor: 'rgba(0,255,0,0.10)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
   },
 });

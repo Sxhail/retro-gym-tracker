@@ -22,27 +22,40 @@ export function useBackgroundRestTimerPersistence() {
     }
     
     if (!restSessionIdRef.current) {
-      // CRITICAL: Clean up any existing rest timer records before creating new session
+      // MINIMAL CLEANUP: Only clean up clearly expired timers to avoid race conditions
+      // with the notification system. Don't clean up all timers blindly.
       try {
         const { db } = await import('../db/client');
         const { active_session_timers } = await import('../db/schema');
         const { eq } = await import('drizzle-orm');
         
-        // Clean up all existing rest timers to prevent conflicts
         const existingRestTimers = await db
           .select()
           .from(active_session_timers)
           .where(eq(active_session_timers.timer_type, 'rest'));
         
+        const now = Date.now();
+        let cleanedCount = 0;
+        
+        // Only clean up timers that are clearly expired (more than 30 minutes old)
+        // to avoid interfering with recently scheduled notifications
         for (const timer of existingRestTimers) {
-          await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+          const startTime = new Date(timer.start_time).getTime();
+          const age = Math.floor((now - startTime) / 1000);
+          const remaining = Math.max(0, timer.duration - age);
+          
+          // Clean up if expired for more than 10 minutes or absurdly old (24h)
+          if (age > timer.duration + 600 || age > 24 * 60 * 60) {
+            await backgroundSessionService.clearTimerData(timer.session_id, 'rest');
+            cleanedCount++;
+          }
         }
         
-        if (existingRestTimers.length > 0) {
-          console.log('🧹 Cleaned up', existingRestTimers.length, 'existing rest timer records before creating new session');
+        if (cleanedCount > 0) {
+          console.log('🧹 Cleaned up', cleanedCount, 'expired rest timer records (preserving active ones)');
         }
       } catch (error) {
-        console.error('Failed to cleanup existing rest timers in ensureRestSessionId:', error);
+        console.error('Failed to cleanup expired rest timers in ensureRestSessionId:', error);
       }
       
       restSessionIdRef.current = `rest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -215,9 +228,14 @@ export function useBackgroundRestTimerPersistence() {
   ]);
 
   // Save immediately when a rest timer starts (first frame)
+  // BUT delay it to allow notification system to schedule first
   useEffect(() => {
     if (session.globalRestTimer?.isActive && session.globalRestTimer.startTime) {
-      saveRestTimerState();
+      // Add a small delay to ensure notification scheduling completes first
+      const timeout = setTimeout(() => {
+        saveRestTimerState();
+      }, 200); // 200ms delay to avoid race condition
+      return () => clearTimeout(timeout);
     }
   }, [session.globalRestTimer?.isActive]);
 

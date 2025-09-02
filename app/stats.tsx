@@ -5,6 +5,7 @@ import VolumeOverTimeChart from '../components/stats/VolumeOverTimeChart';
 import WorkoutFrequencyChart from '../components/stats/WorkoutFrequencyChart';
 import PRTimelineChart from '../components/stats/PRTimelineChart';
 import Estimated1RMChart from '../components/stats/Estimated1RMChart';
+import { MuscleActivationStats } from '../components/stats/MuscleActivationStats';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import theme from '../styles/theme';
@@ -180,6 +181,9 @@ export default function ProgressOverview() {
         </View>
       ) : (
         <ScrollView style={styles.list}>
+          {/* Muscle Activation Map */}
+          <MuscleActivationStats />
+          
           {/* Weight Progression */}
           <View style={{ marginBottom: 8 }}>
             <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2, marginBottom: 6 }}>Weight Progression</Text>

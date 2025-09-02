@@ -1660,7 +1660,8 @@ export default function NewWorkoutScreen() {
         onClose={handleCloseReport}
       />
       
-      <BottomNav currentScreen="/new" />
+      {/* Only show BottomNav when workout is not active */}
+      {!isWorkoutActive && <BottomNav currentScreen="/new" />}
     </SafeAreaView>
   );
 }

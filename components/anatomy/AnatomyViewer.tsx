@@ -204,7 +204,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.neon,
     borderRadius: 8,
-    backgroundColor: theme.colors.backgroundOverlay,
   },
   legend: {
     backgroundColor: theme.colors.backgroundOverlay,

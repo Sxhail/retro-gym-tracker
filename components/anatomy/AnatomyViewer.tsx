@@ -16,7 +16,7 @@ interface Props {
   gender: Gender;
   anatomySide: AnatomySide;
   onMusclePress?: (muscleId: MuscleId) => void;
-  onGenderToggle?: () => void;
+  onGenderToggle?: (gender: Gender) => void;
   onSideToggle?: () => void;
   width?: number;
   height?: number;
@@ -76,7 +76,7 @@ export default function AnatomyViewer({
       <View style={styles.controls}>
         <TouchableOpacity 
           style={[styles.toggleButton, gender === 'male' && styles.activeButton]}
-          onPress={onGenderToggle}
+          onPress={() => onGenderToggle?.('male')}
         >
         <Text style={[styles.toggleText, gender === 'male' && styles.activeText]}>
           MALE
@@ -85,7 +85,7 @@ export default function AnatomyViewer({
 
         <TouchableOpacity 
           style={[styles.toggleButton, gender === 'female' && styles.activeButton]}
-          onPress={onGenderToggle}
+          onPress={() => onGenderToggle?.('female')}
         >
         <Text style={[styles.toggleText, gender === 'female' && styles.activeText]}>
           FEMALE
@@ -96,7 +96,7 @@ export default function AnatomyViewer({
 
         <TouchableOpacity 
           style={[styles.toggleButton, anatomySide === 'front' && styles.activeButton]}
-          onPress={onSideToggle}
+          onPress={() => onSideToggle?.()}
         >
         <Text style={[styles.toggleText, anatomySide === 'front' && styles.activeText]}>
           FRONT
@@ -105,7 +105,7 @@ export default function AnatomyViewer({
 
         <TouchableOpacity 
           style={[styles.toggleButton, anatomySide === 'back' && styles.activeButton]}
-          onPress={onSideToggle}
+          onPress={() => onSideToggle?.()}
         >
         <Text style={[styles.toggleText, anatomySide === 'back' && styles.activeText]}>
           BACK

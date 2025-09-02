@@ -5,7 +5,7 @@ import AnatomyViewer from '../anatomy/AnatomyViewer';
 import { getMuscleActivationMap, getMuscleStatistics, compareMuscleActivation } from '../../services/muscleAnalytics';
 import { VIEW_MODE_CONFIG, TRAINING_LEVEL_CONFIG } from '../anatomy/training-levels';
 import type { MuscleActivationResult } from '../../services/muscleAnalytics';
-import type { ViewMode, MuscleId, TrainingLevel } from '../anatomy/muscles';
+import type { ViewMode, MuscleId, TrainingLevel, Gender, AnatomySide } from '../anatomy/muscles';
 
 export interface MuscleActivationStatsProps {
   className?: string;
@@ -19,6 +19,10 @@ export const MuscleActivationStats: React.FC<MuscleActivationStatsProps> = () =>
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonData, setComparisonData] = useState<any>(null);
+  
+  // Anatomy viewer state
+  const [anatomyGender, setAnatomyGender] = useState<Gender>('male');
+  const [anatomySide, setAnatomySide] = useState<AnatomySide>('front');
 
   // Load muscle activation data
   const loadActivationData = async (date: Date = new Date(), mode: ViewMode = viewMode) => {
@@ -82,6 +86,15 @@ export const MuscleActivationStats: React.FC<MuscleActivationStatsProps> = () =>
     } else {
       setComparisonData(null);
     }
+  };
+
+  // Anatomy view handlers
+  const handleGenderToggle = (gender: Gender) => {
+    setAnatomyGender(gender);
+  };
+
+  const handleSideToggle = () => {
+    setAnatomySide(prev => prev === 'front' ? 'back' : 'front');
   };
 
   // Load data on component mount and when dependencies change
@@ -181,9 +194,11 @@ export const MuscleActivationStats: React.FC<MuscleActivationStatsProps> = () =>
             <View style={styles.anatomyContainer}>
               <AnatomyViewer
                 muscleStates={activationData.muscleStates}
-                gender="male"
-                anatomySide="front"
+                gender={anatomyGender}
+                anatomySide={anatomySide}
                 onMusclePress={handleMusclePress}
+                onGenderToggle={handleGenderToggle}
+                onSideToggle={handleSideToggle}
               />
             </View>
 

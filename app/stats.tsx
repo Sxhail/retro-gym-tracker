@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import theme from '../styles/theme';
 import { getExerciseMaxTimeline } from '../services/workoutHistory';
+import { BottomNav } from '../components/BottomNav';
 
 export default function ProgressOverview() {
   const router = useRouter();
@@ -76,9 +77,7 @@ export default function ProgressOverview() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>←</Text>
-        </TouchableOpacity>
+        <View style={{ width: 36 }} />
         <Text style={styles.pageTitle}>STATS</Text>
         <View style={{ width: 36 }} />
       </View>
@@ -196,6 +195,8 @@ export default function ProgressOverview() {
           <Estimated1RMChart initialRange={'all'} selectedExercise={selectedExercise} />
         </ScrollView>
       )}
+      
+      <BottomNav currentScreen="/stats" />
     </SafeAreaView>
   );
 }

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } fr
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
 import { useCardioSession } from '../hooks/useCardioSession';
+import { BottomNav } from '../components/BottomNav';
 
 export default function CardioScreen() {
   const router = useRouter();
@@ -58,9 +59,7 @@ export default function CardioScreen() {
   <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
+        <View style={styles.placeholder} />
         <Text style={styles.headerTitle}>SELECT CARDIO TYPE</Text>
         <View style={styles.placeholder} />
       </View>
@@ -101,6 +100,8 @@ export default function CardioScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+      
+      <BottomNav currentScreen="/cardio" />
     </SafeAreaView>
   );
 }

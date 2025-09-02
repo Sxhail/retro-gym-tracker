@@ -9,11 +9,14 @@ interface BottomNavProps {
   currentScreen?: string;
 }
 
-export function BottomNav({ activeTab = 'settings', currentScreen }: BottomNavProps) {
+export function BottomNav({ activeTab = 'home', currentScreen }: BottomNavProps) {
   const router = useRouter();
 
   const handleTabPress = (tab: string) => {
     switch (tab) {
+      case 'home':
+        router.push('/');
+        break;
       case 'settings':
         router.push('/settings');
         break;
@@ -35,11 +38,14 @@ export function BottomNav({ activeTab = 'settings', currentScreen }: BottomNavPr
     if (currentScreen) {
       // Map current screen paths to tab names
       const screenToTab: { [key: string]: string } = {
+        '/': 'home',
         '/settings': 'settings',
         '/program': 'program',
         '/history': 'history',
         '/stats': 'stats',
         '/progress': 'stats',
+        '/new': 'home', // New workout page goes to home tab
+        '/cardio': 'home', // Cardio selection page goes to home tab
       };
       return screenToTab[currentScreen] === tab;
     }
@@ -70,6 +76,18 @@ export function BottomNav({ activeTab = 'settings', currentScreen }: BottomNavPr
           />
           <Text style={[styles.navTabLabel, isActive('program') && styles.navTabLabelActive]}>
             Program
+          </Text>
+        </TouchableOpacity>
+
+        {/* Home Tab - Middle Position */}
+        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('home')}>
+          <MaterialIcons 
+            name="home" 
+            size={24} 
+            color={isActive('home') ? theme.colors.neonBright : theme.colors.textSecondary} 
+          />
+          <Text style={[styles.navTabLabel, isActive('home') && styles.navTabLabelActive]}>
+            Home
           </Text>
         </TouchableOpacity>
 

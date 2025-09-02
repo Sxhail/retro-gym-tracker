@@ -13,6 +13,7 @@ import * as schema from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { Picker } from '@react-native-picker/picker';
 import AttendanceCalendar from '../components/AttendanceCalendar';
+import { BottomNav } from '../components/BottomNav';
 
 const GREEN = '#00FF00';
 const LIGHT_GREEN = '#39FF14';
@@ -676,9 +677,7 @@ export default function HistoryListScreen() {
       
       {/* Header Row */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
+        <View style={{ width: 36 }} />
         <Text style={styles.pageTitle}>HISTORY</Text>
         <View style={{ width: 36 }} />
       </View>
@@ -1230,6 +1229,8 @@ export default function HistoryListScreen() {
           </View>
         </View>
       </Modal>
+      
+      <BottomNav currentScreen="/history" />
     </SafeAreaView>
   );
 }

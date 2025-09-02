@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
+import { BottomNav } from '../components/BottomNav';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -22,9 +23,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.root}>
       {/* Full-width header (outside scroll) */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
+        <View style={{ width: 36 }} />
         <Text style={styles.headerTitle}>SETTINGS</Text>
         <View style={{ width: 36 }} />
       </View>
@@ -65,6 +64,8 @@ export default function SettingsScreen() {
   {/* Bottom spacer so floating elements never overlap */}
   <View style={{ height: theme.spacing.xxl }} />
       </ScrollView>
+      
+      <BottomNav currentScreen="/settings" />
     </SafeAreaView>
   );
 }

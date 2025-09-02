@@ -8,6 +8,7 @@ import * as schema from '../db/schema';
 import { useWorkoutSession } from '../context/WorkoutSessionContext';
 import ExerciseCard from '../components/ExerciseCard';
 import { backgroundSessionService } from '../services/backgroundSession';
+import { BottomNav } from '../components/BottomNav';
 
 import { getExerciseMaxWeights, getPreviousSetForExerciseSetNumber } from '../services/workoutHistory';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -1193,14 +1194,7 @@ export default function NewWorkoutScreen() {
     <SafeAreaView style={styles.safeArea}>
       {/* Header with back button, workout name, and cancel cross */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={handleBackButton} style={styles.backButtonArea}>
-          <Text style={{ 
-            color: theme.colors.neon, 
-            fontFamily: theme.fonts.body, 
-            fontSize: 36, 
-            fontWeight: 'bold',
-          }}>←</Text>
-        </TouchableOpacity>
+        <View style={{ width: 36 }} />
         
         {sessionExercises.length > 0 && (
           <Text style={{ 
@@ -1415,11 +1409,11 @@ export default function NewWorkoutScreen() {
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
           {/* Header */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16 }}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 24 }}>←</Text>
-            </TouchableOpacity>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>EXERCISES</Text>
             <View style={{ width: 24 }} />
+            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 20, fontWeight: 'bold' }}>EXERCISES</Text>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 24 }}>✕</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Search Bar */}
@@ -1665,6 +1659,8 @@ export default function NewWorkoutScreen() {
         workoutId={reportWorkoutId}
         onClose={handleCloseReport}
       />
+      
+      <BottomNav currentScreen="/new" />
     </SafeAreaView>
   );
 }

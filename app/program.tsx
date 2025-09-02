@@ -10,6 +10,7 @@ import { ProgramManager, ProgramData } from '../services/programManager';
 import ExerciseCard from '../components/ExerciseCard';
 import { dbOperations } from '../services/database';
 import { getExerciseMaxWeights } from '../services/workoutHistory';
+import { BottomNav } from '../components/BottomNav';
 // Global rest timer display is injected via AppLayout; no need to render here
 
 interface ProgramConfig {
@@ -281,9 +282,7 @@ export default function ProgramScreen() {
     <View>
   {/* Rest timer line bar above arrow and title */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
+        <View style={{ width: 36 }} />
         <Text style={styles.headerTitle}>TRAINING PROGRAMS</Text>
         <View style={{ width: 36 }} />
       </View>
@@ -551,7 +550,7 @@ export default function ProgramScreen() {
     <View style={styles.footer}>
       <TouchableOpacity 
         style={styles.backButtonFooter}
-        onPress={() => step > 1 ? setStep(step - 1) : router.back()}
+        onPress={() => setStep(step - 1)}
       >
         <Text style={styles.backButtonText}>← BACK</Text>
       </TouchableOpacity>
@@ -713,6 +712,8 @@ export default function ProgramScreen() {
       {step === 3 && renderStep3()}
       {step === 4 && renderStep4()}
       {step > 1 && renderFooter()}
+      
+      <BottomNav currentScreen="/program" />
     </SafeAreaView>
   );
 }

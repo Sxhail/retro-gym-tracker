@@ -8,8 +8,9 @@ import type { MuscleId, TrainingLevel, Gender, AnatomySide } from './muscles';
 // Import anatomy components
 import MaleAnatomyFront from './svg/MaleAnatomyFront';
 import MaleAnatomyBack from './svg/MaleAnatomyBack';
-import FemaleAnatomyFront from './svg/FemaleAnatomyFront';
-import FemaleAnatomyBack from './svg/FemaleAnatomyBack';
+// TODO: Implement female anatomy components with new SVG assets
+// import FemaleAnatomyFront from './svg/FemaleAnatomyFront';
+// import FemaleAnatomyBack from './svg/FemaleAnatomyBack';
 
 interface Props {
   muscleStates: Partial<Record<MuscleId, TrainingLevel>>;
@@ -65,8 +66,8 @@ export default function AnatomyViewer({
         : <MaleAnatomyBack {...commonProps} />;
     } else {
       return anatomySide === 'front'
-        ? <FemaleAnatomyFront {...commonProps} />
-        : <FemaleAnatomyBack {...commonProps} />;
+        ? <Text style={styles.placeholderText}>Female Front - Coming Soon</Text>
+        : <Text style={styles.placeholderText}>Female Back - Coming Soon</Text>;
     }
   };
 
@@ -244,5 +245,12 @@ const styles = StyleSheet.create({
     fontFamily: 'ShareTechMono',
     color: theme.colors.text,
     textTransform: 'uppercase',
+  },
+  placeholderText: {
+    fontSize: 16,
+    fontFamily: 'VT323',
+    color: theme.colors.neon,
+    textAlign: 'center',
+    padding: 40,
   },
 });

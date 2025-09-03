@@ -10,7 +10,7 @@ import type { MuscleActivationResult } from '../../services/muscleAnalytics';
 
 export default function MuscleActivationMapV2() {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
-  const [gender, setGender] = useState<Gender>('male');
+  const gender = 'male'; // Fixed to male for now
   const [side, setSide] = useState<AnatomySide>('front');
   const [bodyData, setBodyData] = useState([]);
   const [activationData, setActivationData] = useState<MuscleActivationResult | null>(null);
@@ -76,26 +76,8 @@ export default function MuscleActivationMapV2() {
           ))}
         </View>
 
-        {/* Gender/Side Controls */}
+        {/* Side Control */}
         <View style={styles.bodyControls}>
-          <TouchableOpacity
-            style={[styles.controlButton, gender === 'male' && styles.activeControlButton]}
-            onPress={() => setGender('male')}
-          >
-            <Text style={[styles.controlText, gender === 'male' && styles.activeControlText]}>
-              MALE
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.controlButton, gender === 'female' && styles.activeControlButton]}
-            onPress={() => setGender('female')}
-          >
-            <Text style={[styles.controlText, gender === 'female' && styles.activeControlText]}>
-              FEMALE
-            </Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity
             style={[styles.controlButton]}
             onPress={() => setSide(side === 'front' ? 'back' : 'front')}
@@ -152,9 +134,6 @@ export default function MuscleActivationMapV2() {
       {/* Legend */}
       <View style={styles.legend}>
         <Text style={styles.legendTitle}>Training Levels</Text>
-        <Text style={styles.legendSubtitle}>
-          {VIEW_MODE_CONFIG[viewMode].description}
-        </Text>
         <View style={styles.legendGrid}>
           {(Object.keys(TRAINING_LEVEL_CONFIG) as Array<keyof typeof TRAINING_LEVEL_CONFIG>).map((level) => {
             const config = TRAINING_LEVEL_CONFIG[level];
@@ -166,10 +145,7 @@ export default function MuscleActivationMapV2() {
                     { backgroundColor: config.color }
                   ]}
                 />
-                <View style={styles.legendTextContainer}>
-                  <Text style={styles.legendLevel}>{config.label}</Text>
-                  <Text style={styles.legendDescription}>{config.description}</Text>
-                </View>
+                <Text style={styles.legendLevel}>{config.label}</Text>
               </View>
             );
           })}
@@ -293,12 +269,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.neon,
     textAlign: 'center',
-    marginBottom: 4,
-  },
-  legendSubtitle: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
     marginBottom: 12,
   },
   legendGrid: {
@@ -308,24 +278,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginBottom: 8,
   },
   legendColor: {
     width: 16,
     height: 16,
     borderRadius: 8,
   },
-  legendTextContainer: {
-    flex: 1,
-  },
   legendLevel: {
     fontSize: 14,
     fontWeight: '600',
     color: theme.colors.text,
-    marginBottom: 2,
-  },
-  legendDescription: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
   },
   loadingContainer: {
     flex: 1,

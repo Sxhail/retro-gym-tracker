@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, SafeAreaView } from 'react-native';
 import ProgressChart from '../components/ProgressChart';
 import VolumeOverTimeChart from '../components/stats/VolumeOverTimeChart';
 import WorkoutFrequencyChart from '../components/stats/WorkoutFrequencyChart';
@@ -18,8 +18,6 @@ export default function ProgressOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<string>('');
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     async function fetchProgress() {
@@ -82,94 +80,6 @@ export default function ProgressOverview() {
         <Text style={styles.pageTitle}>STATS</Text>
         <View style={{ width: 36 }} />
       </View>
-      {/* Exercise Selection Dropdown with Search */}
-      {charts.length > 0 && (
-        <View style={{ marginBottom: 16 }}>
-          <TouchableOpacity
-            style={{
-              borderWidth: theme.borderWidth,
-              borderColor: theme.colors.neon,
-              borderRadius: theme.borderRadius,
-              paddingVertical: 10,
-              paddingHorizontal: 16,
-              backgroundColor: theme.colors.backgroundOverlay,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-            onPress={() => setDropdownVisible(true)}
-            activeOpacity={0.8}
-          >
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 16 }}>
-              {selectedExercise || 'Select Exercise'}
-            </Text>
-            <Text style={{ color: theme.colors.neon, fontSize: 18, marginLeft: 8 }}>▼</Text>
-          </TouchableOpacity>
-          <Modal
-            visible={dropdownVisible}
-            animationType="fade"
-            transparent={true}
-            onRequestClose={() => setDropdownVisible(false)}
-          >
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' }}>
-              <View style={{ backgroundColor: theme.colors.background, borderRadius: 12, padding: 18, width: '90%', maxWidth: 400 }}>
-                <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 18, marginBottom: 8 }}>Select Exercise</Text>
-                <TextInput
-                  style={{
-                    borderWidth: 1,
-                    borderColor: theme.colors.neon,
-                    borderRadius: 8,
-                    color: theme.colors.neon,
-                    fontFamily: theme.fonts.code,
-                    fontSize: 16,
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    backgroundColor: 'transparent',
-                    marginBottom: 12,
-                  }}
-                  placeholder="Search exercise..."
-                  placeholderTextColor={theme.colors.neon}
-                  value={searchTerm}
-                  onChangeText={setSearchTerm}
-                  autoFocus
-                />
-                <FlatList
-                  data={charts.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()))}
-                  keyExtractor={item => item.title}
-                  style={{ maxHeight: 250, marginBottom: 8 }}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={{
-                        paddingVertical: 10,
-                        paddingHorizontal: 8,
-                        borderBottomWidth: 1,
-                        borderBottomColor: theme.colors.neonDim,
-                        backgroundColor: item.title === selectedExercise ? theme.colors.neon : 'transparent',
-                      }}
-                      onPress={() => {
-                        setSelectedExercise(item.title);
-                        setDropdownVisible(false);
-                        setSearchTerm('');
-                      }}
-                    >
-                      <Text style={{
-                        color: item.title === selectedExercise ? theme.colors.background : theme.colors.neon,
-                        fontFamily: theme.fonts.code,
-                        fontSize: 16,
-                        fontWeight: item.title === selectedExercise ? 'bold' : 'normal',
-                      }}>{item.title}</Text>
-                    </TouchableOpacity>
-                  )}
-                  ListEmptyComponent={<Text style={{ color: theme.colors.textSecondary, fontFamily: theme.fonts.code, fontSize: 14, textAlign: 'center', marginTop: 16 }}>No exercises found.</Text>}
-                />
-                <TouchableOpacity onPress={() => setDropdownVisible(false)} style={{ alignSelf: 'flex-end', marginTop: 8 }}>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.body, fontSize: 14 }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-        </View>
-      )}
       {loading ? (
         <ActivityIndicator color={theme.colors.neon} size="large" style={{ marginTop: 32 }} />
       ) : error ? (

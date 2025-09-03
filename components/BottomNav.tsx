@@ -158,14 +158,14 @@ const styles = StyleSheet.create({
   },
   navTabLabel: {
     color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.body,
-    fontSize: 11,
-    fontWeight: '500',
+    fontFamily: theme.fonts.display,
+    fontSize: 9,
+    fontWeight: '400',
     marginTop: 4,
     textAlign: 'center',
   },
   navTabLabelActive: {
     color: theme.colors.neonBright,
-    fontFamily: theme.fonts.body,
+    fontFamily: theme.fonts.display,
   },
 });

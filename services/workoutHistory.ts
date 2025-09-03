@@ -97,7 +97,9 @@ export async function saveWorkout(sessionData: WorkoutSessionData): Promise<numb
         }
         
         for (const set of exercise.sets) {
-          if (set.weight < 0) {
+          // Allow weight to be 0 (empty is treated as 0), but validate if provided
+          const weight = set.weight === null || set.weight === undefined || set.weight === 0 ? 0 : set.weight;
+          if (weight < 0) {
             throw new Error('Weight cannot be negative');
           }
           if (set.reps <= 0) {
@@ -139,7 +141,7 @@ export async function saveWorkout(sessionData: WorkoutSessionData): Promise<numb
             const setsToInsert: NewSet[] = exerciseData.sets.map(set => ({
               workout_exercise_id: workoutExerciseId,
               set_index: set.setIndex,
-              weight: set.weight,
+              weight: set.weight || 0,
               reps: set.reps,
               notes: set.notes ? set.notes.trim() : null,
               rest_duration: set.restDuration,
@@ -720,7 +722,9 @@ export async function saveProgramWorkout(
         }
         
         for (const set of exercise.sets) {
-          if (set.weight < 0) {
+          // Allow weight to be 0 (empty is treated as 0), but validate if provided
+          const weight = set.weight === null || set.weight === undefined || set.weight === 0 ? 0 : set.weight;
+          if (weight < 0) {
             throw new Error('Weight cannot be negative');
           }
           if (set.reps <= 0) {
@@ -764,7 +768,7 @@ export async function saveProgramWorkout(
             await tx.insert(sets).values({
               workout_exercise_id: workoutExerciseId,
               set_index: setData.setIndex,
-              weight: setData.weight,
+              weight: setData.weight || 0,
               reps: setData.reps,
               notes: setData.notes,
               rest_duration: setData.restDuration,

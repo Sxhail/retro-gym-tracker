@@ -21,10 +21,9 @@ export type Exercise = typeof schema.exercises.$inferSelect;
 function SetRow({ set, setIdx, exerciseId, handleSetFieldChange, handleSetRestChange, handleToggleSetComplete, handleRemoveSet, theme, isLastCompleted }: any) {
   // Remove PanResponder and Animated pan logic
 
-  // Only allow marking as complete if both KG and REPS are positive numbers
-  // Allow weight to be 0, but reps must be > 0. Blank weight is not allowed.
-  const hasWeightValue = set.weight !== '' && set.weight !== null && set.weight !== undefined;
-  const canComplete = hasWeightValue && Number(set.weight) >= 0 && Number(set.reps) > 0;
+  // Only allow marking as complete if REPS are positive numbers
+  // Allow weight to be empty or 0, but reps must be > 0
+  const canComplete = Number(set.reps) > 0;
 
   // Rest timer state (per set) - timestamp-based for background persistence
   const [restTime, setRestTime] = useState(set.restDuration ?? 120);
@@ -1125,19 +1124,20 @@ export default function NewWorkoutScreen() {
       return;
     }
 
-    // Validate sets have valid data
+    // Validate sets have valid data - allow empty weight, but require valid reps
     const invalidSets = sessionExercises.flatMap(exercise => 
       exercise.sets.filter(set => {
-        const weight = Number(set.weight);
+        const weight = set.weight === '' || set.weight === null || set.weight === undefined ? 0 : Number(set.weight);
         const reps = Number(set.reps);
-        return isNaN(weight) || weight < 0 || isNaN(reps) || reps <= 0;
+        // Weight can be empty (treated as 0), but reps must be > 0
+        return (set.weight !== '' && set.weight !== null && set.weight !== undefined && (isNaN(weight) || weight < 0)) || isNaN(reps) || reps <= 0;
       })
     );
 
     if (invalidSets.length > 0) {
       Alert.alert(
         'Invalid Set Data', 
-        'All sets must have valid weight (≥ 0) and reps (> 0) values.'
+        'All sets must have valid reps (> 0). Weight can be left empty or must be ≥ 0.'
       );
       return;
     }
@@ -1192,27 +1192,27 @@ export default function NewWorkoutScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header with back button, workout name, and cancel cross */}
+      {/* Header with back button and centered workout name when in session */}
       <View style={styles.headerRow}>
-        <View style={{ width: 36 }} />
+        {sessionExercises.length > 0 && (
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            style={styles.backButtonArea}
+          >
+            <Text style={styles.backButton}>←</Text>
+          </TouchableOpacity>
+        )}
+        
+        {sessionExercises.length === 0 && <View style={{ width: 36 }} />}
         
         {sessionExercises.length > 0 && (
-          <Text style={{ 
-            color: theme.colors.neon, 
-            fontFamily: theme.fonts.code, 
-            fontWeight: 'bold', 
-            fontSize: 28, 
-            letterSpacing: 1.5, 
-            textAlign: 'center',
-            flex: 1,
-            marginHorizontal: 16,
-          }}>
+          <Text style={styles.workoutTitle}>
             {workoutName}
           </Text>
         )}
         
-  {/* X removed as per requirement */}
-  <View style={{ flexDirection: 'row', alignItems: 'center' }} />
+        {/* Empty view for layout balance */}
+        <View style={{ width: 36 }} />
       </View>
       {/* Main content (workout box, input, END WORKOUT) */}
       {sessionExercises.length === 0 ? (
@@ -1705,6 +1705,22 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButton: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.code,
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  workoutTitle: {
+    color: theme.colors.neon, 
+    fontFamily: theme.fonts.code, 
+    fontWeight: 'bold', 
+    fontSize: 28, 
+    letterSpacing: 1.5, 
+    textAlign: 'center',
+    flex: 1,
+    marginHorizontal: 16,
   },
   back: {
     color: theme.colors.text,

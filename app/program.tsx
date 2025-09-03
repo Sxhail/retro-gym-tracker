@@ -713,7 +713,8 @@ export default function ProgramScreen() {
       {step === 4 && renderStep4()}
       {step > 1 && renderFooter()}
       
-      <BottomNav currentScreen="/program" />
+      {/* Only show BottomNav on step 1 */}
+      {step === 1 && <BottomNav currentScreen="/program" />}
     </SafeAreaView>
   );
 }

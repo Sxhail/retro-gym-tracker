@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import theme from '../../styles/theme';
-// import AnatomyViewer from '../anatomy/AnatomyViewer'; // REMOVED - Will be replaced with Body Highlighter
+// import AnatomyViewer from '../anatomy/AnatomyViewer'; // REMOVED - Replaced with Body Highlighter
+import MuscleActivationMapV2 from './MuscleActivationMapV2';
 import { getMuscleActivationMap, getMuscleStatistics, compareMuscleActivation } from '../../services/muscleAnalytics';
 import { VIEW_MODE_CONFIG, TRAINING_LEVEL_CONFIG } from '../anatomy/training-levels';
 import type { MuscleActivationResult } from '../../services/muscleAnalytics';
@@ -190,22 +191,8 @@ export const MuscleActivationStats: React.FC<MuscleActivationStatsProps> = () =>
               </View>
             </View>
 
-            {/* Anatomy Viewer */}
-            <View style={styles.anatomyContainer}>
-              {/* PLACEHOLDER: AnatomyViewer will be replaced with React Native Body Highlighter */}
-              <View style={styles.placeholderContainer}>
-                <Text style={styles.placeholderTitle}>🚧 Anatomy View - Under Refactoring</Text>
-                <Text style={styles.placeholderText}>
-                  The anatomy viewer is being upgraded to use React Native Body Highlighter
-                </Text>
-                <Text style={styles.placeholderStats}>
-                  Total muscles tracked: {Object.keys(activationData.muscleStates).length}
-                </Text>
-                <Text style={styles.placeholderStats}>
-                  Training volume: {activationData.totalVolume.toLocaleString()}
-                </Text>
-              </View>
-            </View>
+            {/* New Body Highlighter Integration */}
+            <MuscleActivationMapV2 />
 
             {/* Training Level Legend */}
             <View style={styles.legendContainer}>
@@ -537,34 +524,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     textAlign: 'center',
-  },
-  // Placeholder styles for anatomy refactor
-  placeholderContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-    backgroundColor: theme.colors.backgroundOverlay,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: theme.colors.neon,
-    borderStyle: 'dashed',
-  },
-  placeholderTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.colors.neon,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  placeholderText: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  placeholderStats: {
-    fontSize: 12,
-    color: theme.colors.text,
-    marginBottom: 4,
   },
 });

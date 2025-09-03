@@ -14,6 +14,7 @@ export interface MuscleVolumeData {
 
 export interface MuscleActivationResult {
   muscleStates: Partial<Record<MuscleId, TrainingLevel>>;
+  muscleVolumes: Partial<Record<MuscleId, number>>;
   totalVolume: number;
   analysisDate: Date;
   viewMode: ViewMode;
@@ -109,11 +110,13 @@ export function analyzeMuscleActivation(
 ): MuscleActivationResult {
   const config = VIEW_MODE_CONFIG[viewMode];
   const muscleStates: Partial<Record<MuscleId, TrainingLevel>> = {};
+  const muscleVolumes: Partial<Record<MuscleId, number>> = {};
   
   let totalVolume = 0;
   
   for (const data of volumeData) {
     totalVolume += data.volume;
+    muscleVolumes[data.muscleId] = data.volume;
     
     // Determine training level based on volume thresholds
     let trainingLevel: TrainingLevel;
@@ -133,6 +136,7 @@ export function analyzeMuscleActivation(
   
   return {
     muscleStates,
+    muscleVolumes,
     totalVolume,
     analysisDate: new Date(),
     viewMode

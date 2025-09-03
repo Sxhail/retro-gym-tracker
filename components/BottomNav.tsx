@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   navTabLabel: {
     color: theme.colors.textSecondary,
     fontFamily: theme.fonts.display,
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '400',
     marginTop: 4,
     textAlign: 'center',

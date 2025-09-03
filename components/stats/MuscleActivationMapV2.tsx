@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated, Dimensions } from 'react-native';
 import Body from 'react-native-body-highlighter';
 import theme from '../../styles/theme';
 import ChartCard from './ChartCard';
@@ -16,10 +16,21 @@ export default function MuscleActivationMapV2() {
   const [bodyData, setBodyData] = useState([]);
   const [activationData, setActivationData] = useState<MuscleActivationResult | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Slider animation
+  const { width } = Dimensions.get('window');
+  const CARD_MARGIN = 16;
+  const sliderPosition = useRef(new Animated.Value(0)).current; // 0 = front, 1 = back
+  const sideIndex = side === 'front' ? 0 : 1;
 
   useEffect(() => {
     loadMuscleData();
   }, [viewMode]);
+
+  useEffect(() => {
+    // Initialize slider position
+    animateSlider(sideIndex);
+  }, []);
 
   const loadMuscleData = async () => {
     try {
@@ -42,6 +53,21 @@ export default function MuscleActivationMapV2() {
     console.log('Pressed body part:', bodyPart, 'side:', pressedSide);
     // TODO: Show detailed muscle statistics modal
     // You can implement a modal here to show detailed stats for the pressed muscle
+  };
+
+  // Slider animation functions
+  const animateSlider = (toValue: number) => {
+    Animated.timing(sliderPosition, {
+      toValue,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleSliderPress = (index: number) => {
+    const newSide: AnatomySide = index === 0 ? 'front' : 'back';
+    setSide(newSide);
+    animateSlider(index);
   };
 
   if (loading) {
@@ -77,16 +103,45 @@ export default function MuscleActivationMapV2() {
             ))}
           </View>
 
-          {/* Side Control */}
-          <View style={styles.bodyControls}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={() => setSide(side === 'front' ? 'back' : 'front')}
-            >
-              <Text style={styles.controlText}>
-                {side.toUpperCase()}
-              </Text>
-            </TouchableOpacity>
+          {/* Side Control Slider */}
+          <View style={styles.sliderContainer}>
+            <View style={styles.sliderTrack}>
+              <Animated.View 
+                style={[
+                  styles.sliderIndicator,
+                  {
+                    transform: [{
+                      translateX: sliderPosition.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, (width - CARD_MARGIN * 4) / 2], // Half width for each option
+                      })
+                    }]
+                  }
+                ]}
+              />
+              <TouchableOpacity
+                style={styles.sliderOption}
+                onPress={() => handleSliderPress(0)}
+              >
+                <Text style={[
+                  styles.sliderText,
+                  sideIndex === 0 && styles.sliderTextActive
+                ]}>
+                  FRONT
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sliderOption}
+                onPress={() => handleSliderPress(1)}
+              >
+                <Text style={[
+                  styles.sliderText,
+                  sideIndex === 1 && styles.sliderTextActive
+                ]}>
+                  BACK
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -196,25 +251,6 @@ const styles = StyleSheet.create({
   activeModeText: {
     color: theme.colors.background,
   },
-  bodyControls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  controlButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: theme.colors.neon,
-    backgroundColor: 'rgba(0, 255, 0, 0.1)',
-  },
-  controlText: {
-    color: theme.colors.neon,
-    fontFamily: theme.fonts.code,
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
   summaryContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -284,5 +320,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: theme.fonts.body,
     color: theme.colors.text,
+  },
+  // Slider styles
+  sliderContainer: {
+    marginTop: 12,
+  },
+  sliderTrack: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 255, 0, 0.05)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 0, 0.2)',
+    position: 'relative',
+    overflow: 'hidden',
+    height: 36,
+  },
+  sliderIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '50%',
+    height: '100%',
+    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.neon,
+  },
+  sliderOption: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  sliderText: {
+    color: theme.colors.neonDim,
+    fontFamily: theme.fonts.code,
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  sliderTextActive: {
+    color: theme.colors.neon,
   },
 });

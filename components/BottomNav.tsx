@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import theme from '../styles/theme';
@@ -62,9 +62,6 @@ export function BottomNav({ activeTab = 'home', currentScreen }: BottomNavProps)
             size={24} 
             color={isActive('settings') ? theme.colors.neonBright : theme.colors.textSecondary} 
           />
-          <Text style={[styles.navTabLabel, isActive('settings') && styles.navTabLabelActive]}>
-            Settings
-          </Text>
         </TouchableOpacity>
 
         {/* Program Tab */}
@@ -74,9 +71,6 @@ export function BottomNav({ activeTab = 'home', currentScreen }: BottomNavProps)
             size={24} 
             color={isActive('program') ? theme.colors.neonBright : theme.colors.textSecondary} 
           />
-          <Text style={[styles.navTabLabel, isActive('program') && styles.navTabLabelActive]}>
-            Program
-          </Text>
         </TouchableOpacity>
 
         {/* Home Tab - Middle Position */}
@@ -86,9 +80,6 @@ export function BottomNav({ activeTab = 'home', currentScreen }: BottomNavProps)
             size={24} 
             color={isActive('home') ? theme.colors.neonBright : theme.colors.textSecondary} 
           />
-          <Text style={[styles.navTabLabel, isActive('home') && styles.navTabLabelActive]}>
-            Home
-          </Text>
         </TouchableOpacity>
 
         {/* History Tab */}
@@ -98,9 +89,6 @@ export function BottomNav({ activeTab = 'home', currentScreen }: BottomNavProps)
             size={24} 
             color={isActive('history') ? theme.colors.neonBright : theme.colors.textSecondary} 
           />
-          <Text style={[styles.navTabLabel, isActive('history') && styles.navTabLabelActive]}>
-            History
-          </Text>
         </TouchableOpacity>
 
         {/* Stats Tab */}
@@ -110,9 +98,6 @@ export function BottomNav({ activeTab = 'home', currentScreen }: BottomNavProps)
             size={24} 
             color={isActive('stats') ? theme.colors.neonBright : theme.colors.textSecondary} 
           />
-          <Text style={[styles.navTabLabel, isActive('stats') && styles.navTabLabelActive]}>
-            Stats
-          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -155,17 +140,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 4,
-  },
-  navTabLabel: {
-    color: theme.colors.textSecondary,
-    fontFamily: theme.fonts.display,
-    fontSize: 8,
-    fontWeight: '400',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  navTabLabelActive: {
-    color: theme.colors.neonBright,
-    fontFamily: theme.fonts.display,
   },
 });

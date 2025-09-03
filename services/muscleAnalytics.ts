@@ -64,9 +64,11 @@ export async function calculateMuscleVolume(
 
     for (const row of workoutResults) {
       const muscleGroup = row.muscleGroup;
-      const muscleIds = DATABASE_TO_MUSCLE_MAP[muscleGroup] || [];
+      // Split comma-separated muscle groups and get muscle IDs for each
+      const muscleGroups = muscleGroup ? muscleGroup.split(',').map(g => g.trim()) : [];
+      const allMuscleIds = muscleGroups.flatMap(group => DATABASE_TO_MUSCLE_MAP[group] || []);
       
-      for (const muscleId of muscleIds) {
+      for (const muscleId of allMuscleIds) {
         // Calculate volume (1 set × reps × weight)
         const volume = (row.reps || 0) * (row.weight || 0);
         

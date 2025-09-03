@@ -125,8 +125,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'flex-end',
     backgroundColor: theme.colors.background,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.neonDim,
     paddingVertical: 8,
     paddingBottom: 8,
     borderTopLeftRadius: 18,

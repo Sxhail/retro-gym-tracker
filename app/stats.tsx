@@ -90,23 +90,47 @@ export default function ProgressOverview() {
           <Text style={styles.noDataSubtitle}>Start tracking your workouts to see progress analysis</Text>
         </View>
       ) : (
-        <ScrollView style={styles.list}>
-          {/* Muscle Activation Map */}
-          <MuscleActivationStats />
-          
-          {/* Weight Progression */}
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.heading, fontSize: 18, fontWeight: 'bold', letterSpacing: 1.2, marginBottom: 6 }}>Weight Progression</Text>
+        <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+          {/* Muscle Activation Map Section */}
+          <View style={styles.section}>
+            <MuscleActivationStats />
           </View>
-          {charts.filter(c => c.title === selectedExercise).map((c, i) => (
-            <ProgressChart key={`pc-${i}`} title={c.title} maxGain={c.maxGain} percentGain={c.percentGain} sessions={c.sessions} data={c.data} labels={c.labels} />
-          ))}
+          
+          {/* Weight Progression Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Weight Progression</Text>
+            </View>
+            {charts.filter(c => c.title === selectedExercise).map((c, i) => (
+              <ProgressChart 
+                key={`pc-${i}`} 
+                title={c.title} 
+                maxGain={c.maxGain} 
+                percentGain={c.percentGain} 
+                sessions={c.sessions} 
+                data={c.data} 
+                labels={c.labels} 
+              />
+            ))}
+          </View>
 
-          {/* New Stats Charts */}
-          <VolumeOverTimeChart initialRange={'30d'} />
-          <WorkoutFrequencyChart initialRange={'30d'} showRollingAvg />
-          <PRTimelineChart initialRange={'all'} selectedExercise={selectedExercise} />
-          <Estimated1RMChart initialRange={'all'} selectedExercise={selectedExercise} />
+          {/* Analytics Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Training Analytics</Text>
+            </View>
+            <VolumeOverTimeChart initialRange={'30d'} />
+            <WorkoutFrequencyChart initialRange={'30d'} showRollingAvg />
+          </View>
+
+          {/* Performance Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Performance Tracking</Text>
+            </View>
+            <PRTimelineChart initialRange={'all'} selectedExercise={selectedExercise} />
+            <Estimated1RMChart initialRange={'all'} selectedExercise={selectedExercise} />
+          </View>
         </ScrollView>
       )}
       
@@ -175,6 +199,23 @@ const styles = StyleSheet.create({
   },
   list: {
     marginTop: 8,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    color: theme.colors.neon,
+    fontFamily: theme.fonts.heading,
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1.2,
   },
   noDataContainer: {
     flex: 1,

@@ -32,7 +32,7 @@ export function mapToBodyHighlighter(
     rhomboids: 'upper-back',
     lowerBack: 'lower-back',
     traps: 'trapezius',
-    neck: 'head',
+    neck: 'neck',
     adductors: 'adductors',
     abductors: 'adductors', // Body Highlighter doesn't have separate abductors
     shins: 'tibialis',

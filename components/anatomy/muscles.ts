@@ -46,7 +46,7 @@ export type AnatomySide = 'front' | 'back';
 export const DATABASE_TO_MUSCLE_MAP: Record<string, MuscleId[]> = {
   'Chest': ['chest'],
   'Arms': ['biceps', 'triceps', 'forearms'],
-  'Legs': ['quads', 'hamstrings', 'calves', 'adductors', 'abductors', 'shins'],
+  'Legs': ['quads', 'hamstrings', 'calves', 'adductors', 'abductors', 'shins', 'glutes'],
   'Back': ['traps', 'upperTraps', 'midTraps', 'lowerTraps', 'lats', 'rhomboids', 'lowerBack', 'neck'],
   'Core': ['abs', 'obliques'],
   'Shoulders': ['frontDelts', 'sideDelts', 'rearDelts', 'rotatorCuffs'],

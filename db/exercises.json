@@ -36,7 +36,7 @@
       "categories": ["Cable"]
     },
     {
-      "name": "Cable curl",
+      "name": "Cable Curl",
       "muscle_groups": ["Arms"],
       "categories": ["Cable"]
     },
@@ -51,7 +51,7 @@
       "categories": ["Bodyweight"]
     },
     {
-      "name": "EZ Bar curl",
+      "name": "EZ Bar Curl",
       "muscle_groups": ["Arms"],
       "categories": ["Barbell"]
     },
@@ -96,7 +96,7 @@
       "categories": ["Machine"]
     },
     {
-      "name": "Low row",
+      "name": "Low Row",
       "muscle_groups": ["Back", "Arms"],
       "categories": ["Cable"]
     },
@@ -179,6 +179,431 @@
       "name": "Triceps Pushdown (Cable - Straight Bar)",
       "muscle_groups": ["Arms"],
       "categories": ["Cable"]
+    },
+    {
+      "name": "Overhead Press (Barbell)",
+      "muscle_groups": ["Shoulders", "Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Overhead Press (Dumbbell)",
+      "muscle_groups": ["Shoulders", "Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Incline Dumbbell Bench Press",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Decline Barbell Bench Press",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Decline Dumbbell Bench Press",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Dumbbell Chest Fly",
+      "muscle_groups": ["Chest"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Machine Chest Fly",
+      "muscle_groups": ["Chest"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Incline Dumbbell Chest Fly",
+      "muscle_groups": ["Chest"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Push-Up (Incline)",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Push-Up (Decline)",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Dumbbell Pullover",
+      "muscle_groups": ["Chest", "Back"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Machine Chest Press",
+      "muscle_groups": ["Chest", "Arms", "Shoulders"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Pec Deck Machine",
+      "muscle_groups": ["Chest"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Front Raise (Dumbbell)",
+      "muscle_groups": ["Shoulders"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Front Raise (Barbell)",
+      "muscle_groups": ["Shoulders"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Lateral Raise (Dumbbell)",
+      "muscle_groups": ["Shoulders"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Lateral Raise (Machine)",
+      "muscle_groups": ["Shoulders"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Rear Delt Fly (Dumbbell)",
+      "muscle_groups": ["Shoulders", "Back"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Rear Delt Fly (Machine)",
+      "muscle_groups": ["Shoulders", "Back"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Face Pull (Cable)",
+      "muscle_groups": ["Shoulders", "Back", "Arms"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Upright Row (Barbell)",
+      "muscle_groups": ["Shoulders", "Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Upright Row (Dumbbell)",
+      "muscle_groups": ["Shoulders", "Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Concentration Curl (Dumbbell)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Incline Dumbbell Curl",
+      "muscle_groups": ["Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Hammer Curl (Dumbbell)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Preacher Curl (Barbell)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Preacher Curl (Dumbbell)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Reverse Barbell Curl",
+      "muscle_groups": ["Arms", "Forearms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Reverse Dumbbell Curl",
+      "muscle_groups": ["Arms", "Forearms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Skullcrusher (Barbell)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Skullcrusher (Dumbbell)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Overhead Triceps Extension (Dumbbell)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Overhead Triceps Extension (Cable)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Triceps Kickback (Dumbbell)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Triceps Kickback (Cable)",
+      "muscle_groups": ["Arms"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Close Grip Bench Press (Barbell)",
+      "muscle_groups": ["Arms", "Chest"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Close Grip Bench Press (Dumbbell)",
+      "muscle_groups": ["Arms", "Chest"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Chin-Up",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Pull-Up",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Inverted Row",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "One Arm Dumbbell Row",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Bent Over Dumbbell Row",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Pendlay Row (Barbell)",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Barbell Row (Prone)",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Chest Supported Dumbbell Row",
+      "muscle_groups": ["Back", "Arms"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Deadlift (Barbell)",
+      "muscle_groups": ["Back", "Legs", "Core"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Sumo Deadlift (Barbell)",
+      "muscle_groups": ["Back", "Legs", "Core"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Trap Bar Deadlift",
+      "muscle_groups": ["Back", "Legs", "Core"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Deficit Deadlift (Barbell)",
+      "muscle_groups": ["Back", "Legs", "Core"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Good Morning (Barbell)",
+      "muscle_groups": ["Back", "Legs"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Glute Bridge (Bodyweight)",
+      "muscle_groups": ["Legs", "Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Hip Thrust (Barbell)",
+      "muscle_groups": ["Legs", "Core"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Step-Up (Dumbbell)",
+      "muscle_groups": ["Legs", "Core"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Bulgarian Split Squat (Dumbbell)",
+      "muscle_groups": ["Legs", "Core"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Front Squat (Barbell)",
+      "muscle_groups": ["Legs", "Core"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Overhead Squat (Barbell)",
+      "muscle_groups": ["Legs", "Core", "Shoulders"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Hack Squat (Machine)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Smith Machine Squat",
+      "muscle_groups": ["Legs", "Core"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Leg Curl (Machine)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Standing Calf Raise (Dumbbell)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Donkey Calf Raise",
+      "muscle_groups": ["Legs"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Walking Lunge (Dumbbell)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Side Lunge (Bodyweight)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Curtsy Lunge (Dumbbell)",
+      "muscle_groups": ["Legs"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Plank",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Side Plank",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Hanging Leg Raise",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Knee Raise (Captain's Chair)",
+      "muscle_groups": ["Core"],
+      "categories": ["Machine"]
+    },
+    {
+      "name": "Cable Crunch",
+      "muscle_groups": ["Core"],
+      "categories": ["Cable"]
+    },
+    {
+      "name": "Russian Twist",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Ab Wheel Rollout",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Mountain Climber",
+      "muscle_groups": ["Core", "Legs"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Bicycle Crunch",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Flutter Kick",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "V-Up",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Hollow Hold",
+      "muscle_groups": ["Core"],
+      "categories": ["Bodyweight"]
+    },
+    {
+      "name": "Clean (Barbell)",
+      "muscle_groups": ["Full Body"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Clean & Jerk (Barbell)",
+      "muscle_groups": ["Full Body"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Snatch (Barbell)",
+      "muscle_groups": ["Full Body"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Push Press (Barbell)",
+      "muscle_groups": ["Shoulders", "Arms", "Legs"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Thruster (Barbell)",
+      "muscle_groups": ["Full Body"],
+      "categories": ["Barbell"]
+    },
+    {
+      "name": "Turkish Get-Up (Kettlebell)",
+      "muscle_groups": ["Full Body"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Farmer's Carry (Dumbbell)",
+      "muscle_groups": ["Full Body"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Suitcase Carry (Dumbbell)",
+      "muscle_groups": ["Full Body"],
+      "categories": ["Dumbbell"]
+    },
+    {
+      "name": "Overhead Carry (Dumbbell)",
+      "muscle_groups": ["Full Body"],
+      "categories": ["Dumbbell"]
     }
   ]
 }

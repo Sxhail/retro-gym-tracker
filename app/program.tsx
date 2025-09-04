@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Tex
 import { useRouter } from 'expo-router';
 import { eq } from 'drizzle-orm';
 import theme from '../styles/theme';
-import PageTransition from '../components/PageTransition';
 import { db } from '../db/client';
 import * as schema from '../db/schema';
 import { ProgramManager, ProgramData } from '../services/programManager';
@@ -575,9 +574,8 @@ export default function ProgramScreen() {
   );
 
   return (
-    <PageTransition>
-      <SafeAreaView style={styles.container}>
-        {renderHeader()}
+    <SafeAreaView style={styles.container}>
+      {renderHeader()}
       
       {/* Show pathway selection only on step 1, otherwise show progress */}
       {step === 1 ? (
@@ -718,7 +716,6 @@ export default function ProgramScreen() {
       {/* Only show BottomNav on step 1 */}
       {step === 1 && <BottomNav currentScreen="/program" />}
     </SafeAreaView>
-    </PageTransition>
   );
 }
 

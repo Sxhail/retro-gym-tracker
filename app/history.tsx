@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, A
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import theme from '../styles/theme';
-import PageTransition from '../components/PageTransition';
 import { getWorkoutHistory, getTotalWorkoutStats, formatDuration, formatDate, type WorkoutHistoryItem, getWorkoutsOnDate } from '../services/workoutHistory';
 import { getCardioHistory, getTotalCardioStats, formatCardioDate, getCardioTypeDisplayName, type CardioSessionWithStats, getCardioSessionsForDateRange } from '../services/cardioTracking';
 import * as DocumentPicker from 'expo-document-picker';
@@ -672,17 +671,16 @@ export default function HistoryListScreen() {
   }
 
   return (
-    <PageTransition>
-      <SafeAreaView style={styles.safeArea}>
-        {/* Global Rest Timer Display */}
-        
-        
-        {/* Header Row */}
-        <View style={styles.headerRow}>
-          <View style={{ width: 36 }} />
-          <Text style={styles.pageTitle}>HISTORY</Text>
-          <View style={{ width: 36 }} />
-        </View>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Global Rest Timer Display */}
+      
+      
+      {/* Header Row */}
+      <View style={styles.headerRow}>
+        <View style={{ width: 36 }} />
+        <Text style={styles.pageTitle}>HISTORY</Text>
+        <View style={{ width: 36 }} />
+      </View>
 
       {/* Refined Slider Toggle - Now only 2 tabs */}
       <View style={styles.sliderContainer}>
@@ -1234,7 +1232,6 @@ export default function HistoryListScreen() {
       
       <BottomNav currentScreen="/history" />
     </SafeAreaView>
-    </PageTransition>
   );
 }
 

@@ -6,6 +6,7 @@ import WorkoutFrequencyChart from '../components/stats/WorkoutFrequencyChart';
 import PRTimelineChart from '../components/stats/PRTimelineChart';
 import Estimated1RMChart from '../components/stats/Estimated1RMChart';
 import { MuscleActivationStats } from '../components/stats/MuscleActivationStats';
+import PageTransition from '../components/PageTransition';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import theme from '../styles/theme';
@@ -74,12 +75,13 @@ export default function ProgressOverview() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerRow}>
-        <View style={{ width: 36 }} />
-        <Text style={styles.pageTitle}>STATS</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <PageTransition>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.headerRow}>
+          <View style={{ width: 36 }} />
+          <Text style={styles.pageTitle}>STATS</Text>
+          <View style={{ width: 36 }} />
+        </View>
       {loading ? (
         <ActivityIndicator color={theme.colors.neon} size="large" style={{ marginTop: 32 }} />
       ) : error ? (
@@ -136,6 +138,7 @@ export default function ProgressOverview() {
       
       <BottomNav currentScreen="/stats" />
     </SafeAreaView>
+    </PageTransition>
   );
 }
 

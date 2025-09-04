@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { useSmoothNavigation } from '../hooks/useSmoothNavigation';
 import theme from '../styles/theme';
 
 interface BottomNavProps {
@@ -11,23 +12,29 @@ interface BottomNavProps {
 
 export function BottomNav({ activeTab = 'home', currentScreen }: BottomNavProps) {
   const router = useRouter();
+  const { navigate } = useSmoothNavigation();
 
   const handleTabPress = (tab: string) => {
+    // Don't navigate if already on the target screen
+    if (isActive(tab)) {
+      return;
+    }
+
     switch (tab) {
       case 'home':
-        router.push('/');
+        navigate('/');
         break;
       case 'settings':
-        router.push('/settings');
+        navigate('/settings');
         break;
       case 'program':
-        router.push('/program');
+        navigate('/program');
         break;
       case 'history':
-        router.push('/history');
+        navigate('/history');
         break;
       case 'stats':
-        router.push('/stats');
+        navigate('/stats');
         break;
       default:
         break;
@@ -52,53 +59,57 @@ export function BottomNav({ activeTab = 'home', currentScreen }: BottomNavProps)
     return activeTab === tab;
   };
 
+  const NavButton = ({ tab, icon, iconFamily = 'MaterialIcons' }: { tab: string; icon: string; iconFamily?: string }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const active = isActive(tab);
+
+    const handlePressIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 0.85,
+        useNativeDriver: true,
+        tension: 300,
+        friction: 10,
+      }).start();
+    };
+
+    const handlePressOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 300,
+        friction: 10,
+      }).start();
+    };
+
+    const IconComponent = iconFamily === 'Ionicons' ? Ionicons : MaterialIcons;
+
+    return (
+      <TouchableOpacity
+        style={styles.navTab}
+        onPress={() => handleTabPress(tab)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.8}
+      >
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <IconComponent
+            name={icon as any}
+            size={24}
+            color={active ? theme.colors.neonBright : theme.colors.textSecondary}
+          />
+        </Animated.View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.bottomNavContainer}>
       <View style={styles.bottomNav}>
-        {/* Settings Tab */}
-        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('settings')}>
-          <MaterialIcons 
-            name="settings" 
-            size={24} 
-            color={isActive('settings') ? theme.colors.neonBright : theme.colors.textSecondary} 
-          />
-        </TouchableOpacity>
-
-        {/* Program Tab */}
-        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('program')}>
-          <MaterialIcons 
-            name="fitness-center" 
-            size={24} 
-            color={isActive('program') ? theme.colors.neonBright : theme.colors.textSecondary} 
-          />
-        </TouchableOpacity>
-
-        {/* Home Tab - Middle Position */}
-        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('home')}>
-          <MaterialIcons 
-            name="home" 
-            size={24} 
-            color={isActive('home') ? theme.colors.neonBright : theme.colors.textSecondary} 
-          />
-        </TouchableOpacity>
-
-        {/* History Tab */}
-        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('history')}>
-          <MaterialIcons 
-            name="history" 
-            size={24} 
-            color={isActive('history') ? theme.colors.neonBright : theme.colors.textSecondary} 
-          />
-        </TouchableOpacity>
-
-        {/* Stats Tab */}
-        <TouchableOpacity style={styles.navTab} onPress={() => handleTabPress('stats')}>
-          <Ionicons 
-            name="stats-chart" 
-            size={24} 
-            color={isActive('stats') ? theme.colors.neonBright : theme.colors.textSecondary} 
-          />
-        </TouchableOpacity>
+        <NavButton tab="settings" icon="settings" />
+        <NavButton tab="program" icon="fitness-center" />
+        <NavButton tab="home" icon="home" />
+        <NavButton tab="history" icon="history" />
+        <NavButton tab="stats" icon="stats-chart" iconFamily="Ionicons" />
       </View>
     </View>
   );

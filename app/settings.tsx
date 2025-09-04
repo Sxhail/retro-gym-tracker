@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import theme from '../styles/theme';
+import PageTransition from '../components/PageTransition';
 import { BottomNav } from '../components/BottomNav';
 
 export default function SettingsScreen() {
@@ -20,13 +21,14 @@ export default function SettingsScreen() {
   const filtered = items.filter(i => i.label.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <SafeAreaView style={styles.root}>
-      {/* Full-width header (outside scroll) */}
-      <View style={styles.header}>
-        <View style={{ width: 36 }} />
-        <Text style={styles.headerTitle}>SETTINGS</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <PageTransition>
+      <SafeAreaView style={styles.root}>
+        {/* Full-width header (outside scroll) */}
+        <View style={styles.header}>
+          <View style={{ width: 36 }} />
+          <Text style={styles.headerTitle}>SETTINGS</Text>
+          <View style={{ width: 36 }} />
+        </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Search */}
@@ -67,6 +69,7 @@ export default function SettingsScreen() {
       
       <BottomNav currentScreen="/settings" />
     </SafeAreaView>
+    </PageTransition>
   );
 }
 

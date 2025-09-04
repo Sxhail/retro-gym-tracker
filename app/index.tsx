@@ -7,6 +7,7 @@ import { useCardioSession } from '../hooks/useCardioSession';
 // Removed Alert-based popups for cardio continue/cancel flow
 import theme from '../styles/theme';
 import ProgramProgressWidget from '../components/ProgramProgressWidget';
+import PageTransition from '../components/PageTransition';
 import { ProgramManager } from '../services/programManager';
 import { useFocusEffect } from '@react-navigation/native';
 import { BottomNav } from '../components/BottomNav';
@@ -168,30 +169,31 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Header block: show rest bar here when active, else show protocol text and outline */}
-        <View style={{ width: '100%', marginTop: theme.spacing.xs, marginBottom: 0, minHeight: 24 }}>
-          {(isWorkoutActive && globalRestTimer?.isActive && (globalRestTimer.timeRemaining ?? 0) > 0)
-            ? <View style={{ width: '100%', height: 4, marginHorizontal: 16, marginTop: 4, backgroundColor: 'rgba(0, 0, 0, 0.35)', borderRadius: 2, overflow: 'hidden' }}>
-                <View style={{ height: '100%', width: `${globalRestTimer.timeRemaining / Math.max(1, globalRestTimer.originalDuration) * 100}%`, backgroundColor: theme.colors.neon }} />
-              </View>
-            : <>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginHorizontal: 16, marginTop: 4 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ width: 10, height: 10, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 6 }} />
-                    <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, letterSpacing: 1 }}>
-                      SYSTEM ONLINE
+    <PageTransition>
+      <SafeAreaView style={styles.root}>
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          {/* Header block: show rest bar here when active, else show protocol text and outline */}
+          <View style={{ width: '100%', marginTop: theme.spacing.xs, marginBottom: 0, minHeight: 24 }}>
+            {(isWorkoutActive && globalRestTimer?.isActive && (globalRestTimer.timeRemaining ?? 0) > 0)
+              ? <View style={{ width: '100%', height: 4, marginHorizontal: 16, marginTop: 4, backgroundColor: 'rgba(0, 0, 0, 0.35)', borderRadius: 2, overflow: 'hidden' }}>
+                  <View style={{ height: '100%', width: `${globalRestTimer.timeRemaining / Math.max(1, globalRestTimer.originalDuration) * 100}%`, backgroundColor: theme.colors.neon }} />
+                </View>
+              : <>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginHorizontal: 16, marginTop: 4 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ width: 10, height: 10, backgroundColor: theme.colors.neon, borderRadius: 2, marginRight: 6 }} />
+                      <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 12, letterSpacing: 1 }}>
+                        SYSTEM ONLINE
+                      </Text>
+                    </View>
+                    <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 11, letterSpacing: 1 }}>
+                      RETRO FITNESS PROTOCOL
                     </Text>
                   </View>
-                  <Text style={{ color: theme.colors.neon, fontFamily: theme.fonts.code, fontSize: 11, letterSpacing: 1 }}>
-                    RETRO FITNESS PROTOCOL
-                  </Text>
-                </View>
-                <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
-              </>
-          }
-        </View>
+                  <View style={{ height: 1, backgroundColor: theme.colors.neon, width: '100%', opacity: 0.7, marginTop: 4 }} />
+                </>
+            }
+          </View>
 
         {/* Program Progress Widgets for all existing programs */}
         {programs.filter(p => p != null && p.id).map((program) => {
@@ -310,6 +312,7 @@ export default function HomeScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+    </PageTransition>
   );
 }
 
@@ -356,9 +359,9 @@ const styles = StyleSheet.create({
   },
   bottomActionSection: {
     marginHorizontal: theme.spacing.xl,
-    marginBottom: theme.spacing.xl + 80, // Add extra margin to prevent overlap with nav bar
+    marginBottom: theme.spacing.sm, // Small gap between button and nav bar
     marginTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md, // Additional padding for spacing
+    paddingBottom: theme.spacing.xs, // Minimal padding for spacing
   },
   sectionTitle: {
     color: '#fff',

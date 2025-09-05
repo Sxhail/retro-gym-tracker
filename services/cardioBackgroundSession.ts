@@ -143,8 +143,9 @@ class CardioBackgroundSessionService {
     try {
       console.log(`[CardioBackgroundSession] Cancelling all notifications for session ${sessionId}`);
       
-      // First: Cancel session-specific notifications
+      // First: Cancel session-specific notifications (regular + countdown)
       await IOSLocalNotifications.cancelAllForSession(sessionId);
+      await IOSLocalNotifications.cancelAllForSession(sessionId + '_countdown');
       
       // Second: Aggressively cancel ALL cardio notifications (safety net)
       await IOSLocalNotifications.cancelAllCardio();
@@ -218,8 +219,29 @@ class CardioBackgroundSessionService {
       for (const entry of schedule) {
         const fireAt = new Date(entry.endAt).getTime();
         if (fireAt > now + 1000) {
+          // Schedule regular phase transition notification
           const { title, body } = this.getNotificationContent(entry, false, sessionId);
           await IOSLocalNotifications.scheduleAbsolute(sessionId, new Date(fireAt), title, body);
+          
+          // Schedule countdown audio notification for work/run phases (3 seconds before end)
+          if ((entry.phase === 'work' || entry.phase === 'run') && fireAt > now + 4000) {
+            const countdownFireAt = fireAt - 3000; // 3 seconds before phase end
+            const countdownTitle = entry.phase === 'work' ? '3 SECONDS LEFT' : '3 SECONDS LEFT';
+            const countdownBody = entry.phase === 'work' 
+              ? `Round ${entry.cycleIndex + 1} work ending soon`
+              : `Lap ${entry.cycleIndex + 1} run ending soon`;
+            
+            console.log(`[CardioBackgroundSession] Scheduling countdown notification for ${entry.phase} phase at ${new Date(countdownFireAt).toISOString()}`);
+            
+            // Use custom audio file for countdown notifications
+            await IOSLocalNotifications.scheduleAbsolute(
+              sessionId + '_countdown', 
+              new Date(countdownFireAt), 
+              countdownTitle, 
+              countdownBody,
+              'cardio-countdown.wav' // Custom audio file
+            );
+          }
         }
       }
     } catch (error) {}

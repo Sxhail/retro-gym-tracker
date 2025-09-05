@@ -6,16 +6,18 @@ type SessionId = string;
 let initialized = false;
 
 // Only show notifications when app is in background or inactive
+// BUT always play sound for countdown notifications
 Notifications.setNotificationHandler({
-  handleNotification: async () => {
+  handleNotification: async (notification) => {
     const appState = AppState.currentState;
     const shouldShow = appState === 'background' || appState === 'inactive';
+    const isCountdown = (notification as any)?.request?.content?.data?.sessionId?.includes('_countdown');
     
     return {
       shouldShowAlert: shouldShow,
       shouldShowBanner: shouldShow,
       shouldShowList: shouldShow,
-      shouldPlaySound: shouldShow,
+      shouldPlaySound: shouldShow || isCountdown, // Always play sound for countdown notifications
       shouldSetBadge: false,
     };
   },
@@ -42,7 +44,7 @@ export const IOSLocalNotifications = {
     initialized = true;
   },
 
-  async scheduleAbsolute(sessionId: SessionId, when: Date, title: string, body: string) {
+  async scheduleAbsolute(sessionId: SessionId, when: Date, title: string, body: string, customSound?: string) {
     if (Platform.OS !== 'ios') return null;
     if (!initialized) await IOSLocalNotifications.initialize();
     
@@ -57,11 +59,13 @@ export const IOSLocalNotifications = {
                             isLiftRest ? 'lift_rest_timer' : 'general';
 
     try {
+      console.log(`[IOSNotifications] Scheduling notification with sound: ${customSound || 'default'}`);
+      
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title,
           body,
-          sound: 'default',
+          sound: customSound || 'default',
           data: {
             sessionId,
             notificationType,
@@ -70,6 +74,7 @@ export const IOSLocalNotifications = {
         trigger: { type: 'timeInterval', seconds, repeats: false } as any,
       });
       
+      console.log(`[IOSNotifications] Scheduled notification ${id} for ${title} with sound: ${customSound || 'default'}`);
       return id;
     } catch (error) {
       return null;

@@ -237,7 +237,7 @@ export function useCardioSession() {
     return phase === 'work' || phase === 'run';
   }, []);
 
-  // Countdown audio effect - mirrors notification timing logic
+  // Countdown audio effect - Hybrid approach: foreground audio + background notifications
   useEffect(() => {
     // Early returns for invalid states (following notification patterns)
     if (!sessionId || !schedule.length || isPaused || derived.phase === 'idle' || derived.phase === 'completed') {
@@ -259,11 +259,12 @@ export function useCardioSession() {
       // Mark this phase as triggered to prevent duplicates
       countdownTriggeredRef.current.add(phaseId);
       
-      console.log(`[useCardioSession] Triggering countdown audio for ${derived.phase} phase (${derived.remainingMs}ms remaining)`);
+      console.log(`[useCardioSession] Triggering foreground countdown audio for ${derived.phase} phase (${derived.remainingMs}ms remaining)`);
       
-      // Play countdown audio (async, non-blocking like notifications)
+      // Play countdown audio in foreground (async, non-blocking like notifications)
+      // Background scenarios are handled by notification system
       cardioCountdownAudio.playCountdown(sessionId, derived.phase as 'work' | 'run').catch((error) => {
-        console.warn('[useCardioSession] Failed to play countdown audio:', error);
+        console.warn('[useCardioSession] Failed to play foreground countdown audio:', error);
       });
     }
 
@@ -406,11 +407,11 @@ export function useCardioSession() {
     const pAt = nowUtcIso();
     setPausedAt(pAt);
     
-    // Stop countdown audio immediately on pause (following notification pause logic)
+    // Stop foreground countdown audio immediately on pause
     try {
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop countdown audio on pause:', error);
+      console.warn('[useCardioSession] Failed to stop foreground countdown audio on pause:', error);
     }
     
     // Use the enhanced session state change handler
@@ -467,11 +468,11 @@ export function useCardioSession() {
     if (!sessionId || !schedule.length) return;
     console.log(`[useCardioSession] Skipping phase for session ${sessionId}`);
     
-    // Stop countdown audio immediately on skip (following skip logic patterns)
+    // Stop foreground countdown audio immediately on skip
     try {
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop countdown audio on skip:', error);
+      console.warn('[useCardioSession] Failed to stop foreground countdown audio on skip:', error);
     }
     
     const now = Date.now();
@@ -620,11 +621,11 @@ export function useCardioSession() {
     if (!sessionId) return;
     console.log(`[useCardioSession] Resetting session ${sessionId}`);
     
-    // Stop countdown audio immediately on reset (following session cleanup patterns)
+    // Stop foreground countdown audio immediately on reset
     try {
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop countdown audio on reset:', error);
+      console.warn('[useCardioSession] Failed to stop foreground countdown audio on reset:', error);
     }
     
     try {
@@ -658,11 +659,11 @@ export function useCardioSession() {
     if (!sessionId) return;
     console.log(`[useCardioSession] Cancelling session ${sessionId}`);
     
-    // Stop countdown audio immediately on cancel (mirroring notification cancellation)
+    // Stop foreground countdown audio immediately on cancel
     try {
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop countdown audio on cancel:', error);
+      console.warn('[useCardioSession] Failed to stop foreground countdown audio on cancel:', error);
     }
     
     try {
@@ -777,11 +778,11 @@ export function useCardioSession() {
     }
   }, [derived.phase, sessionId, clearTick, finish]);
 
-  // Cleanup countdown audio on unmount (following notification cleanup patterns)
+  // Cleanup foreground countdown audio on unmount
   useEffect(() => {
     return () => {
       cardioCountdownAudio.stopCountdown().catch((error) => {
-        console.warn('[useCardioSession] Failed to stop countdown audio on unmount:', error);
+        console.warn('[useCardioSession] Failed to stop foreground countdown audio on unmount:', error);
       });
     };
   }, []);

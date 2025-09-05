@@ -32,7 +32,8 @@ const CATEGORY_OPTIONS = [
 // Helper to format duration as hours only (e.g., "5 HRS")
 function formatDurationAsHours(seconds: number): string {
   const hours = Math.round(seconds / 3600);
-  return `${hours.toString().padStart(3, '0')} HRS`;
+  // Don't pad with zeros for compact display
+  return `${hours} HRS`;
 }
 
 // Helper to format duration as HR MIN format (e.g., "1HR 30MIN")
@@ -1423,24 +1424,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 18,
     marginHorizontal: CARD_MARGIN,
+    paddingHorizontal: 4,
   },
   statItem: {
     alignItems: 'center',
     flex: 1,
+    minWidth: 0, // Allow text to wrap/shrink if needed
   },
   statNumber: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.heading,
-    fontSize: 18,
+    fontSize: 14, // Reduced from 18
     fontWeight: 'bold',
     marginBottom: 2,
+    textAlign: 'center',
+    lineHeight: 16, // Tighter line height
   },
   statLabel: {
     color: theme.colors.neon,
     fontFamily: theme.fonts.body,
-    fontSize: 10,
+    fontSize: 9, // Reduced from 10
     opacity: 0.8,
     textAlign: 'center',
+    lineHeight: 11, // Tighter line height
   },
   list: {
     marginTop: 0,

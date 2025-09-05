@@ -192,6 +192,11 @@ export async function saveWorkout(sessionData: WorkoutSessionData): Promise<numb
  */
 export async function getWorkoutHistory(limit: number = 10, offset: number = 0): Promise<WorkoutHistoryItem[]> {
   try {
+    // Validate inputs
+    if (limit <= 0 || offset < 0) {
+      throw new Error('Invalid pagination parameters');
+    }
+
     // Single query with aggregates to avoid N+1 per workout
     const results = await db
       .select({
@@ -220,7 +225,21 @@ export async function getWorkoutHistory(limit: number = 10, offset: number = 0):
     }));
   } catch (error) {
     console.error('Error fetching workout history:', error);
-    throw new Error(`Failed to fetch workout history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    
+    // Provide more detailed error information
+    if (error instanceof Error) {
+      if (error.message.includes('no such table')) {
+        throw new Error('Database tables not found. Please restart the app to initialize the database.');
+      } else if (error.message.includes('database is locked')) {
+        throw new Error('Database is temporarily unavailable. Please try again.');
+      } else if (error.message.includes('FOREIGN KEY constraint failed')) {
+        throw new Error('Data integrity issue detected. Please contact support.');
+      } else {
+        throw new Error(`Database error: ${error.message}`);
+      }
+    }
+    
+    throw new Error('Unknown database error occurred. Please restart the app.');
   }
 }
 

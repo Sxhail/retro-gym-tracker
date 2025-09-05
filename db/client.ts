@@ -65,11 +65,25 @@ export async function checkMigrationStatus(): Promise<{
  */
 export async function initializeDatabase(): Promise<void> {
   try {
+    console.log('Starting database initialization...');
+    
+    // Test database connection first
+    const connectionOk = await testDatabaseConnection();
+    if (!connectionOk) {
+      throw new Error('Database connection test failed');
+    }
+    
     // Enable foreign key constraints
     await expoDb.execAsync('PRAGMA foreign_keys = ON;');
     
     // Enable WAL mode for better performance
     await expoDb.execAsync('PRAGMA journal_mode = WAL;');
+    
+    // Verify schema exists
+    const schemaOk = await verifyDatabaseSchema();
+    if (!schemaOk) {
+      throw new Error('Database schema verification failed');
+    }
     
     // Create indexes for better query performance
     await expoDb.execAsync(`
@@ -78,7 +92,7 @@ export async function initializeDatabase(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_workout_exercises_exercise_id ON workout_exercises(exercise_id);
       CREATE INDEX IF NOT EXISTS idx_sets_workout_exercise_id ON sets(workout_exercise_id);
       CREATE INDEX IF NOT EXISTS idx_sets_set_index ON sets(set_index);
-  CREATE INDEX IF NOT EXISTS idx_cardio_sessions_date ON cardio_sessions(date DESC);
+      CREATE INDEX IF NOT EXISTS idx_cardio_sessions_date ON cardio_sessions(date DESC);
     `);
     
     // Check if exercises table is empty and populate with default exercises
@@ -151,10 +165,24 @@ export async function verifyDatabaseSchema(): Promise<boolean> {
       }
     }
     
-    console.log('Database schema verification passed');
+    console.log('Database schema verification successful');
     return true;
   } catch (error) {
     console.error('Error verifying database schema:', error);
+    return false;
+  }
+}
+
+/**
+ * Test database connectivity by performing a simple query
+ */
+export async function testDatabaseConnection(): Promise<boolean> {
+  try {
+    // Simple query to test connectivity
+    await expoDb.getFirstAsync("SELECT 1 as test");
+    return true;
+  } catch (error) {
+    console.error('Database connection test failed:', error);
     return false;
   }
 }

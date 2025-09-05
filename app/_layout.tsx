@@ -44,18 +44,27 @@ export default function Layout() {
 
   // State to control native splash
   const [showNativeSplash, setShowNativeSplash] = useState(true);
+  const [databaseInitialized, setDatabaseInitialized] = useState(false);
 
   useEffect(() => {
-    if (fontsLoaded && migrationsSuccess && !showNativeSplash) {
+    if (fontsLoaded && migrationsSuccess && !showNativeSplash && !databaseInitialized) {
       // Initialize database when fonts are loaded, migrations are complete, and splash is done
-      initializeDatabase().catch(console.error);
-      SplashScreen.hideAsync();
+      initializeDatabase()
+        .then(() => {
+          setDatabaseInitialized(true);
+          SplashScreen.hideAsync();
+        })
+        .catch((error) => {
+          console.error('Database initialization failed:', error);
+          setDatabaseInitialized(true); // Still proceed to avoid infinite loading
+          SplashScreen.hideAsync();
+        });
     }
     
     if (migrationsError) {
       console.error('Database migration failed:', migrationsError);
     }
-  }, [fontsLoaded, migrationsSuccess, migrationsError, showNativeSplash]);
+  }, [fontsLoaded, migrationsSuccess, migrationsError, showNativeSplash, databaseInitialized]);
 
   // Show native splash screen first
   if (showNativeSplash) {
@@ -67,7 +76,7 @@ export default function Layout() {
     );
   }
 
-  if (!fontsLoaded || !migrationsSuccess) {
+  if (!fontsLoaded || !migrationsSuccess || !databaseInitialized) {
     return null;
   }
 

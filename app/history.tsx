@@ -133,7 +133,11 @@ export default function HistoryListScreen() {
       const offset = isRefresh ? 0 : page * ITEMS_PER_PAGE;
       const limit = ITEMS_PER_PAGE;
       
+      console.log(`Loading workout history: limit=${limit}, offset=${offset}, isRefresh=${isRefresh}`);
+      
       const workoutData = await getWorkoutHistory(limit, offset);
+      
+      console.log(`Loaded ${workoutData.length} workouts`);
       
       if (isRefresh) {
         setWorkouts(workoutData);
@@ -144,8 +148,14 @@ export default function HistoryListScreen() {
       
       setHasMore(workoutData.length === limit);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load workout history');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load workout history';
+      setError(errorMessage);
       console.error('Error loading workout history:', err);
+      
+      // If this is the initial load, ensure we still stop loading state
+      if (isRefresh) {
+        setWorkouts([]);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

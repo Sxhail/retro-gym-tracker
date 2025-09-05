@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { cardioBackgroundSessionService as svc } from '../services/cardioBackgroundSession';
 import IOSLocalNotifications from '../services/iosNotifications';
+import { cardioCountdownAudio } from '../services/cardioCountdownAudio';
 
 export type CardioMode = 'hiit' | 'walk_run';
 export type CardioPhase = 'work' | 'rest' | 'run' | 'walk' | 'completed' | 'idle';
@@ -151,6 +152,10 @@ export function useCardioSession() {
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const tickRef = useRef<number | null>(null);
+  
+  // Countdown audio state tracking (following notification patterns)
+  const countdownTriggeredRef = useRef<Set<string>>(new Set());
+  const lastPhaseRef = useRef<string | null>(null);
 
   const ensureTick = useCallback(() => {
     // Do not tick while paused or if already ticking
@@ -225,6 +230,60 @@ export function useCardioSession() {
       currentLap,
     };
   }, [sessionId, mode, params, isPaused, startedAt, schedule, pausedAt]);
+
+  // Helper function to determine if countdown audio should play for current phase
+  const shouldPlayCountdownAudio = useCallback((phase: CardioPhase): boolean => {
+    // Only play for work phases (HIIT) and run phases (Walk-Run)
+    return phase === 'work' || phase === 'run';
+  }, []);
+
+  // Countdown audio effect - mirrors notification timing logic
+  useEffect(() => {
+    // Early returns for invalid states (following notification patterns)
+    if (!sessionId || !schedule.length || isPaused || derived.phase === 'idle' || derived.phase === 'completed') {
+      return;
+    }
+
+    // Generate unique phase identifier to prevent duplicate triggers
+    const phaseId = `${sessionId}-${derived.currentIndex}-${derived.phase}-${derived.cycleIndex}`;
+    
+    // Check if we should play countdown audio for this phase
+    if (!shouldPlayCountdownAudio(derived.phase)) {
+      return;
+    }
+
+    // Check if countdown audio should trigger (3 seconds remaining)
+    const shouldTrigger = derived.remainingMs <= 3000 && derived.remainingMs > 0;
+    
+    if (shouldTrigger && !countdownTriggeredRef.current.has(phaseId)) {
+      // Mark this phase as triggered to prevent duplicates
+      countdownTriggeredRef.current.add(phaseId);
+      
+      console.log(`[useCardioSession] Triggering countdown audio for ${derived.phase} phase (${derived.remainingMs}ms remaining)`);
+      
+      // Play countdown audio (async, non-blocking like notifications)
+      cardioCountdownAudio.playCountdown(sessionId, derived.phase as 'work' | 'run').catch((error) => {
+        console.warn('[useCardioSession] Failed to play countdown audio:', error);
+      });
+    }
+
+    // Reset triggered phases when phase changes (following notification state management)
+    const currentPhaseKey = `${derived.currentIndex}-${derived.phase}`;
+    if (lastPhaseRef.current !== currentPhaseKey) {
+      lastPhaseRef.current = currentPhaseKey;
+      
+      // Clear old triggered phases to free memory (keep only current and recent phases)
+      const currentAndNext = new Set([
+        phaseId,
+        `${sessionId}-${derived.currentIndex + 1}-work-${derived.cycleIndex}`,
+        `${sessionId}-${derived.currentIndex + 1}-run-${derived.cycleIndex}`,
+      ]);
+      
+      countdownTriggeredRef.current = new Set(
+        Array.from(countdownTriggeredRef.current).filter(id => currentAndNext.has(id))
+      );
+    }
+  }, [sessionId, schedule.length, isPaused, derived.phase, derived.currentIndex, derived.cycleIndex, derived.remainingMs, shouldPlayCountdownAudio]);
 
   // Persist snapshot
   const persist = useCallback(async () => {
@@ -347,6 +406,13 @@ export function useCardioSession() {
     const pAt = nowUtcIso();
     setPausedAt(pAt);
     
+    // Stop countdown audio immediately on pause (following notification pause logic)
+    try {
+      await cardioCountdownAudio.stopCountdown();
+    } catch (error) {
+      console.warn('[useCardioSession] Failed to stop countdown audio on pause:', error);
+    }
+    
     // Use the enhanced session state change handler
     try { 
       await svc.handleSessionStateChange(sessionId, 'pause'); 
@@ -368,6 +434,9 @@ export function useCardioSession() {
     setIsPaused(false);
     setPausedAt(null);
     setAccumPauseMs(accum => accum + delta);
+    
+    // Reset countdown audio triggers on resume (following notification rescheduling patterns)
+    countdownTriggeredRef.current.clear();
     
     await svc.saveActiveSession({
       sessionId,
@@ -397,6 +466,14 @@ export function useCardioSession() {
   const skipPhase = useCallback(async () => {
     if (!sessionId || !schedule.length) return;
     console.log(`[useCardioSession] Skipping phase for session ${sessionId}`);
+    
+    // Stop countdown audio immediately on skip (following skip logic patterns)
+    try {
+      await cardioCountdownAudio.stopCountdown();
+    } catch (error) {
+      console.warn('[useCardioSession] Failed to stop countdown audio on skip:', error);
+    }
+    
     const now = Date.now();
     const idx = clamp(indexAt(schedule, now), 0, schedule.length - 2);
     // Advance to next phase; rebuild remaining schedule from now with same durations
@@ -413,6 +490,9 @@ export function useCardioSession() {
     const newSched = [...schedule.slice(0, idx + 1), ...rebuilt];
     setSchedule(newSched);
     setPhaseIndex(idx + 1);
+    
+    // Reset countdown audio triggers for the new schedule (following notification patterns)
+    countdownTriggeredRef.current.clear();
     
     await svc.saveActiveSession({
       sessionId,
@@ -487,6 +567,13 @@ export function useCardioSession() {
     if (!sessionId) return;
     console.log(`[useCardioSession] Finishing session ${sessionId}`);
     
+    // Stop countdown audio on finish (session complete)
+    try {
+      await cardioCountdownAudio.stopCountdown();
+    } catch (error) {
+      console.warn('[useCardioSession] Failed to stop countdown audio on finish:', error);
+    }
+    
     // Save historical record before clearing
     if (mode && params && startedAt) {
       await svc.saveHistoricalFromSnapshot({
@@ -523,6 +610,8 @@ export function useCardioSession() {
     setPausedAt(null);
     setAccumPauseMs(0);
     setStartedAt(null);
+    countdownTriggeredRef.current.clear();
+    lastPhaseRef.current = null;
     clearTick();
   }, [sessionId, mode, params, startedAt, derived, pausedAt, accumPauseMs, schedule, clearTick]);
 
@@ -530,6 +619,13 @@ export function useCardioSession() {
     // Reset should NOT save to history; just clear active state
     if (!sessionId) return;
     console.log(`[useCardioSession] Resetting session ${sessionId}`);
+    
+    // Stop countdown audio immediately on reset (following session cleanup patterns)
+    try {
+      await cardioCountdownAudio.stopCountdown();
+    } catch (error) {
+      console.warn('[useCardioSession] Failed to stop countdown audio on reset:', error);
+    }
     
     try {
       // Use the enhanced session state change handler
@@ -540,7 +636,7 @@ export function useCardioSession() {
     }
     try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
     
-    // Clear local state
+    // Clear local state and countdown audio triggers
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -549,6 +645,8 @@ export function useCardioSession() {
     setPausedAt(null);
     setAccumPauseMs(0);
     setStartedAt(null);
+    countdownTriggeredRef.current.clear();
+    lastPhaseRef.current = null;
     clearTick();
     
     // Small delay to ensure state changes are processed
@@ -560,6 +658,13 @@ export function useCardioSession() {
     if (!sessionId) return;
     console.log(`[useCardioSession] Cancelling session ${sessionId}`);
     
+    // Stop countdown audio immediately on cancel (mirroring notification cancellation)
+    try {
+      await cardioCountdownAudio.stopCountdown();
+    } catch (error) {
+      console.warn('[useCardioSession] Failed to stop countdown audio on cancel:', error);
+    }
+    
     try {
       // Use the enhanced session state change handler
       await svc.handleSessionStateChange(sessionId, 'cancel');
@@ -569,7 +674,7 @@ export function useCardioSession() {
     }
     try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
     
-    // Clear local state
+    // Clear local state and countdown audio triggers
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -578,6 +683,8 @@ export function useCardioSession() {
     setPausedAt(null);
     setAccumPauseMs(0);
     setStartedAt(null);
+    countdownTriggeredRef.current.clear();
+    lastPhaseRef.current = null;
     clearTick();
     
     // Small delay to ensure state changes are processed
@@ -669,6 +776,15 @@ export function useCardioSession() {
       });
     }
   }, [derived.phase, sessionId, clearTick, finish]);
+
+  // Cleanup countdown audio on unmount (following notification cleanup patterns)
+  useEffect(() => {
+    return () => {
+      cardioCountdownAudio.stopCountdown().catch((error) => {
+        console.warn('[useCardioSession] Failed to stop countdown audio on unmount:', error);
+      });
+    };
+  }, []);
 
   return {
     state: derived,

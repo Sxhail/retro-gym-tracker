@@ -273,6 +273,11 @@ export function useCardioSession() {
     if (lastPhaseRef.current !== currentPhaseKey) {
       lastPhaseRef.current = currentPhaseKey;
       
+      // Stop any countdown audio when phase changes (ensures audio doesn't continue beyond 3 seconds)
+      cardioCountdownAudio.stopCountdown().catch((error) => {
+        console.warn('[useCardioSession] Failed to stop countdown audio on phase change:', error);
+      });
+      
       // Clear old triggered phases to free memory (keep only current and recent phases)
       const currentAndNext = new Set([
         phaseId,

@@ -232,6 +232,7 @@ class CardioBackgroundSessionService {
               : `Lap ${entry.cycleIndex + 1} run ending soon`;
             
             console.log(`[CardioBackgroundSession] Scheduling countdown notification for ${entry.phase} phase at ${new Date(countdownFireAt).toISOString()}`);
+            console.log(`[CardioBackgroundSession] Using custom sound: cardio-countdown.wav`);
             
             // Use custom audio file for countdown notifications
             await IOSLocalNotifications.scheduleAbsolute(

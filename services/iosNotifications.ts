@@ -6,18 +6,17 @@ type SessionId = string;
 let initialized = false;
 
 // Only show notifications when app is in background or inactive
-// BUT always play sound for countdown notifications
+// Foreground audio is handled by expo-av, notifications only for background
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const appState = AppState.currentState;
     const shouldShow = appState === 'background' || appState === 'inactive';
-    const isCountdown = (notification as any)?.request?.content?.data?.sessionId?.includes('_countdown');
     
     return {
       shouldShowAlert: shouldShow,
       shouldShowBanner: shouldShow,
       shouldShowList: shouldShow,
-      shouldPlaySound: shouldShow || isCountdown, // Always play sound for countdown notifications
+      shouldPlaySound: shouldShow, // Only play notification sound when app is in background
       shouldSetBadge: false,
     };
   },
@@ -61,11 +60,23 @@ export const IOSLocalNotifications = {
     try {
       console.log(`[IOSNotifications] Scheduling notification with sound: ${customSound || 'default'}`);
       
+      // For iOS notifications, custom sounds must be in the app bundle
+      // The expo-notifications library expects just the filename for bundled sounds
+      // For custom sounds in app/assets/, we reference them by filename only
+      let soundConfig: string | boolean = 'default';
+      
+      if (customSound) {
+        // Extract just the filename without path for iOS bundle sounds
+        const filename = customSound.includes('/') ? customSound.split('/').pop() : customSound;
+        soundConfig = filename || 'default';
+        console.log(`[IOSNotifications] Using custom sound filename: ${soundConfig}`);
+      }
+      
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title,
           body,
-          sound: customSound || 'default',
+          sound: soundConfig,
           data: {
             sessionId,
             notificationType,
@@ -74,7 +85,7 @@ export const IOSLocalNotifications = {
         trigger: { type: 'timeInterval', seconds, repeats: false } as any,
       });
       
-      console.log(`[IOSNotifications] Scheduled notification ${id} for ${title} with sound: ${customSound || 'default'}`);
+      console.log(`[IOSNotifications] Scheduled notification ${id} for ${title} with sound: ${soundConfig}`);
       return id;
     } catch (error) {
       return null;

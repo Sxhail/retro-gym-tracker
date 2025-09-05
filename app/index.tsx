@@ -233,7 +233,12 @@ export default function HomeScreen() {
       {/* Action Buttons - moved to bottom */}
     <View style={styles.bottomActionSection}>
       {(() => {
-        const cardioActive = !!cardio.state.sessionId && cardio.state.phase !== 'completed' && cardio.state.phase !== 'idle';
+        // More robust check for active cardio session
+        const cardioActive = !!cardio.state.sessionId && 
+                           cardio.state.phase !== 'completed' && 
+                           cardio.state.phase !== 'idle' &&
+                           cardio.state.mode && // ensure mode is set
+                           cardio.state.startedAt; // ensure session was actually started
         if (cardioActive) {
           return (
             <TouchableOpacity

@@ -80,7 +80,24 @@ export default function WalkRunScreen() {
         {
           text: 'Yes',
           style: 'destructive',
-          onPress: async () => { await cardio.cancel(); router.push('/'); }
+          onPress: async () => { 
+            try {
+              // Wait for cancel to complete before navigating
+              await cardio.cancel(); 
+              
+              // Double-check that session is cleared
+              if (cardio.state.sessionId) {
+                console.warn('Session still exists after cancel, forcing cleanup...');
+                await cardio.reset(); // fallback cleanup
+              }
+              
+              router.push('/');
+            } catch (error) {
+              console.error('Error cancelling cardio session:', error);
+              // Still navigate even if cancel fails to avoid stuck state
+              router.push('/');
+            }
+          }
         }
       ]
     );

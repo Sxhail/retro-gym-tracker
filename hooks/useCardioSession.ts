@@ -538,8 +538,9 @@ export function useCardioSession() {
     } catch (error) {
       console.warn('Failed to reset session:', error);
     }
-  try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
+    try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
     
+    // Clear local state
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -549,6 +550,9 @@ export function useCardioSession() {
     setAccumPauseMs(0);
     setStartedAt(null);
     clearTick();
+    
+    // Small delay to ensure state changes are processed
+    await new Promise(resolve => setTimeout(resolve, 100));
   }, [sessionId, clearTick]);
 
   // Cancel without saving to history
@@ -563,8 +567,9 @@ export function useCardioSession() {
     } catch (error) {
       console.warn('Failed to cancel session:', error);
     }
-  try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
+    try { await IOSLocalNotifications.cancelAllCardio(); } catch {}
     
+    // Clear local state
     setSessionId(null);
     setMode(null);
     setParams(null);
@@ -574,6 +579,9 @@ export function useCardioSession() {
     setAccumPauseMs(0);
     setStartedAt(null);
     clearTick();
+    
+    // Small delay to ensure state changes are processed
+    await new Promise(resolve => setTimeout(resolve, 100));
   }, [sessionId, clearTick]);
 
   // Restore on mount
@@ -582,6 +590,27 @@ export function useCardioSession() {
       try {
         const snap = await svc.restoreActiveSession();
         if (!snap) return;
+        
+        // Defensive validation: ensure the session is valid and not stale
+        const now = Date.now();
+        const sessionStartTime = new Date(snap.startedAt).getTime();
+        const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
+        
+        // If session is older than 24 hours, consider it stale and clear it
+        if (now - sessionStartTime > maxSessionAge) {
+          console.log(`[useCardioSession] Clearing stale session ${snap.sessionId} (age: ${(now - sessionStartTime) / 1000 / 60 / 60} hours)`);
+          await svc.clearActiveSession(snap.sessionId);
+          return;
+        }
+        
+        // Additional validation: check if session has required fields
+        if (!snap.mode || !snap.params || !snap.schedule?.length) {
+          console.log(`[useCardioSession] Clearing invalid session ${snap.sessionId} (missing required fields)`);
+          await svc.clearActiveSession(snap.sessionId);
+          return;
+        }
+        
+        console.log(`[useCardioSession] Restoring valid session ${snap.sessionId}`);
         setSessionId(snap.sessionId);
         setMode(snap.mode);
         setParams(snap.params);
@@ -592,9 +621,11 @@ export function useCardioSession() {
         setPausedAt(snap.pausedAt);
         setIsPaused(!!snap.pausedAt);
         setAccumPauseMs(snap.accumulatedPauseMs);
-  // Only tick if not paused
-  if (!snap.pausedAt) ensureTick();
-      } catch (e) {}
+        // Only tick if not paused
+        if (!snap.pausedAt) ensureTick();
+      } catch (e) {
+        console.warn('[useCardioSession] Failed to restore session:', e);
+      }
     })();
     return clearTick;
   }, [ensureTick, clearTick]);

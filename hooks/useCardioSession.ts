@@ -156,6 +156,7 @@ export function useCardioSession() {
   
   // Countdown audio state tracking (following notification patterns)
   const countdownTriggeredRef = useRef<Set<string>>(new Set());
+  const phaseTransitionTriggeredRef = useRef<Set<string>>(new Set());
   const lastPhaseRef = useRef<string | null>(null);
 
   const ensureTick = useCallback(() => {
@@ -269,10 +270,50 @@ export function useCardioSession() {
       });
     }
 
+    // Trigger phase transition audio at the START of phases (when remainingMs is close to full duration)
+    // This is the key fix - trigger when phase STARTS, not in useEffect phase change detection
+    if (sessionId && schedule.length > 0 && !isPaused) {
+      const currentPhase = schedule[derived.currentIndex];
+      if (currentPhase) {
+        const phaseStartTime = new Date(currentPhase.startAt).getTime();
+        const phaseEndTime = new Date(currentPhase.endAt).getTime();
+        const phaseDurationMs = phaseEndTime - phaseStartTime;
+        
+        // Trigger audio when phase just started (remainingMs is close to full duration)
+        // Allow for small timing variance (within 1 second of phase start)
+        const isPhaseJustStarted = derived.remainingMs > (phaseDurationMs - 1000) && derived.remainingMs <= phaseDurationMs;
+        
+        if (isPhaseJustStarted) {
+          const phaseTransitionId = `${sessionId}-${derived.currentIndex}-${derived.phase}-start`;
+          
+          if (!phaseTransitionTriggeredRef.current.has(phaseTransitionId)) {
+            phaseTransitionTriggeredRef.current.add(phaseTransitionId);
+            
+            console.log(`[useCardioSession] 🎯 PHASE START DETECTED: ${derived.phase} (remaining: ${derived.remainingMs}ms, duration: ${phaseDurationMs}ms)`);
+            
+            // Logic 1: cardio-rest plays when rest phase starts
+            if (derived.phase === 'rest') {
+              console.log('[useCardioSession] 🔊 TRIGGERING REST AUDIO: rest phase started');
+              cardioPhaseAudio.playRest(sessionId).catch((error) => {
+                console.warn('[useCardioSession] ❌ Failed to play rest audio:', error);
+              });
+            }
+            
+            // Logic 2: cardio-work plays when work phase starts (HIIT only)
+            if (derived.phase === 'work' && mode === 'hiit') {
+              console.log('[useCardioSession] 🔊 TRIGGERING WORK AUDIO: work phase started (HIIT)');
+              cardioPhaseAudio.playWork(sessionId).catch((error) => {
+                console.warn('[useCardioSession] ❌ Failed to play work audio:', error);
+              });
+            }
+          }
+        }
+      }
+    }
+
     // Reset triggered phases when phase changes (following notification state management)
     const currentPhaseKey = `${derived.currentIndex}-${derived.phase}`;
     if (lastPhaseRef.current !== currentPhaseKey) {
-      const previousPhaseKey = lastPhaseRef.current;
       lastPhaseRef.current = currentPhaseKey;
       
       // Stop any countdown audio when phase changes (backup safety)
@@ -280,44 +321,26 @@ export function useCardioSession() {
         console.warn('[useCardioSession] Failed to stop countdown audio on phase change:', error);
       });
       
-      // Handle phase transition audio
-      if (previousPhaseKey && sessionId) {
-        // Extract previous phase info
-        const prevParts = previousPhaseKey.split('-');
-        const prevPhase = prevParts[1] as CardioPhase;
-        
-        console.log(`[useCardioSession] Phase transition: ${prevPhase} → ${derived.phase}`);
-        
-        // Logic 1: cardio-rest plays right after cardio-countdown finishes
-        // This happens when countdown was playing (5s before phase end) and now we're starting rest
-        if (derived.phase === 'rest' && (prevPhase === 'work' || prevPhase === 'run')) {
-          console.log('[useCardioSession] Playing rest audio after countdown finished');
-          cardioPhaseAudio.playRest(sessionId).catch((error) => {
-            console.warn('[useCardioSession] Failed to play rest audio:', error);
-          });
-        }
-        
-        // Logic 2: cardio-work plays in HIIT only, when rest timer finishes and work timer starts
-        if (mode === 'hiit' && derived.phase === 'work' && prevPhase === 'rest') {
-          console.log('[useCardioSession] Playing work audio after rest finished (HIIT)');
-          cardioPhaseAudio.playWork(sessionId).catch((error) => {
-            console.warn('[useCardioSession] Failed to play work audio:', error);
-          });
-        }
-      }
-      
       // Clear old triggered phases to free memory (keep only current and recent phases)
       const currentAndNext = new Set([
         phaseId,
         `${sessionId}-${derived.currentIndex + 1}-work-${derived.cycleIndex}`,
         `${sessionId}-${derived.currentIndex + 1}-run-${derived.cycleIndex}`,
+        // Phase transition IDs
+        `${sessionId}-${derived.currentIndex}-${derived.phase}-start`,
+        `${sessionId}-${derived.currentIndex + 1}-work-start`,
+        `${sessionId}-${derived.currentIndex + 1}-rest-start`,
       ]);
       
       countdownTriggeredRef.current = new Set(
         Array.from(countdownTriggeredRef.current).filter(id => currentAndNext.has(id))
       );
+      
+      phaseTransitionTriggeredRef.current = new Set(
+        Array.from(phaseTransitionTriggeredRef.current).filter(id => currentAndNext.has(id))
+      );
     }
-  }, [sessionId, schedule.length, isPaused, derived.phase, derived.currentIndex, derived.cycleIndex, derived.remainingMs, shouldPlayCountdownAudio]);
+  }, [sessionId, schedule.length, isPaused, derived.phase, derived.currentIndex, derived.cycleIndex, derived.remainingMs, mode, shouldPlayCountdownAudio]);
 
   // Persist snapshot
   const persist = useCallback(async () => {

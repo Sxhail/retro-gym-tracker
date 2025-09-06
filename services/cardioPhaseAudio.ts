@@ -286,6 +286,14 @@ class CardioPhaseAudioService {
       console.warn('[CardioPhaseAudio] Error handling interruption:', error);
     }
   }
+
+  /**
+   * Test method - manually trigger audio for debugging
+   */
+  async testAudio(type: AudioType): Promise<void> {
+    console.log(`[CardioPhaseAudio] 🧪 TESTING ${type.toUpperCase()} AUDIO`);
+    await this.playAudio(type, 'test-session', 'manual-test');
+  }
 }
 
 // Export singleton instance

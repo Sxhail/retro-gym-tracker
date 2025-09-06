@@ -223,10 +223,10 @@ class CardioBackgroundSessionService {
           const { title, body } = this.getNotificationContent(entry, false, sessionId);
           await IOSLocalNotifications.scheduleAbsolute(sessionId, new Date(fireAt), title, body);
           
-          // Schedule countdown audio notification for work/run phases (3 seconds before end)
-          if ((entry.phase === 'work' || entry.phase === 'run') && fireAt > now + 4000) {
-            const countdownFireAt = fireAt - 3000; // 3 seconds before phase end
-            const countdownTitle = entry.phase === 'work' ? '3 SECONDS LEFT' : '3 SECONDS LEFT';
+          // Schedule countdown audio notification for work/run phases (5 seconds before end)
+          if ((entry.phase === 'work' || entry.phase === 'run') && fireAt > now + 6000) {
+            const countdownFireAt = fireAt - 5000; // 5 seconds before phase end
+            const countdownTitle = entry.phase === 'work' ? '5 SECONDS LEFT' : '5 SECONDS LEFT';
             const countdownBody = entry.phase === 'work' 
               ? `Round ${entry.cycleIndex + 1} work ending soon`
               : `Lap ${entry.cycleIndex + 1} run ending soon`;

@@ -10,18 +10,20 @@ console.log('🔧 Testing Countdown Audio Fixes');
 console.log('=================================');
 
 function testIssue1Fix() {
-  console.log('1️⃣ ISSUE 1 FIX: Audio duration limited to exactly 3 seconds in foreground');
+  console.log('1️⃣ ISSUE 1 FIX: Audio duration limited to exactly 4 seconds in foreground');
   console.log('====================================================================');
-  console.log('✅ Added 3-second timer to stop audio exactly after 3 seconds');
+  console.log('✅ Audio triggers when 5 seconds remain in work/run phase');
+  console.log('✅ Added 4-second timer to stop audio exactly after 4 seconds');
   console.log('✅ Phase change detection as backup to stop audio when phase ends early');
   console.log('✅ Timer cleanup in all session actions (pause, skip, finish, reset, cancel)');
-  console.log('✅ cardioCountdownAudio.stopCountdown() called automatically after 3 seconds');
+  console.log('✅ cardioCountdownAudio.stopCountdown() called automatically after 4 seconds');
   
   console.log('\n📋 Implementation:');
-  console.log('   - Timer: Set 3-second timeout when countdown audio starts');
+  console.log('   - Trigger: When 5 seconds remain in work/run phase');
+  console.log('   - Timer: Set 4-second timeout when countdown audio starts');
   console.log('   - Cleanup: Clear timer in all session state changes');
   console.log('   - Backup: Phase change detection stops audio if phase ends early');
-  console.log('   - Result: Audio plays for exactly 3 seconds, no longer');
+  console.log('   - Result: Audio plays for exactly 4 seconds, no longer');
 }
 
 function testIssue2Fix() {
@@ -59,18 +61,18 @@ function expectedBehavior() {
   console.log('==================================');
   
   console.log('📱 FOREGROUND (app active):');
-  console.log('   ├─ 3 seconds before end: expo-av plays cardio-countdown.wav');
-  console.log('   ├─ After exactly 3 seconds: expo-av stops automatically');
+  console.log('   ├─ 5 seconds before end: expo-av plays cardio-countdown.wav');
+  console.log('   ├─ After exactly 4 seconds: expo-av stops automatically');
   console.log('   ├─ Phase ends: audio already stopped (no overlap)');
   console.log('   └─ No notification sound heard (suppressed)');
   
   console.log('\n📱 BACKGROUND (app closed/backgrounded):');
-  console.log('   ├─ 3 seconds before end: notification plays cardio-countdown.wav');
+  console.log('   ├─ 5 seconds before end: notification plays cardio-countdown.wav');
   console.log('   ├─ Phase ends: regular notification with default sound');
   console.log('   └─ expo-av not active (app not running)');
   
   console.log('\n📱 FORCE-CLOSED (app terminated):');
-  console.log('   ├─ 3 seconds before end: notification plays cardio-countdown.wav');
+  console.log('   ├─ 5 seconds before end: notification plays cardio-countdown.wav');
   console.log('   ├─ Phase ends: regular notification with default sound');
   console.log('   └─ All audio delivered by iOS notification system');
 }
@@ -83,19 +85,22 @@ function testingInstructions() {
   console.log('   • Start HIIT with 10-second work phases');
   console.log('   • Keep app open and active');
   console.log('   • ✅ Should hear: ONE audio source (expo-av cardio-countdown.wav)');
-  console.log('   • ✅ Should stop: Exactly when phase ends (not continue)');
+  console.log('   • ✅ Should start: When 5 seconds remain in work/run phase');
+  console.log('   • ✅ Should stop: After exactly 4 seconds of audio playback');
   console.log('   • ❌ Should NOT hear: Notification sound alongside expo-av');
   
   console.log('\n2. Test Background (Issue 3):');
   console.log('   • Start HIIT session');
   console.log('   • Background app immediately');
   console.log('   • ✅ Should hear: cardio-countdown.wav from notification (not default)');
+  console.log('   • ✅ Should start: When 5 seconds remain in work/run phase');
   console.log('   • ✅ Should hear: Default sound for phase end notification');
   
   console.log('\n3. Test Force-Close:');
   console.log('   • Start HIIT session');
   console.log('   • Force-close app (swipe up, remove from switcher)');
   console.log('   • ✅ Should hear: cardio-countdown.wav from notification');
+  console.log('   • ✅ Should start: When 5 seconds remain in work/run phase');
   console.log('   • ✅ Should work: Even with app completely closed');
 }
 
@@ -103,10 +108,11 @@ function troubleshooting() {
   console.log('\n🛠️ TROUBLESHOOTING:');
   console.log('====================');
   
-  console.log('❌ If Issue 1 persists (audio too long):');
-  console.log('   • Check console for "Failed to stop countdown audio on phase change"');
-  console.log('   • Verify phase transitions are being detected');
-  console.log('   • Test with shorter phases (5-6 seconds work)');
+  console.log('❌ If Issue 1 persists (audio too long or wrong timing):');
+  console.log('   • Check console for "Failed to stop countdown audio after 4 seconds"');
+  console.log('   • Verify audio starts when 5 seconds remain');
+  console.log('   • Verify audio stops after exactly 4 seconds');
+  console.log('   • Test with longer phases (10+ seconds work)');
   
   console.log('\n❌ If Issue 2 persists (double audio):');
   console.log('   • Check app state detection in notification handler');

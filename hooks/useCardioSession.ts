@@ -253,8 +253,8 @@ export function useCardioSession() {
       return;
     }
 
-    // Check if countdown audio should trigger (3 seconds remaining)
-    const shouldTrigger = derived.remainingMs <= 3000 && derived.remainingMs > 0;
+    // Check if countdown audio should trigger (5 seconds remaining)
+    const shouldTrigger = derived.remainingMs <= 5000 && derived.remainingMs > 0;
     
     if (shouldTrigger && !countdownTriggeredRef.current.has(phaseId)) {
       // Mark this phase as triggered to prevent duplicates
@@ -268,17 +268,17 @@ export function useCardioSession() {
         console.warn('[useCardioSession] Failed to play foreground countdown audio:', error);
       });
       
-      // Set timer to stop audio after exactly 3 seconds
+      // Set timer to stop audio after exactly 4 seconds
       if (countdownTimerRef.current) {
         clearTimeout(countdownTimerRef.current);
       }
       countdownTimerRef.current = setTimeout(() => {
-        console.log(`[useCardioSession] Stopping countdown audio after 3 seconds for ${derived.phase} phase`);
+        console.log(`[useCardioSession] Stopping countdown audio after 4 seconds for ${derived.phase} phase`);
         cardioCountdownAudio.stopCountdown().catch((error) => {
-          console.warn('[useCardioSession] Failed to stop countdown audio after 3 seconds:', error);
+          console.warn('[useCardioSession] Failed to stop countdown audio after 4 seconds:', error);
         });
         countdownTimerRef.current = null;
-      }, 3000);
+      }, 4000);
     }
 
     // Reset triggered phases when phase changes (following notification state management)

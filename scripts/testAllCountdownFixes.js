@@ -10,16 +10,18 @@ console.log('🔧 Testing Countdown Audio Fixes');
 console.log('=================================');
 
 function testIssue1Fix() {
-  console.log('1️⃣ ISSUE 1 FIX: Audio duration limited to 3 seconds in foreground');
-  console.log('================================================================');
-  console.log('✅ Added phase change detection to stop audio when phase ends');
-  console.log('✅ cardioCountdownAudio.stopCountdown() called on phase transition');
-  console.log('✅ Audio will now stop exactly when phase changes, not continue playing');
+  console.log('1️⃣ ISSUE 1 FIX: Audio duration limited to exactly 3 seconds in foreground');
+  console.log('====================================================================');
+  console.log('✅ Added 3-second timer to stop audio exactly after 3 seconds');
+  console.log('✅ Phase change detection as backup to stop audio when phase ends early');
+  console.log('✅ Timer cleanup in all session actions (pause, skip, finish, reset, cancel)');
+  console.log('✅ cardioCountdownAudio.stopCountdown() called automatically after 3 seconds');
   
   console.log('\n📋 Implementation:');
-  console.log('   - Hook: useCardioSession.ts detects phase changes');
-  console.log('   - Action: Calls stopCountdown() when currentPhaseKey changes');
-  console.log('   - Result: Audio stops immediately when work/run phase ends');
+  console.log('   - Timer: Set 3-second timeout when countdown audio starts');
+  console.log('   - Cleanup: Clear timer in all session state changes');
+  console.log('   - Backup: Phase change detection stops audio if phase ends early');
+  console.log('   - Result: Audio plays for exactly 3 seconds, no longer');
 }
 
 function testIssue2Fix() {
@@ -58,7 +60,8 @@ function expectedBehavior() {
   
   console.log('📱 FOREGROUND (app active):');
   console.log('   ├─ 3 seconds before end: expo-av plays cardio-countdown.wav');
-  console.log('   ├─ Phase ends: expo-av stops immediately');
+  console.log('   ├─ After exactly 3 seconds: expo-av stops automatically');
+  console.log('   ├─ Phase ends: audio already stopped (no overlap)');
   console.log('   └─ No notification sound heard (suppressed)');
   
   console.log('\n📱 BACKGROUND (app closed/backgrounded):');

@@ -3,6 +3,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import { cardioBackgroundSessionService as svc } from '../services/cardioBackgroundSession';
 import IOSLocalNotifications from '../services/iosNotifications';
 import { cardioCountdownAudio } from '../services/cardioCountdownAudio';
+import { cardioPhaseAudio } from '../services/cardioPhaseAudio';
 
 export type CardioMode = 'hiit' | 'walk_run';
 export type CardioPhase = 'work' | 'rest' | 'run' | 'walk' | 'completed' | 'idle';
@@ -263,7 +264,7 @@ export function useCardioSession() {
       
       // Play countdown audio in foreground (natural 4-second audio duration)
       // Background scenarios are handled by notification system
-      cardioCountdownAudio.playCountdown(sessionId, derived.phase as 'work' | 'run').catch((error) => {
+      cardioPhaseAudio.playCountdown(sessionId, derived.phase as 'work' | 'run').catch((error) => {
         console.warn('[useCardioSession] Failed to play foreground countdown audio:', error);
       });
     }
@@ -271,12 +272,39 @@ export function useCardioSession() {
     // Reset triggered phases when phase changes (following notification state management)
     const currentPhaseKey = `${derived.currentIndex}-${derived.phase}`;
     if (lastPhaseRef.current !== currentPhaseKey) {
+      const previousPhaseKey = lastPhaseRef.current;
       lastPhaseRef.current = currentPhaseKey;
       
       // Stop any countdown audio when phase changes (backup safety)
       cardioCountdownAudio.stopCountdown().catch((error) => {
         console.warn('[useCardioSession] Failed to stop countdown audio on phase change:', error);
       });
+      
+      // Handle phase transition audio
+      if (previousPhaseKey && sessionId) {
+        // Extract previous phase info
+        const prevParts = previousPhaseKey.split('-');
+        const prevPhase = prevParts[1] as CardioPhase;
+        
+        console.log(`[useCardioSession] Phase transition: ${prevPhase} → ${derived.phase}`);
+        
+        // Logic 1: cardio-rest plays right after cardio-countdown finishes
+        // This happens when countdown was playing (5s before phase end) and now we're starting rest
+        if (derived.phase === 'rest' && (prevPhase === 'work' || prevPhase === 'run')) {
+          console.log('[useCardioSession] Playing rest audio after countdown finished');
+          cardioPhaseAudio.playRest(sessionId).catch((error) => {
+            console.warn('[useCardioSession] Failed to play rest audio:', error);
+          });
+        }
+        
+        // Logic 2: cardio-work plays in HIIT only, when rest timer finishes and work timer starts
+        if (mode === 'hiit' && derived.phase === 'work' && prevPhase === 'rest') {
+          console.log('[useCardioSession] Playing work audio after rest finished (HIIT)');
+          cardioPhaseAudio.playWork(sessionId).catch((error) => {
+            console.warn('[useCardioSession] Failed to play work audio:', error);
+          });
+        }
+      }
       
       // Clear old triggered phases to free memory (keep only current and recent phases)
       const currentAndNext = new Set([
@@ -412,11 +440,11 @@ export function useCardioSession() {
     const pAt = nowUtcIso();
     setPausedAt(pAt);
     
-    // Stop foreground countdown audio immediately on pause
+    // Stop all audio immediately on pause
     try {
-      await cardioCountdownAudio.stopCountdown();
+      await cardioPhaseAudio.stopAllAudio();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop foreground countdown audio on pause:', error);
+      console.warn('[useCardioSession] Failed to stop audio on pause:', error);
     }
     
     // Use the enhanced session state change handler
@@ -473,11 +501,11 @@ export function useCardioSession() {
     if (!sessionId || !schedule.length) return;
     console.log(`[useCardioSession] Skipping phase for session ${sessionId}`);
     
-    // Stop foreground countdown audio immediately on skip
+    // Stop all audio immediately on skip
     try {
-      await cardioCountdownAudio.stopCountdown();
+      await cardioPhaseAudio.stopAllAudio();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop foreground countdown audio on skip:', error);
+      console.warn('[useCardioSession] Failed to stop audio on skip:', error);
     }
     
     const now = Date.now();
@@ -573,11 +601,11 @@ export function useCardioSession() {
     if (!sessionId) return;
     console.log(`[useCardioSession] Finishing session ${sessionId}`);
     
-    // Stop countdown audio on finish (session complete)
+    // Stop all audio on finish (session complete)
     try {
-      await cardioCountdownAudio.stopCountdown();
+      await cardioPhaseAudio.stopAllAudio();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop countdown audio on finish:', error);
+      console.warn('[useCardioSession] Failed to stop audio on finish:', error);
     }
     
     // Save historical record before clearing
@@ -626,11 +654,11 @@ export function useCardioSession() {
     if (!sessionId) return;
     console.log(`[useCardioSession] Resetting session ${sessionId}`);
     
-    // Stop foreground countdown audio immediately on reset
+    // Stop all audio immediately on reset
     try {
-      await cardioCountdownAudio.stopCountdown();
+      await cardioPhaseAudio.stopAllAudio();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop foreground countdown audio on reset:', error);
+      console.warn('[useCardioSession] Failed to stop audio on reset:', error);
     }
     
     try {
@@ -664,11 +692,11 @@ export function useCardioSession() {
     if (!sessionId) return;
     console.log(`[useCardioSession] Cancelling session ${sessionId}`);
     
-    // Stop foreground countdown audio immediately on cancel
+    // Stop all audio immediately on cancel
     try {
-      await cardioCountdownAudio.stopCountdown();
+      await cardioPhaseAudio.stopAllAudio();
     } catch (error) {
-      console.warn('[useCardioSession] Failed to stop foreground countdown audio on cancel:', error);
+      console.warn('[useCardioSession] Failed to stop audio on cancel:', error);
     }
     
     try {
@@ -783,11 +811,11 @@ export function useCardioSession() {
     }
   }, [derived.phase, sessionId, clearTick, finish]);
 
-  // Cleanup foreground countdown audio on unmount
+  // Cleanup all audio on unmount
   useEffect(() => {
     return () => {
-      cardioCountdownAudio.stopCountdown().catch((error) => {
-        console.warn('[useCardioSession] Failed to stop foreground countdown audio on unmount:', error);
+      cardioPhaseAudio.stopAllAudio().catch((error) => {
+        console.warn('[useCardioSession] Failed to stop audio on unmount:', error);
       });
     };
   }, []);

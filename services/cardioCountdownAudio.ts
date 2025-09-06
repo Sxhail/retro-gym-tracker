@@ -195,17 +195,25 @@ class CardioCountdownAudioService {
    */
   async stopCountdown(): Promise<void> {
     try {
-      if (this.sound && this.state === 'playing') {
+      console.log('[CardioCountdownAudio] Stopping countdown audio...');
+      
+      if (this.sound) {
+        // Force stop and reset position regardless of state
         await this.sound.stopAsync();
         await this.sound.setPositionAsync(0);
-        await this.sound.setIsLoopingAsync(false);
-        console.log('[CardioCountdownAudio] Countdown audio stopped');
+        console.log('[CardioCountdownAudio] Audio stopped and position reset');
       }
       
-      this.state = this.sound ? 'ready' : 'idle';
+      // Clear playback tracking
       this.currentPlaybackId = null;
+      this.state = this.sound ? 'ready' : 'idle';
+      
+      console.log('[CardioCountdownAudio] Countdown audio stopped successfully');
     } catch (error) {
       console.warn('[CardioCountdownAudio] Error stopping countdown audio:', error);
+      // Still clear tracking even if stop failed
+      this.currentPlaybackId = null;
+      this.state = this.sound ? 'ready' : 'idle';
     }
   }
 

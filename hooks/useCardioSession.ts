@@ -156,6 +156,7 @@ export function useCardioSession() {
   // Countdown audio state tracking (following notification patterns)
   const countdownTriggeredRef = useRef<Set<string>>(new Set());
   const lastPhaseRef = useRef<string | null>(null);
+  const forceStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ensureTick = useCallback(() => {
     // Do not tick while paused or if already ticking
@@ -261,17 +262,38 @@ export function useCardioSession() {
       
       console.log(`[useCardioSession] Triggering foreground countdown audio for ${derived.phase} phase (${derived.remainingMs}ms remaining)`);
       
+      // Clear any existing force stop timer
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
+      }
+      
       // Play countdown audio in foreground (audio service handles 4-second duration)
       // Background scenarios are handled by notification system
       cardioCountdownAudio.playCountdown(sessionId, derived.phase as 'work' | 'run').catch((error) => {
         console.warn('[useCardioSession] Failed to play foreground countdown audio:', error);
       });
+      
+      // FORCE STOP after exactly 4 seconds as backup (in case service timer fails)
+      forceStopTimerRef.current = setTimeout(() => {
+        console.log(`[useCardioSession] FORCE STOPPING countdown audio after 4 seconds for ${derived.phase} phase`);
+        cardioCountdownAudio.stopCountdown().catch((error) => {
+          console.warn('[useCardioSession] Failed to force stop countdown audio:', error);
+        });
+        forceStopTimerRef.current = null;
+      }, 4000);
     }
 
     // Reset triggered phases when phase changes (following notification state management)
     const currentPhaseKey = `${derived.currentIndex}-${derived.phase}`;
     if (lastPhaseRef.current !== currentPhaseKey) {
       lastPhaseRef.current = currentPhaseKey;
+      
+      // Clear force stop timer when phase changes
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
+      }
       
       // Stop any countdown audio when phase changes (backup safety)
       cardioCountdownAudio.stopCountdown().catch((error) => {
@@ -414,6 +436,11 @@ export function useCardioSession() {
     
     // Stop foreground countdown audio immediately on pause
     try {
+      // Clear force stop timer
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
+      }
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
       console.warn('[useCardioSession] Failed to stop foreground countdown audio on pause:', error);
@@ -475,6 +502,11 @@ export function useCardioSession() {
     
     // Stop foreground countdown audio immediately on skip
     try {
+      // Clear force stop timer
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
+      }
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
       console.warn('[useCardioSession] Failed to stop foreground countdown audio on skip:', error);
@@ -575,6 +607,11 @@ export function useCardioSession() {
     
     // Stop countdown audio on finish (session complete)
     try {
+      // Clear force stop timer
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
+      }
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
       console.warn('[useCardioSession] Failed to stop countdown audio on finish:', error);
@@ -628,6 +665,11 @@ export function useCardioSession() {
     
     // Stop foreground countdown audio immediately on reset
     try {
+      // Clear force stop timer
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
+      }
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
       console.warn('[useCardioSession] Failed to stop foreground countdown audio on reset:', error);
@@ -666,6 +708,11 @@ export function useCardioSession() {
     
     // Stop foreground countdown audio immediately on cancel
     try {
+      // Clear force stop timer
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
+      }
       await cardioCountdownAudio.stopCountdown();
     } catch (error) {
       console.warn('[useCardioSession] Failed to stop foreground countdown audio on cancel:', error);
@@ -786,6 +833,11 @@ export function useCardioSession() {
   // Cleanup foreground countdown audio on unmount
   useEffect(() => {
     return () => {
+      // Clear force stop timer
+      if (forceStopTimerRef.current) {
+        clearTimeout(forceStopTimerRef.current);
+        forceStopTimerRef.current = null;
+      }
       cardioCountdownAudio.stopCountdown().catch((error) => {
         console.warn('[useCardioSession] Failed to stop foreground countdown audio on unmount:', error);
       });

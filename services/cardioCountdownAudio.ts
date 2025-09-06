@@ -92,8 +92,8 @@ class CardioCountdownAudioService {
   }
 
   /**
-   * Play countdown audio for exactly 3 seconds
-   * Handles looping for short clips, truncation for long clips
+   * Play countdown audio - simplified for 4-second audio file
+   * Audio file is exactly 4 seconds, so just play it once
    */
   async playCountdown(sessionId: string, phaseType: 'work' | 'run'): Promise<void> {
     try {
@@ -112,80 +112,19 @@ class CardioCountdownAudioService {
       this.currentPlaybackId = playbackId;
       this.state = 'playing';
 
-      console.log(`[CardioCountdownAudio] Starting countdown audio for ${phaseType} phase (${playbackId})`);
+      console.log(`[CardioCountdownAudio] Playing 4-second countdown audio for ${phaseType} phase (${playbackId})`);
+      console.log(`[CardioCountdownAudio] Audio duration: ${this.audioDurationMs}ms`);
 
-      if (this.audioDurationMs <= this.targetDurationMs) {
-        // Audio is shorter than or equal to 4 seconds - play with looping if needed
-        await this.playWithLooping(playbackId);
-      } else {
-        // Audio is longer than 4 seconds - play for exactly 4 seconds then stop
-        await this.playWithTruncation(playbackId);
-      }
+      // Simply play the 4-second audio file once
+      await this.sound.playAsync();
+      
+      // Audio will automatically stop when it finishes (4 seconds)
+      // The audio file itself controls the duration now
 
     } catch (error) {
       console.warn('[CardioCountdownAudio] Failed to play countdown audio:', error);
       this.state = 'ready';
       this.currentPlaybackId = null;
-    }
-  }
-
-  /**
-   * Play audio with looping to reach exactly 3 seconds
-   */
-  private async playWithLooping(playbackId: string): Promise<void> {
-    if (!this.sound) return;
-
-    try {
-      if (this.audioDurationMs >= this.targetDurationMs) {
-        // Single play is enough
-        await this.sound.playAsync();
-        
-        // Stop after target duration
-        setTimeout(async () => {
-          if (this.currentPlaybackId === playbackId) {
-            await this.stopCountdown();
-          }
-        }, this.targetDurationMs);
-      } else {
-        // Need to loop - calculate how many loops needed
-        const loops = Math.ceil(this.targetDurationMs / this.audioDurationMs);
-        console.log(`[CardioCountdownAudio] Will loop ${loops} times to reach 3 seconds`);
-
-        // Set up looping
-        await this.sound.setIsLoopingAsync(true);
-        await this.sound.playAsync();
-
-        // Stop after exactly 3 seconds
-        setTimeout(async () => {
-          if (this.currentPlaybackId === playbackId) {
-            await this.stopCountdown();
-          }
-        }, this.targetDurationMs);
-      }
-    } catch (error) {
-      console.warn('[CardioCountdownAudio] Error in playWithLooping:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Play audio for exactly 4 seconds (truncating longer clips)
-   */
-  private async playWithTruncation(playbackId: string): Promise<void> {
-    if (!this.sound) return;
-
-    try {
-      await this.sound.playAsync();
-      
-      // Stop after exactly 4 seconds
-      setTimeout(async () => {
-        if (this.currentPlaybackId === playbackId) {
-          await this.stopCountdown();
-        }
-      }, this.targetDurationMs);
-    } catch (error) {
-      console.warn('[CardioCountdownAudio] Error in playWithTruncation:', error);
-      throw error;
     }
   }
 

@@ -8,7 +8,7 @@ class CardioCountdownAudioService {
   private sound: Audio.Sound | null = null;
   private state: AudioState = 'idle';
   private audioDurationMs: number = 0;
-  private targetDurationMs: number = 3000; // Exactly 3 seconds
+  private targetDurationMs: number = 4000; // Exactly 4 seconds
   private currentPlaybackId: string | null = null;
   private isInitialized: boolean = false;
 
@@ -115,10 +115,10 @@ class CardioCountdownAudioService {
       console.log(`[CardioCountdownAudio] Starting countdown audio for ${phaseType} phase (${playbackId})`);
 
       if (this.audioDurationMs <= this.targetDurationMs) {
-        // Audio is shorter than or equal to 3 seconds - play with looping if needed
+        // Audio is shorter than or equal to 4 seconds - play with looping if needed
         await this.playWithLooping(playbackId);
       } else {
-        // Audio is longer than 3 seconds - play for exactly 3 seconds then stop
+        // Audio is longer than 4 seconds - play for exactly 4 seconds then stop
         await this.playWithTruncation(playbackId);
       }
 
@@ -169,7 +169,7 @@ class CardioCountdownAudioService {
   }
 
   /**
-   * Play audio for exactly 3 seconds (truncating longer clips)
+   * Play audio for exactly 4 seconds (truncating longer clips)
    */
   private async playWithTruncation(playbackId: string): Promise<void> {
     if (!this.sound) return;
@@ -177,7 +177,7 @@ class CardioCountdownAudioService {
     try {
       await this.sound.playAsync();
       
-      // Stop after exactly 3 seconds
+      // Stop after exactly 4 seconds
       setTimeout(async () => {
         if (this.currentPlaybackId === playbackId) {
           await this.stopCountdown();
